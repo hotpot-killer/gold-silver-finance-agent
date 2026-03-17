@@ -1,21 +1,23 @@
 import logging
 import json
 from datetime import datetime
-from flask import Flask, render_template, jsonify, send_from_directory
+from fastapi import FastAPI
+from fastapi.staticfiles import StaticFiles
+from fastapi.responses import HTMLResponse
 from pathlib import Path
+import uvicorn
 
 logger = logging.getLogger(__name__)
 
-app = Flask(__name__, 
-            template_folder='../templates',
-            static_folder='../static')
-app.config['SECRET_KEY'] = 'gold-silver-finance-agent-secret-key'
+app = FastAPI(title="gold-silver-finance-agent Web API")
 
 # 预警日志文件路径
 ALERT_LOG_PATH = Path('./data/alerts.log')
 
 # 获取当前文件所在目录
 CURRENT_DIR = Path(__file__).parent
+TEMPLATE_DIR = CURRENT_DIR / 'templates'
+STATIC_DIR = CURRENT_DIR / 'static'
 
 def load_alerts():
     """加载历史预警"""
@@ -38,28 +40,26 @@ def load_alerts():
     alerts.sort(key=lambda x: x.get('timestamp', ''), reverse=True)
     return alerts
 
-@app.route('/')
-def index():
+@app.get("/", response_class=HTMLResponse)
+async def index():
     """首页 - 显示历史预警 (Vue 前端)"""
-    return render_template('index.html')
+    with open(TEMPLATE_DIR / 'index.html', 'r', encoding='utf-8') as f:
+        return HTMLResponse(content=f.read())
 
-@app.route('/static/<path:filename>')
-def serve_static(filename):
-    """提供静态文件"""
-    static_dir = CURRENT_DIR / 'static'
-    return send_from_directory(static_dir, filename)
+# 挂载静态文件
+app.mount("/static", StaticFiles(directory=STATIC_DIR), name="static")
 
-@app.route('/api/alerts')
-def api_alerts():
+@app.get("/api/alerts")
+async def api_alerts():
     """API - 获取预警列表"""
     alerts = load_alerts()
-    return jsonify({
+    return {
         'count': len(alerts),
         'alerts': alerts
-    })
+    }
 
-@app.route('/api/stats')
-def api_stats():
+@app.get("/api/stats")
+async def api_stats():
     """API - 获取统计信息"""
     alerts = load_alerts()
     stats = {
@@ -80,13 +80,13 @@ def api_stats():
             stats['by_signal_type'][signal_type] = 0
         stats['by_signal_type'][signal_type] += 1
     
-    return jsonify(stats)
+    return stats
 
-def run_web_server(host='0.0.0.0', port=5000, debug=False):
+def run_web_server(host='0.0.0.0', port=5000):
     """启动Web服务器"""
     # 确保data目录存在
     ALERT_LOG_PATH.parent.mkdir(exist_ok=True)
-    app.run(host=host, port=port, debug=debug)
+    uvicorn.run(app, host=host, port=port)
 
 if __name__ == '__main__':
-    run_web_server(debug=True)
+    run_web_server()

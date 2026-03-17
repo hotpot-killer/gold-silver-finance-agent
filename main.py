@@ -375,7 +375,7 @@ def main():
         # 启动Web服务器查看历史预警
         from src.web.app import run_web_server
         logger.info(f"Starting web server on {args.host}:{args.port}")
-        run_web_server(host=args.host, port=args.port, debug=False)
+        run_web_server(host=args.host, port=args.port)
     elif args.run_once or not config.schedule.only_trading_hours:
         # 单次运行
         run_once(config)
