@@ -29,12 +29,19 @@ class COMEXInventory:
     change_pct: float  # 变化百分比
 
 class PriceMonitor(BaseMonitor):
-    """价格行情监控 - Tushare + 金银ETF/COMEX库存"""
+    """价格行情监控 - Tushare + 金银ETF/COMEX库存
+    专注监控黄金白银市场
+    """
     
-    def __init__(self, token: str, stocks: List[str] = None, gold_enabled: bool = False, etf_monitor: bool = True):
+    def __init__(self, token: str, 
+                 stocks: List[str] = None, 
+                 gold_enabled: bool = True, 
+                 silver_enabled: bool = True, 
+                 etf_monitor: bool = True):
         self.token = token
-        self.stocks = stocks or []
+        self.stocks = stocks or []  # 黄金白银相关股票
         self.gold_enabled = gold_enabled
+        self.silver_enabled = silver_enabled
         self.etf_monitor = etf_monitor
         self.fetcher = Fetcher()
         ts.set_token(token)
@@ -44,7 +51,7 @@ class PriceMonitor(BaseMonitor):
         """获取最新价格数据"""
         results = []
         
-        # 获取股票实时行情
+        # 获取股票实时行情（黄金白银相关个股）
         for symbol in self.stocks:
             try:
                 # 获取最新日线数据
@@ -53,7 +60,7 @@ class PriceMonitor(BaseMonitor):
                     latest = df.iloc[0]
                     results.append(PriceData(
                         symbol=symbol,
-                        name=symbol,  # 可以进一步获取名称
+                        name=symbol,
                         price=latest.close,
                         change=latest.change,
                         change_pct=latest.pct_chg,
@@ -63,16 +70,16 @@ class PriceMonitor(BaseMonitor):
             except Exception as e:
                 logger.error(f"Failed to fetch {symbol}: {e}")
                 
-        logger.info(f"Fetched {len(results)} price data")
+        logger.info(f"Fetched {len(results)} price data for {len(self.stocks)} stocks")
         
         # 如果启用了ETF监控，添加GLD/SLV持仓
         if self.etf_monitor:
-            # 获取 GLD 持仓
+            # 获取 GLD 持仓 - 最大黄金ETF，反映散户情绪
             gld_holdings = self.fetch_gld_holdings()
             if gld_holdings:
                 logger.info(f"GLD ({gld_holdings.name}) latest holdings: {gld_holdings.holdings:.0f} shares, change: {gld_holdings.change_pct:.2f}%")
             
-            # 获取 SLV 持仓  
+            # 获取 SLV 持仓 - 最大白银ETF，反映庄家动向
             slv_holdings = self.fetch_slv_holdings()
             if slv_holdings:
                 logger.info(f"SLV ({slv_holdings.name}) latest holdings: {slv_holdings.holdings:.0f} shares, change: {slv_holdings.change_pct:.2f}%")
@@ -80,9 +87,11 @@ class PriceMonitor(BaseMonitor):
         # 获取 COMEX 库存
         if self.gold_enabled:
             gold_inv = self.fetch_comex_inventory('gold')
-            silver_inv = self.fetch_comex_inventory('silver')
             if gold_inv:
                 logger.info(f"COMEX gold inventory: {gold_inv.inventory:.0f} oz, change: {gold_inv.change_pct:.2f}%")
+        
+        if self.silver_enabled:
+            silver_inv = self.fetch_comex_inventory('silver')
             if silver_inv:
                 logger.info(f"COMEX silver inventory: {silver_inv.inventory:.0f} oz, change: {silver_inv.change_pct:.2f}%")
         
@@ -90,15 +99,14 @@ class PriceMonitor(BaseMonitor):
         
     def fetch_gld_holdings(self) -> Optional[ETFHoldings]:
         """获取SPDR Gold Trust (GLD) 最新持仓
-        GLD - 最大黄金ETF，通常是散户持仓为主
+        GLD - 最大黄金ETF，通常是散户持仓为主 → 反映散户情绪
         """
         try:
             # 从ishares官网获取最新持仓
             url = "https://www.ishares.com/us/products/239751/gld-spdr-gold-trust"
             page = self.fetcher.get(url)
             
-            # 解析持仓数据，框架已完成，具体解析可以后续完善
-            # 当前框架保留，方便后续贡献完善
+            # 解析持仓数据，框架已完成，具体HTML解析可以后续完善
             logger.info("Fetched GLD holdings data")
             return None
         except Exception as e:
@@ -107,7 +115,7 @@ class PriceMonitor(BaseMonitor):
             
     def fetch_slv_holdings(self) -> Optional[ETFHoldings]:
         """获取iShares Silver Trust (SLV) 最新持仓
-        SLV - 最大白银ETF，庄家操作迹象更明显
+        SLV - 最大白银ETF，庄家操作迹象更明显 → 反映庄家动向
         """
         try:
             url = "https://www.ishares.com/us/products/239728/slv-isharess-silver-trust"

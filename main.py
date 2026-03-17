@@ -50,6 +50,7 @@ class Config:
         interval: int = 60
         stocks: List[str] = field(default_factory=list)
         gold: dict = field(default_factory=dict)
+        silver: dict = field(default_factory=dict)
         etf_monitor: dict = field(default_factory=dict)
         news_sources: List[str] = field(default_factory=list)
     monitor: MonitorConfig = field(default_factory=MonitorConfig)
@@ -122,6 +123,7 @@ def load_config(config_path: str = "config/config.yaml") -> Config:
         config.monitor.interval = data['monitor'].get('interval', 60)
         config.monitor.stocks = data['monitor'].get('stocks', [])
         config.monitor.gold = data['monitor'].get('gold', {})
+        config.monitor.silver = data['monitor'].get('silver', {})
         config.monitor.etf_monitor = data['monitor'].get('etf_monitor', {})
         config.monitor.news_sources = data['monitor'].get('news_sources', [])
     
@@ -191,11 +193,12 @@ def run_once(config: Config) -> bool:
     # 1. 监控 - 获取新闻和价格
     logger.info("Step 1: Fetching latest data...")
     
-    # 价格监控
+    # 价格监控 - 专注黄金白银
     price_monitor = PriceMonitor(
         config.tushare.token,
         config.monitor.stocks,
-        config.monitor.gold.get('enabled', False),
+        config.monitor.gold.get('enabled', True),
+        config.monitor.silver.get('enabled', True),
         config.monitor.etf_monitor.get('enabled', True)
     )
     prices = price_monitor.fetch_latest()

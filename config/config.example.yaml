@@ -1,15 +1,16 @@
 # Active Finance Agent 配置
+# 专注：黄金/白银市场主动监控 + AI分析 + 自动预警
 
 # 全局配置
 log_level: INFO
 data_dir: ./data
 cache_dir: ./cache
 
-# Tushare 配置
+# Tushare 配置（获取国内金价/相关股票数据）
 tushare:
   token: "your-tushare-token-here"
 
-# LLM 配置（用于研报总结）
+# LLM 配置（用于新闻/研报总结）
 llm:
   provider: "openai"
   api_key: "your-openai-api-key"
@@ -20,19 +21,29 @@ llm:
 monitor:
   # 监控间隔（分钟）
   interval: 60
-  # 自选股列表 TS代码
-  stocks:
-    - "000001.SZ"
-    - "600000.SH"
-  # 监控黄金（上海黄金交易所AU9999 或者 COMEX 黄金）
+  # 自选股列表（黄金白银相关）
+  stocks: []
+    # - "600547.SH"  # 山东黄金
+    # - "600489.SH"  # 中金黄金
+  
+  # 监控黄金
   gold:
     enabled: true
     symbol: "AU9999"
   
-  # 监控 ETF 持仓 - GLD(黄金ETF)/SLV(白银ETF)
-  # 市场经验: 白银ETF 庄家操作迹象明显，黄金ETF 散户持仓为主
+  # 监控白银
+  silver:
+    enabled: true
+    symbol: "AG9999"
+  
+  # 监控 ETF 持仓 
+  # 市场经验：
+  # - GLD (SPDR Gold Trust) 最大黄金ETF → 反映散户情绪
+  # - SLV (iShares Silver Trust) 最大白银ETF → 反映庄家操作动向
   etf_monitor:
     enabled: true
+    gld: true
+    slv: true
   
   # 新闻源
   news_sources:
@@ -40,17 +51,18 @@ monitor:
     - "wallstreetcn"
     - "xueqiu"
 
-# 研报配置
+# 研报/新闻总结配置
 research:
-  # 自动抓取最新研报
+  # 自动抓取最新新闻/研报
   auto_fetch: true
-  # 只总结和你关注资产相关的研报
+  # 只总结和黄金白银相关的新闻
   only_related: true
   # 输出总结条数
   summary_points: 3
 
-# 预警规则配置
+# 预警规则配置（专注黄金白银）
 alerts:
+  # 黄金MA50偏离
   - name: "黄金MA50偏离"
     asset: gold
     enabled: true
@@ -60,8 +72,19 @@ alerts:
       threshold: 0.05  # 偏离超过5%触发
       direction: "both"  # up / down / both
   
-  - name: "RSI超买超卖"
-    asset: stock
+  # 白银MA50偏离
+  - name: "白银MA50偏离"
+    asset: silver
+    enabled: true
+    type: "ma_deviation"
+    params:
+      ma_period: 50
+      threshold: 0.07  # 白银波动更大，阈值高一点
+      direction: "both"
+  
+  # 黄金RSI超买超卖
+  - name: "黄金 RSI 超买超卖"
+    asset: gold
     enabled: true
     type: "rsi"
     params:
@@ -69,15 +92,36 @@ alerts:
       overbought: 70
       oversold: 30
   
-  - name: "波动率异常"
-    asset: all
+  # 白银RSI超买超卖
+  - name: "白银 RSI 超买超卖"
+    asset: silver
+    enabled: true
+    type: "rsi"
+    params:
+      period: 14
+      overbought: 75
+      oversold: 25
+  
+  # 黄金波动率异常
+  - name: "黄金波动率异常"
+    asset: gold
     enabled: true
     type: "volatility"
     params:
       window: 20
       threshold: 2.0  # 波动率超过2倍历史均值触发
   
-  - name: "GLD持仓异动"
+  # 白银波动率异常
+  - name: "白银波动率异常"
+    asset: silver
+    enabled: true
+    type: "volatility"
+    params:
+      window: 20
+      threshold: 2.5  # 白银波动率更大
+  
+  # GLD持仓异动（散户情绪）
+  - name: "GLD 持仓异动 (散户情绪)"
     asset: gld
     enabled: true
     type: "volatility"
@@ -85,7 +129,8 @@ alerts:
       window: 5
       threshold: 1.5  # 持仓变化超过1.5倍日均变化触发
   
-  - name: "SLV持仓异动"
+  # SLV持仓异动（庄家动向）
+  - name: "SLV 持仓异动 (庄家动向)"
     asset: slv
     enabled: true
     type: "volatility"
