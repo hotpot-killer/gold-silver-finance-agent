@@ -1,0 +1,39 @@
+[project]
+name = "active-finance-agent"
+version = "0.1.0"
+description = "主动式个人财务资产监控 Agent - Multi-Agent 协作监控全球宏观新闻、自动分析研报、自动预警推送"
+authors = [
+  { name = "wzh", email = "wzh@example.com" }
+]
+license = { text = "MIT" }
+readme = "README.md"
+requires-python = ">=3.10"
+keywords = ["fintech", "agent", "finance", "quantitative-investing", "monitoring", "tushare", "multi-agent", "notification"]
+classifiers = [
+  "Development Status :: 3 - Alpha",
+  "License :: OSI Approved :: MIT License",
+  "Programming Language :: Python :: 3",
+  "Programming Language :: Python :: 3.10",
+  "Programming Language :: Python :: 3.11",
+  "Programming Language :: Python :: 3.12",
+  "Intended Audience :: Financial and Insurance Industry",
+  "Topic :: Office/Business :: Financial :: Investment",
+]
+
+dependencies = [
+  "requests>=2.31.0",
+  "tushare>=1.2.58",
+  "playwright>=1.40.0",
+  "scrapling>=0.4",
+  "curl-cffi>=0.6.0",
+  "browserforge>=0.1.0",
+  "schedule>=1.2.0",
+  "pandas>=2.1.3",
+  "numpy>=1.26.0",
+  "pyyaml>=6.0",
+  "openai>=1.0.0",
+  "ta>=0.10.0",
+]
+
+[project.scripts]
+finance-agent = "main:main"

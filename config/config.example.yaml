@@ -1,0 +1,97 @@
+# Active Finance Agent 配置
+
+# 全局配置
+log_level: INFO
+data_dir: ./data
+cache_dir: ./cache
+
+# Tushare 配置
+tushare:
+  token: "your-tushare-token-here"
+
+# LLM 配置（用于研报总结）
+llm:
+  provider: "openai"
+  api_key: "your-openai-api-key"
+  model: "gpt-4o-mini"
+  base_url: ""  # 可填代理地址
+
+# 监控配置
+monitor:
+  # 监控间隔（分钟）
+  interval: 60
+  # 自选股列表 TS代码
+  stocks:
+    - "000001.SZ"
+    - "600000.SH"
+  # 监控黄金（上海黄金交易所AU9999 或者 COMEX 黄金）
+  gold:
+    enabled: true
+    symbol: "AU9999"
+  
+  # 新闻源
+  news_sources:
+    - "wallstreetcn"
+    - "wallstreetcn"
+    - "xueqiu"
+
+# 研报配置
+research:
+  # 自动抓取最新研报
+  auto_fetch: true
+  # 只总结和你关注资产相关的研报
+  only_related: true
+  # 输出总结条数
+  summary_points: 3
+
+# 预警规则配置
+alerts:
+  - name: "黄金MA50偏离"
+    asset: gold
+    enabled: true
+    type: "ma_deviation"
+    params:
+      ma_period: 50
+      threshold: 0.05  # 偏离超过5%触发
+      direction: "both"  # up / down / both
+  
+  - name: "RSI超买超卖"
+    asset: stock
+    enabled: true
+    type: "rsi"
+    params:
+      period: 14
+      overbought: 70
+      oversold: 30
+  
+  - name: "波动率异常"
+    asset: all
+    enabled: true
+    type: "volatility"
+    params:
+      window: 20
+      threshold: 2.0  # 波动率超过2倍历史均值触发
+
+# 通知配置
+notify:
+  dingtalk:
+    enabled: false
+    webhook_url: "https://oapi.dingtalk.com/robot/send?access_token=xxx"
+    secret: ""
+  
+  workwechat:
+    enabled: false
+    webhook_url: "https://qyapi.weixin.qq.com/cgi-bin/webhook/send?key=xxx"
+  
+  telegram:
+    enabled: false
+    bot_token: "xxx"
+    chat_id: "xxx"
+
+# 定时任务配置
+schedule:
+  # 交易时段才运行
+  only_trading_hours: true
+  trading_hours:
+    start: "09:30"
+    end: "15:00"
