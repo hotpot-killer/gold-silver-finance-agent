@@ -107,6 +107,12 @@ uv run python main.py --run-once
 uv run python main.py --schedule
 ```
 
+### 6. Start Web Interface to view historical alerts
+```bash
+uv run python main.py --web --port 5000
+# Then visit http://localhost:5000 to view historical alerts
+```
+
 ### Docker Deployment
 ```bash
 make docker-build
@@ -155,7 +161,7 @@ make test
 - [x] Complete GLD/SLV holdings data parsing ✅
 - [x] Complete COMEX inventory data parsing ✅
 - [x] Add more technical indicators (MACD/ATR) ✅
-- [ ] Web UI for historical alerts
+- [x] Web UI for historical alerts ✅
 - [x] Support more news sources (WallStreetCN/Xueqiu/Sina/Caixin) ✅
 - [x] LLM automatic operation suggestions ✅
 

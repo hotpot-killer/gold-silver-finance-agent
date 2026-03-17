@@ -282,6 +282,26 @@ def run_once(config: Config) -> bool:
     # TODO: gold 单独处理
     logger.info(f"Found {len(all_alerts)} triggered alerts")
     
+    # 记录预警到日志文件供Web界面查看
+    import json
+    from pathlib import Path
+    alert_log_path = Path(config.data_dir) / 'alerts.log'
+    alert_log_path.parent.mkdir(exist_ok=True)
+    
+    current_time = datetime.now().strftime('%Y-%m-%d %H:%M:%S')
+    with open(alert_log_path, 'a', encoding='utf-8') as f:
+        for alert in all_alerts:
+            alert_log = {
+                'name': alert.name,
+                'asset': alert.asset,
+                'type': alert.type,
+                'message': alert.message,
+                'timestamp': current_time
+            }
+            f.write(json.dumps(alert_log, ensure_ascii=False) + '\n')
+    
+    logger.info(f"Logged {len(all_alerts)} alerts to {alert_log_path}")
+    
     # 4. ETF-COMEX 关联分析
     etf_comex_analysis = None
     if config.monitor.etf_monitor.get('enabled', False):
@@ -335,10 +355,13 @@ def run_once(config: Config) -> bool:
     return True
 
 def main():
-    parser = argparse.ArgumentParser(description='Active Finance Agent - 主动式个人财务资产监控')
+    parser = argparse.ArgumentParser(description='gold-silver-finance-agent - AI 赋能黄金白银主动监控 Agent')
     parser.add_argument('--config', default='config/config.yaml', help='Config file path')
     parser.add_argument('--run-once', action='store_true', help='Run once and exit')
     parser.add_argument('--schedule', action='store_true', help='Start scheduled monitoring')
+    parser.add_argument('--web', action='store_true', help='Start web server for historical alerts')
+    parser.add_argument('--port', default=5000, type=int, help='Web server port')
+    parser.add_argument('--host', default='0.0.0.0', help='Web server host')
     
     args = parser.parse_args()
     
@@ -348,7 +371,12 @@ def main():
     os.makedirs(config.data_dir, exist_ok=True)
     os.makedirs(config.cache_dir, exist_ok=True)
     
-    if args.run_once or not config.schedule.only_trading_hours:
+    if args.web:
+        # 启动Web服务器查看历史预警
+        from src.web.app import run_web_server
+        logger.info(f"Starting web server on {args.host}:{args.port}")
+        run_web_server(host=args.host, port=args.port, debug=False)
+    elif args.run_once or not config.schedule.only_trading_hours:
         # 单次运行
         run_once(config)
     elif args.schedule:

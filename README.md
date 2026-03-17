@@ -51,15 +51,19 @@ gold-silver-finance-agent/
 │   │   └── price_monitor.py    # 金银价格 + ETF持仓 + COMEX库存监控 (Tushare)
 │   ├── research/         # AI分析模块
 │   │   ├── __init__.py
-│   │   └── report_summarizer.py  # 新闻/研报浓缩总结
+│   │   └── report_summarizer.py  # 新闻/研报浓缩总结 + LLM 自动生成操作建议
 │   ├── alert/           # 预警分析模块
 │   │   ├── __init__.py
-│   │   ├── indicator.py       # 技术指标计算
+│   │   ├── indicator.py       # 技术指标计算 (MA/RSI/MACD/ATR/布林带/波动率)
 │   │   ├── trigger.py        # 预警触发判断
 │   │   └── etf_comex_analyzer.py  # ETF-COMEX关联分析
-│   └── notifier/        # 通知模块
-│       ├── __init__.py
-│       └── sender.py    # 钉钉/企业微信/飞书/Telegram/邮件推送
+│   ├── notifier/        # 通知模块
+│   │   ├── __init__.py
+│   │   └── sender.py    # 钉钉/企业微信/飞书/Telegram/邮件推送
+│   └── web/             # Web界面模块
+│       ├── app.py       # Flask Web服务
+│       └── templates/
+│           └── index.html  # 历史预警页面
 ├── config/
 │   └── config.example.yaml
 ├── tests/               # 基础测试用例
@@ -112,6 +116,12 @@ uv run python main.py --run-once
 ### 5. 启动定时监控
 ```bash
 uv run python main.py --schedule
+```
+
+### 6. 启动 Web 界面查看历史预警
+```bash
+uv run python main.py --web --port 5000
+# 然后访问 http://localhost:5000 查看历史预警
 ```
 
 ### Docker 部署
@@ -243,7 +253,7 @@ make test
 - [x] 完整解析 GLD/SLV 持仓数据 ✅
 - [x] 完整解析 COMEX 库存数据 ✅
 - [x] 添加更多技术指标 (MACD/ATR) ✅
-- [ ] Web 界面查看历史预警
+- [x] Web 界面查看历史预警 ✅
 - [x] 支持更多新闻源 (华尔街见闻/雪球/新浪财经/财新) ✅
 - [x] LLM 自动生成操作建议 ✅
 

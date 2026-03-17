@@ -1,0 +1,164 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>gold-silver-finance-agent - 历史预警查询</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+            background-color: #f5f5f5;
+            line-height: 1.6;
+        }
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+        header {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 30px 20px;
+            border-radius: 10px;
+            margin-bottom: 30px;
+        }
+        h1 {
+            font-size: 2rem;
+            margin-bottom: 10px;
+        }
+        .subtitle {
+            opacity: 0.9;
+            font-size: 1.1rem;
+        }
+        .stats {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 20px;
+            margin-bottom: 30px;
+        }
+        .stat-card {
+            background: white;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+        .stat-number {
+            font-size: 2rem;
+            font-weight: bold;
+            color: #667eea;
+        }
+        .stat-label {
+            color: #666;
+            font-size: 0.9rem;
+        }
+        .alert-list {
+            background: white;
+            border-radius: 10px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+            overflow: hidden;
+        }
+        .alert-item {
+            padding: 20px;
+            border-bottom: 1px solid #eee;
+        }
+        .alert-item:last-child {
+            border-bottom: none;
+        }
+        .alert-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 10px;
+            flex-wrap: wrap;
+            gap: 10px;
+        }
+        .alert-title {
+            font-weight: bold;
+            font-size: 1.1rem;
+            color: #333;
+        }
+        .alert-time {
+            color: #999;
+            font-size: 0.9rem;
+        }
+        .alert-asset {
+            display: inline-block;
+            background: #667eea;
+            color: white;
+            padding: 4px 12px;
+            border-radius: 20px;
+            font-size: 0.8rem;
+        }
+        .alert-content {
+            color: #555;
+            margin-top: 10px;
+        }
+        .empty-state {
+            text-align: center;
+            padding: 60px 20px;
+            color: #999;
+        }
+        footer {
+            text-align: center;
+            margin-top: 30px;
+            color: #999;
+            font-size: 0.9rem;
+        }
+        @media (max-width: 768px) {
+            .container {
+                padding: 10px;
+            }
+            h1 {
+                font-size: 1.5rem;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>gold-silver-finance-agent</h1>
+            <div class="subtitle">📊 历史预警查询 - AI 赋能黄金白银主动监控 Agent</div>
+        </header>
+
+        <div class="stats">
+            <div class="stat-card">
+                <div class="stat-number">{{ len(alerts) }}</div>
+                <div class="stat-label">总预警条数</div>
+            </div>
+        </div>
+
+        <div class="alert-list">
+            {% if not alerts %}
+            <div class="empty-state">
+                <p>暂无预警记录，等待第一次信号触发...</p>
+            </div>
+            {% else %}
+            {% for alert in alerts %}
+            <div class="alert-item">
+                <div class="alert-header">
+                    <span class="alert-title">{{ alert.name }}</span>
+                    <span class="alert-asset">{{ alert.asset }}</span>
+                    <span class="alert-time">{{ alert.timestamp }}</span>
+                </div>
+                <div class="alert-content">
+                    {% if alert.message %}
+                    {{ alert.message }}
+                    {% endif %}
+                </div>
+            </div>
+            {% endfor %}
+            {% endif %}
+        </div>
+
+        <footer>
+            <p>gold-silver-finance-agent | MIT License</p>
+        </footer>
+    </div>
+</body>
+</html>
