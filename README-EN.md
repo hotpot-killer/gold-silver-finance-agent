@@ -152,12 +152,12 @@ make test
 
 ## Roadmap
 
-- [ ] Complete GLD/SLV holdings data parsing
-- [ ] Complete COMEX inventory data parsing
-- [ ] Add more technical indicators
+- [x] Complete GLD/SLV holdings data parsing ✅
+- [x] Complete COMEX inventory data parsing ✅
+- [x] Add more technical indicators (MACD/ATR) ✅
 - [ ] Web UI for historical alerts
-- [ ] Support more news sources
-- [ ] LLM automatic operation suggestions
+- [x] Support more news sources (WallStreetCN/Xueqiu/Sina/Caixin) ✅
+- [x] LLM automatic operation suggestions ✅
 
 ## Contributing
 

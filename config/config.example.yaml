@@ -46,10 +46,12 @@ monitor:
     slv: true
   
   # 新闻源
+  # 支持: wallstreetcn, xueqiu, sina, caixin
   news_sources:
     - "wallstreetcn"
-    - "wallstreetcn"
     - "xueqiu"
+    - "sina"
+    - "caixin"
 
 # 研报/新闻总结配置
 research:

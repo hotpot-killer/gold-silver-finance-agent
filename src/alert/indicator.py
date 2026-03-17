@@ -43,3 +43,23 @@ class IndicatorCalculator:
         current_price = df.close.iloc[-1]
         current_ma = ma.iloc[-1]
         return (current_price - current_ma) / current_ma
+        
+    @staticmethod
+    def macd(df: pd.DataFrame, fast_period: int = 12, slow_period: int = 26, signal_period: int = 9):
+        """计算 MACD"""
+        macd_indicator = ta.trend.MACD(
+            df.close, 
+            window_slow=slow_period,
+            window_fast=fast_period,
+            window_sign=signal_period
+        )
+        return (
+            macd_indicator.macd().iloc[-1],
+            macd_indicator.macd_signal().iloc[-1],
+            macd_indicator.macd_diff().iloc[-1]
+        )
+        
+    @staticmethod
+    def atr(df: pd.DataFrame, period: int = 14) -> float:
+        """计算 ATR 平均真实波动范围"""
+        return ta.volatility.average_true_range(df.high, df.low, df.close, window=period).iloc[-1]

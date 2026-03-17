@@ -74,8 +74,56 @@ class ReportSummarizer:
         related = []
         for news in news_list:
             title = news.title.lower()
+            content_lower = (news.content or '').lower()
             for asset in my_assets:
-                if asset.lower() in title:
+                asset_lower = asset.lower()
+                if asset_lower in title or asset_lower in content_lower:
                     related.append(news)
                     break
         return related
+        
+    def generate_trading_advice(self, market_data: dict, signals: list, strategy_cycle: str = "medium") -> Optional[str]:
+        """
+        LLM 根据当前市场数据和所有信号生成操作建议
+        
+        Args:
+            market_data: 当前市场数据（金价/银价/GLD/SLV/COMEX）
+            signals: 所有触发的信号列表
+            strategy_cycle: 投资周期 short/medium/long
+        """
+        try:
+            system_prompt = """你是一位专业的黄金白银市场分析师，根据当前提供的市场数据和触发的信号，给用户清晰的操作建议。
+
+请遵循：
+1. 先总结当前市场状态
+2. 根据投资周期给出具体操作建议（加仓/减仓/持有/观望）
+3. 说明风险提示
+保持简洁，不超过 300 字。"""
+
+            user_prompt = f"""当前市场数据:
+{market_data}
+
+当前触发的信号:
+{signals}
+
+投资周期: {strategy_cycle} (短线/中线/长线)
+
+请给出操作建议："""
+            
+            response = self.client.chat.completions.create(
+                model=self.model,
+                messages=[
+                    {"role": "system", "content": system_prompt},
+                    {"role": "user", "content": user_prompt}
+                ],
+                temperature=0.3,
+                max_tokens=500
+            )
+            
+            advice = response.choices[0].message.content.strip()
+            logger.info("Generated trading advice from LLM")
+            return advice
+            
+        except Exception as e:
+            logger.error(f"Failed to generate trading advice: {e}")
+            return None

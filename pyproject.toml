@@ -1,14 +1,14 @@
 [project]
-name = "active-finance-agent"
+name = "gold-silver-finance-agent"
 version = "0.1.0"
-description = "主动式个人财务资产监控 Agent - Multi-Agent 协作监控全球宏观新闻、自动分析研报、自动预警推送"
+description = "AI 赋能黄金白银主动监控 Agent - 全自动监控行情 + AI分析 + 异动预警推送"
 authors = [
   { name = "wzh", email = "wzh@example.com" }
 ]
 license = { text = "MIT" }
 readme = "README.md"
 requires-python = ">=3.10"
-keywords = ["fintech", "agent", "finance", "quantitative-investing", "monitoring", "tushare", "multi-agent", "notification"]
+keywords = ["fintech", "agent", "gold", "silver", "gold-silver", "finance", "quantitative-investing", "monitoring", "tushare", "notification"]
 classifiers = [
   "Development Status :: 3 - Alpha",
   "License :: OSI Approved :: MIT License",
@@ -33,6 +33,7 @@ dependencies = [
   "pyyaml>=6.0",
   "openai>=1.0.0",
   "ta>=0.10.0",
+  "parsel>=1.9.0",
 ]
 
 [project.scripts]
