@@ -29,6 +29,11 @@ monitor:
     enabled: true
     symbol: "AU9999"
   
+  # 监控 ETF 持仓 - GLD(黄金ETF)/SLV(白银ETF)
+  # 市场经验: 白银ETF 庄家操作迹象明显，黄金ETF 散户持仓为主
+  etf_monitor:
+    enabled: true
+  
   # 新闻源
   news_sources:
     - "wallstreetcn"
@@ -71,6 +76,25 @@ alerts:
     params:
       window: 20
       threshold: 2.0  # 波动率超过2倍历史均值触发
+  
+  - name: "GLD持仓异动"
+    asset: gld
+    enabled: true
+    type: "volatility"
+    params:
+      window: 5
+      threshold: 1.5  # 持仓变化超过1.5倍日均变化触发
+  
+  - name: "SLV持仓异动"
+    asset: slv
+    enabled: true
+    type: "volatility"
+    params:
+      window: 5
+      threshold: 1.5  # 持仓变化超过1.5倍日均变化触发
+# 市场经验提示: 
+# - GLD (黄金ETF) 持仓变化反映散户情绪
+# - SLV (白银ETF) 持仓变化反映庄家操作动向
 
 # 通知配置
 notify:
