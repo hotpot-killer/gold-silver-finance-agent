@@ -1,7 +1,7 @@
 # gold-silver-finance-agent
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 
-[中文文档](./README.md)
+[English](./README-EN.md) | [中文文档](./README.md)
 
 🤖 **AI-Powered Gold & Silver Active Monitoring Agent** - 24/7 automatic market monitoring, AI analysis, and anomaly alerts for precious metals markets. Sleep well while your code keeps an eye on gold & silver for you!
 

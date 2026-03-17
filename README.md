@@ -1,7 +1,7 @@
 # gold-silver-finance-agent
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 
-[English Document](./README.en.md)
+[English](./README-EN.md) | [中文文档](./README.md)
 
 🤖 **AI 赋能黄金白银主动监控 Agent** - 24小时帮你盯着金银市场，睡觉时也能自动监控行情、分析新闻、推送异动预警
 
