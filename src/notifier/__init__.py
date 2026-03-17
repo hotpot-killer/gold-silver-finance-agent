@@ -3,6 +3,7 @@ from .sender import (
     DingTalkNotifier, 
     WorkWechatNotifier, 
     TelegramNotifier,
+    FeishuNotifier,
     format_alerts
 )
 
@@ -11,5 +12,6 @@ __all__ = [
     'DingTalkNotifier', 
     'WorkWechatNotifier', 
     'TelegramNotifier',
+    'FeishuNotifier',
     'format_alerts'
 ]

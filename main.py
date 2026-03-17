@@ -83,6 +83,12 @@ class Config:
         workwechat: WorkWechatConfig = field(default_factory=WorkWechatConfig)
         
         @dataclass
+        class FeishuConfig:
+            enabled: bool = False
+            webhook_url: str = ""
+        feishu: FeishuConfig = field(default_factory=FeishuConfig)
+        
+        @dataclass
         class TelegramConfig:
             enabled: bool = False
             bot_token: str = ""
@@ -143,6 +149,9 @@ def load_config(config_path: str = "config/config.yaml") -> Config:
         if 'workwechat' in data['notify']:
             config.notify.workwechat.enabled = data['notify']['workwechat'].get('enabled', False)
             config.notify.workwechat.webhook_url = data['notify']['workwechat'].get('webhook_url', '')
+        if 'feishu' in data['notify']:
+            config.notify.feishu.enabled = data['notify']['feishu'].get('enabled', False)
+            config.notify.feishu.webhook_url = data['notify']['feishu'].get('webhook_url', '')
         if 'telegram' in data['notify']:
             config.notify.telegram.enabled = data['notify']['telegram'].get('enabled', False)
             config.notify.telegram.bot_token = data['notify']['telegram'].get('bot_token', '')
@@ -159,6 +168,12 @@ def load_config(config_path: str = "config/config.yaml") -> Config:
 
 def send_notification(config: Config, title: str, content: str) -> bool:
     """发送通知"""
+    from src.notifier import (
+        DingTalkNotifier, 
+        WorkWechatNotifier, 
+        FeishuNotifier,
+        TelegramNotifier,
+    )
     notified = False
     
     if config.notify.dingtalk.enabled:
@@ -172,6 +187,13 @@ def send_notification(config: Config, title: str, content: str) -> bool:
     if config.notify.workwechat.enabled:
         notifier = WorkWechatNotifier(
             config.notify.workwechat.webhook_url
+        )
+        if notifier.send(title, content):
+            notified = True
+    
+    if config.notify.feishu.enabled:
+        notifier = FeishuNotifier(
+            config.notify.feishu.webhook_url
         )
         if notifier.send(title, content):
             notified = True

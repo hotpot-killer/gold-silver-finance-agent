@@ -152,6 +152,10 @@ notify:
     enabled: false
     webhook_url: "https://qyapi.weixin.qq.com/cgi-bin/webhook/send?key=xxx"
   
+  feishu:
+    enabled: false
+    webhook_url: "https://open.feishu.cn/open-apis/bot/v2/hook/xxx"
+  
   telegram:
     enabled: false
     bot_token: "xxx"

@@ -89,6 +89,32 @@ class TelegramNotifier(BaseNotifier):
             logger.error(f"Telegram exception: {e}")
             return False
 
+class FeishuNotifier(BaseNotifier):
+    """飞书机器人通知"""
+    def __init__(self, webhook_url: str):
+        self.webhook_url = webhook_url
+        
+    def send(self, title: str, content: str) -> bool:
+        """发送飞书消息"""
+        data = {
+            "msg_type": "markdown",
+            "content": {
+                "text": f"## {title}\n\n{content}"
+            }
+        }
+        try:
+            resp = requests.post(self.webhook_url, json=data, timeout=10)
+            result = resp.json()
+            if result.get('code', 0) == 0:
+                logger.info("Feishu notification sent")
+                return True
+            else:
+                logger.error(f"Feishu send failed: {result.get('msg')}")
+                return False
+        except Exception as e:
+            logger.error(f"Feishu exception: {e}")
+            return False
+
 def format_alerts(alerts: List[Alert]) -> str:
     """格式化预警消息"""
     if not alerts:
