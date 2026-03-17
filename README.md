@@ -1,14 +1,13 @@
-# Active Gold/Silver Finance Agent
+# gold-silver-finance-agent
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
-[![Tests](https://github.com/yourusername/active-finance-agent/actions/workflows/tests.yml/badge.svg)](https://github.com/yourusername/active-finance-agent/actions/workflows/tests.yml)
 
-🤖 **主动式黄金/白银市场监控 Multi-Agent** - 24小时帮你盯着金银市场，睡觉时也能自动监控行情、分析新闻、推送异动预警
+🤖 **AI 赋能黄金白银主动监控 Agent** - 24小时帮你盯着金银市场，睡觉时也能自动监控行情、分析新闻、推送异动预警
 
 ## 🎯 项目理念
 
 > 2026 年的 AI 不再只是画 K 线图，而是帮你**主动干活**！
 
-> 看着自己写的代码在睡觉时帮你盯着黄金白银，这种「掌控感」比看视频生成爽得多！😎
+> 看着自己写的代码在睡觉时帮你盯着黄金白银，这种「掌控感」比看短视频爽得多！😎
 
 ✨ **监控 Agent**: 
 - 24小时监控全球宏观新闻 
@@ -42,22 +41,23 @@
 ## 项目结构
 
 ```
-active-finance-agent/
+gold-silver-finance-agent/
 ├── src/
-│   ├── monitor/          # 监控 Agent
+│   ├── monitor/          # 监控模块
 │   │   ├── __init__.py
 │   │   ├── news_monitor.py      # 宏观新闻监控
 │   │   └── price_monitor.py    # 金银价格 + ETF持仓 + COMEX库存监控 (Tushare)
-│   ├── research/         # 研报 Agent
+│   ├── research/         # AI分析模块
 │   │   ├── __init__.py
 │   │   └── report_summarizer.py  # 新闻/研报浓缩总结
-│   ├── alert/           # 预警 Agent
+│   ├── alert/           # 预警分析模块
 │   │   ├── __init__.py
 │   │   ├── indicator.py       # 技术指标计算
-│   │   └── trigger.py        # 预警触发判断
+│   │   ├── trigger.py        # 预警触发判断
+│   │   └── etf_comex_analyzer.py  # ETF-COMEX关联分析
 │   └── notifier/        # 通知模块
 │       ├── __init__.py
-│       └── sender.py    # 钉钉/企业微信/Telegram 推送
+│       └── sender.py    # 钉钉/企业微信/飞书/Telegram/邮件推送
 ├── config/
 │   └── config.example.yaml
 ├── tests/               # 基础测试用例
@@ -73,8 +73,8 @@ active-finance-agent/
 
 ### 1. 克隆项目
 ```bash
-git clone https://github.com/yourusername/active-finance-agent.git
-cd active-finance-agent
+git clone https://github.com/yourusername/gold-silver-finance-agent.git
+cd gold-silver-finance-agent
 ```
 
 ### 2. 安装依赖
@@ -225,8 +225,8 @@ graph TD
 
 ```bash
 # 克隆
-git clone https://github.com/你的用户名/active-finance-agent.git
-cd active-finance-agent
+git clone https://github.com/你的用户名/gold-silver-finance-agent.git
+cd gold-silver-finance-agent
 make install
 make install-browser
 make test
@@ -234,7 +234,7 @@ make test
 
 ## 趣味点
 
-> 看着自己写的代码在睡觉时帮你盯着黄金白银，这种「掌控感」比看视频生成爽得多！😎
+> 看着自己写的代码在睡觉时帮你盯着黄金白银，这种「掌控感」比看短视频爽得多！😎
 
 ## 路线图
 
