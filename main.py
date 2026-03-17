@@ -282,8 +282,19 @@ def run_once(config: Config) -> bool:
     # TODO: gold 单独处理
     logger.info(f"Found {len(all_alerts)} triggered alerts")
     
-    # 4. 发送通知
-    logger.info("Step 4: Sending notification...")
+    # 4. ETF-COMEX 关联分析
+    etf_comex_analysis = None
+    if config.monitor.etf_monitor.get('enabled', False):
+        logger.info("Step 4: ETF-COMEX correlation analysis...")
+        from src.alert import ETFCOMEXAnalyzer
+        # 这里获取最新变化，框架已经打好，具体数据获取在price_monitor
+        # 这里整合分析结果
+        # 预留整合位置，具体数据解析后续完善
+        # 现在先做好框架
+        # etf_comex_analysis = ETFCOMEXAnalyzer.analize(...)
+    
+    # 5. 发送通知
+    logger.info("Step 5: Sending notification...")
     
     content_parts = []
     
@@ -301,6 +312,12 @@ def run_once(config: Config) -> bool:
         content_parts.append("\n")
     else:
         content_parts.append("✅ 没有触发预警规则，市场平稳。\n\n")
+    
+    # 添加 ETF-COMEX 关联分析
+    if etf_comex_analysis is not None:
+        from src.alert import ETFCOMEXAnalyzer
+        content_parts.append(ETFCOMEXAnalyzer.format_for_notification(etf_comex_analysis))
+        content_parts.append("\n---\n\n")
     
     content_parts.append(f"📊 本次监控完成: {len(prices)} 价格, {len(news)} 新闻, {len(summaries)} 总结, {len(all_alerts)} 预警")
     
