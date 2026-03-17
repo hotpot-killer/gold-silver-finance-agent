@@ -1,16 +1,21 @@
 import logging
 import json
 from datetime import datetime
-from flask import Flask, render_template, jsonify
+from flask import Flask, render_template, jsonify, send_from_directory
 from pathlib import Path
 
 logger = logging.getLogger(__name__)
 
-app = Flask(__name__)
+app = Flask(__name__, 
+            template_folder='../templates',
+            static_folder='../static')
 app.config['SECRET_KEY'] = 'gold-silver-finance-agent-secret-key'
 
 # 预警日志文件路径
 ALERT_LOG_PATH = Path('./data/alerts.log')
+
+# 获取当前文件所在目录
+CURRENT_DIR = Path(__file__).parent
 
 def load_alerts():
     """加载历史预警"""
@@ -35,9 +40,14 @@ def load_alerts():
 
 @app.route('/')
 def index():
-    """首页 - 显示历史预警"""
-    alerts = load_alerts()
-    return render_template('index.html', alerts=alerts)
+    """首页 - 显示历史预警 (Vue 前端)"""
+    return render_template('index.html')
+
+@app.route('/static/<path:filename>')
+def serve_static(filename):
+    """提供静态文件"""
+    static_dir = CURRENT_DIR / 'static'
+    return send_from_directory(static_dir, filename)
 
 @app.route('/api/alerts')
 def api_alerts():

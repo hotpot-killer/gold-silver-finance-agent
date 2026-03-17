@@ -4,6 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>gold-silver-finance-agent - 历史预警查询</title>
+    <script src="https://cdn.jsdelivr.net/npm/vue@3.4.27/dist/vue.global.prod.js"></script>
     <style>
         * {
             margin: 0;
@@ -103,6 +104,11 @@
             padding: 60px 20px;
             color: #999;
         }
+        .loading {
+            text-align: center;
+            padding: 60px 20px;
+            color: #999;
+        }
         footer {
             text-align: center;
             margin-top: 30px;
@@ -120,45 +126,8 @@
     </style>
 </head>
 <body>
-    <div class="container">
-        <header>
-            <h1>gold-silver-finance-agent</h1>
-            <div class="subtitle">📊 历史预警查询 - AI 赋能黄金白银主动监控 Agent</div>
-        </header>
+    <div id="app"></div>
 
-        <div class="stats">
-            <div class="stat-card">
-                <div class="stat-number">{{ len(alerts) }}</div>
-                <div class="stat-label">总预警条数</div>
-            </div>
-        </div>
-
-        <div class="alert-list">
-            {% if not alerts %}
-            <div class="empty-state">
-                <p>暂无预警记录，等待第一次信号触发...</p>
-            </div>
-            {% else %}
-            {% for alert in alerts %}
-            <div class="alert-item">
-                <div class="alert-header">
-                    <span class="alert-title">{{ alert.name }}</span>
-                    <span class="alert-asset">{{ alert.asset }}</span>
-                    <span class="alert-time">{{ alert.timestamp }}</span>
-                </div>
-                <div class="alert-content">
-                    {% if alert.message %}
-                    {{ alert.message }}
-                    {% endif %}
-                </div>
-            </div>
-            {% endfor %}
-            {% endif %}
-        </div>
-
-        <footer>
-            <p>gold-silver-finance-agent | MIT License</p>
-        </footer>
-    </div>
+    <script src="/static/app.js"></script>
 </body>
 </html>
