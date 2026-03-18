@@ -151,50 +151,85 @@ async def api_price(symbol: str):
             except Exception as e:
                 logger.error(f"Failed to read local price for {symbol}: {e}")
         
-        # 如果本地没有数据或者数据为空，实时获取当前价格
-        if len(candles) == 0:
-            try:
-                # 实时获取当前价格
-                headers = {
-                    'User-Agent': 'Mozilla/5.0 (Windows NT 100.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36'
-                }
-                if symbol == 'XAUUSD':
-                    url = "https://qt.gtimg.cn/q=XAU"
-                else:
-                    url = "https://qt.gtimg.cn/q=XAG"
+        # 每次请求都实时获取最新价格，更新本地数据
+        try:
+            from datetime import date
+            headers = {
+                'User-Agent': 'Mozilla/5.0 (Windows NT 100.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36'
+            }
+            if symbol == 'XAUUSD':
+                url = "https://qt.gtimg.cn/q=XAU"
+            else:
+                url = "https://qt.gtimg.cn/q=XAG"
+            
+            resp = requests.get(url, headers=headers, timeout=10)
+            if resp.status_code == 200:
+                text = resp.text
+                price = None
+                prev_close = None
+                if symbol == 'XAUUSD' and 'v_xau=' in text:
+                    data_part = text.split('v_xau=')[1].split('";')[0]
+                    parts = data_part.split(' ')
+                    if len(parts) >= 4:
+                        price = float(parts[1])
+                        prev_close = float(parts[2])
+                elif symbol == 'XAGUSD' and 'v_xag=' in text:
+                    data_part = text.split('v_xag=')[1].split('";')[0]
+                    parts = data_part.split(' ')
+                    if len(parts) >= 4:
+                        price = float(parts[1])
+                        prev_close = float(parts[2])
                 
-                resp = requests.get(url, headers=headers, timeout=10)
-                if resp.status_code == 200:
-                    text = resp.text
-                    if symbol == 'XAUUSD' and 'v_xau=' in text:
-                        data_part = text.split('v_xau=')[1].split('";')[0]
-                        parts = data_part.split(' ')
-                        if len(parts) >= 4:
-                            price = float(parts[1])
-                            prev_close = float(parts[2])
-                    elif symbol == 'XAGUSD' and 'v_xag=' in text:
-                        data_part = text.split('v_xag=')[1].split('";')[0]
-                        parts = data_part.split(' ')
-                        if len(parts) >= 4:
-                            price = float(parts[1])
-                            prev_close = float(parts[2])
-                    else:
-                        return {'error': 'Failed to parse price', 'data': []}
-                    
+                # 如果成功获取到价格，更新到本地CSV
+                if price is not None:
                     today = datetime.now()
-                    today_str = today.strftime('%Y%m%d')
-                    timestamp = int(today.timestamp())
-                    candles.append({
-                        'time': timestamp,
-                        'open': price,
-                        'high': price,
-                        'low': price,
-                        'close': price,
-                        'volume': 0
-                    })
-            except Exception as e:
-                logger.error(f"Failed to fetch realtime price for {symbol}: {e}")
-                return {'error': str(e), 'data': []}
+                    today_date = date.today()
+                    today_str = int(today_date.strftime('%Y%m%d'))
+                    
+                    # 更新DataFrame
+                    if 'df' in locals() and len(df) > 0:
+                        if len(df[df['trade_date'] == today_str]) > 0:
+                            # 更新今天的价格
+                            df.loc[df['trade_date'] == today_str, 'close'] = price
+                            df.loc[df['trade_date'] == today_str, 'open'] = price
+                            df.loc[df['trade_date'] == today_str, 'high'] = price
+                            df.loc[df['trade_date'] == today_str, 'low'] = price
+                        else:
+                            # 添加今天的新行
+                            new_row = pd.DataFrame([{
+                                'trade_date': today_str,
+                                'open': price,
+                                'high': price,
+                                'low': price,
+                                'close': price,
+                                'vol': 0
+                            }])
+                            df = pd.concat([df, new_row], ignore_index=True)
+                        
+                        # 保存更新后的CSV
+                        df = df.sort_values('trade_date')
+                        df.to_csv(csv_path, index=False)
+                        
+                        # 更新candles最后一个价格
+                        for candle in candles:
+                            if candle['time'] == int(today.timestamp()):
+                                candle['close'] = price
+                                candle['open'] = price
+                                candle['high'] = price
+                                candle['low'] = price
+                                break
+                        else:
+                            candles.append({
+                                'time': int(today.timestamp()),
+                                'open': price,
+                                'high': price,
+                                'low': price,
+                                'close': price,
+                                'volume': 0
+                            })
+        except Exception as e:
+            logger.error(f"Failed to fetch/update realtime price for {symbol}: {e}")
+            # 失败了也不影响，继续返回已有数据
         
         latest = candles[-1] if len(candles) > 0 else None
         
