@@ -369,10 +369,11 @@ def run_once(config: Config) -> bool:
     with open(alert_log_path, 'a', encoding='utf-8') as f:
         for alert in all_alerts:
             alert_log = {
-                'name': alert.name,
                 'asset': alert.asset,
-                'type': alert.type,
+                'type': alert.alert_type,
                 'message': alert.message,
+                'current_value': alert.current_value,
+                'threshold': alert.threshold,
                 'suggestion': alert.suggestion,
                 'timestamp': current_time
             }
