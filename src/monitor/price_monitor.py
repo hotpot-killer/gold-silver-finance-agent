@@ -62,13 +62,14 @@ class PriceMonitor(BaseMonitor):
         
         # 配置Fetcher使用代理 - 适配新版本scrapling v0.4+
         from scrapling import Fetcher
-        # 先配置再创建实例
+        # 只有有代理才需要configure
         if self.proxies:
             proxy_url = list(self.proxies.values())[0]
             Fetcher.configure(proxy=proxy_url)
+            self.fetcher = Fetcher()
         else:
-            Fetcher.configure()
-        self.fetcher = Fetcher()
+            # 不需要配置，直接创建
+            self.fetcher = Fetcher()
             
         if token:
             ts.set_token(token)
