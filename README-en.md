@@ -147,6 +147,29 @@ All parameters can be adjusted in config file.
 6. **UI Elegance Upgrade**
    - Rounded corners, layered shadows, smooth animation, responsive layout
 
+## ☁️ Automated Deployment - GitHub Actions
+
+Project is already configured with GitHub Actions, you can **run automatically for free on GitHub Cloud every day**, no need for your own server:
+
+### Setup Steps:
+
+1. Fork this repository to your GitHub account
+2. Go to your repository → `Settings` → `Secrets and variables` → `Actions`
+3. Add these Secrets:
+   - `TUSHARE_TOKEN` → your Tushare API token **(required)**
+   - `FEISHU_WEBHOOK` → your Feishu robot webhook **(for receiving notifications, optional)**
+   - `LLM_API_KEY` → your LLM API Key **(for composite analysis, optional)**
+
+4. After pushing to main branch it will automatically work, GitHub will **automatically run monitoring once every day at 8:00 Beijing Time**, and send notification to your Feishu.
+
+### Change Run Frequency:
+
+Edit the `cron` expression in `.github/workflows/scheduled-monitor.yml`:
+- `0 0 * * *` → once per day (default)
+- `0 */6 * * *` → once every 6 hours
+
+See detailed instructions at [.github/README-secrets.md](./.github/README-secrets.md)
+
 ## 📄 License
 
 MIT

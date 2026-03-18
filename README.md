@@ -146,6 +146,29 @@ python main.py --web --port 5000
 6. **UI优雅化**
    - 圆角柔化，阴影分层，动画细腻，响应式布局
 
+## ☁️ 自动化部署 - GitHub Actions
+
+项目已经配置好 GitHub Actions，可以**免费在 GitHub 云上每天自动运行**，不需要自己服务器：
+
+### 配置步骤：
+
+1. Fork 这个仓库到你的 GitHub 账号
+2. 进入你的仓库 → `Settings` → `Secrets and variables` → `Actions`
+3. 添加 Secrets：
+   - `TUSHARE_TOKEN` → 你的 Tushare API token **(必需)**
+   - `FEISHU_WEBHOOK` → 你的飞书机器人 Webhook **(用于接收通知，可选)**
+   - `LLM_API_KEY` → 你的 LLM API Key **(用于综合分析，可选)**
+
+4. 推送到 main 分支后自动生效，GitHub 会**每天北京时间 8:00 自动运行一次监控**，并发送通知到你的飞书
+
+### 修改运行频率：
+
+编辑 `.github/workflows/scheduled-monitor.yml` 中的 `cron` 表达式：
+- `0 0 * * *` → 每天一次（默认）
+- `0 */6 * * *` → 每6小时一次
+
+详细说明看 [.github/README-secrets.md](./.github/README-secrets.md)
+
 ## 📄 License
 
 MIT
