@@ -2,6 +2,9 @@ import logging
 import pandas as pd
 import numpy as np
 import ta
+from ta.trend import sma_indicator, macd, SMAIndicator, EMAIndicator
+from ta.momentum import rsi
+from ta.volatility import BollingerBands, average_true_range
 from typing import Optional
 
 logger = logging.getLogger(__name__)
@@ -12,7 +15,7 @@ class IndicatorCalculator:
     @staticmethod
     def ma(df: pd.DataFrame, period: int = 50) -> pd.Series:
         """计算均线"""
-        return ta.trend.sma_indicator(df.close, window=period)
+        return sma_indicator(df.close, window=period)
     
     @staticmethod
     def ratio(gold_df: pd.DataFrame, silver_df: pd.DataFrame) -> float:
@@ -28,7 +31,7 @@ class IndicatorCalculator:
     @staticmethod
     def rsi(df: pd.DataFrame, period: int = 14) -> pd.Series:
         """计算RSI"""
-        return ta.momentum.rsi(df.close, window=period)
+        return rsi(df.close, window=period)
     
     @staticmethod
     def check_rsi_divergence(df: pd.DataFrame, period: int = 14, lookback: int = 10) -> Optional[str]:
@@ -126,7 +129,7 @@ class IndicatorCalculator:
     @staticmethod
     def bollinger_bands(df: pd.DataFrame, period: int = 20, nbdevup: float = 2, nbdevdn: float = 2):
         """计算布林带"""
-        indicator = ta.volatility.BollingerBands(df.close, window=period, window_dev=nbdevup)
+        indicator = BollingerBands(df.close, window=period, window_dev=nbdevup)
         return (
             indicator.bollinger_hband().values,
             indicator.bollinger_mavg().values, 
@@ -152,7 +155,8 @@ class IndicatorCalculator:
     @staticmethod
     def macd(df: pd.DataFrame, fast_period: int = 12, slow_period: int = 26, signal_period: int = 9):
         """计算 MACD"""
-        macd_indicator = ta.trend.MACD(
+        from ta.trend import MACD
+        macd_indicator = MACD(
             df.close, 
             window_slow=slow_period,
             window_fast=fast_period,
@@ -167,4 +171,4 @@ class IndicatorCalculator:
     @staticmethod
     def atr(df: pd.DataFrame, period: int = 14) -> float:
         """计算 ATR 平均真实波动范围"""
-        return ta.volatility.average_true_range(df.high, df.low, df.close, window=period).iloc[-1]
+        return average_true_range(df.high, df.low, df.close, window=period).iloc[-1]
