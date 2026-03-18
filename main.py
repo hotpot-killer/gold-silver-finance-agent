@@ -392,11 +392,11 @@ def run_once(config: Config) -> bool:
             content_parts.append(calendar.format_events_for_notification(events))
     
     # 添加今日行情概览 - 主动提供市场概况，即使没有预警
+    gold_price = None
+    silver_price = None
     if len(prices) > 0:
         content_parts.append("### 📈 今日行情概览\n\n")
         # 找到黄金和白银最新价格
-        gold_price = None
-        silver_price = None
         for p in prices:
             if p.symbol in ['XAUUSD', 'gold']:
                 gold_price = p
@@ -457,6 +457,60 @@ def run_once(config: Config) -> bool:
         from src.alert import ETFCOMEXAnalyzer
         content_parts.append(ETFCOMEXAnalyzer.format_for_notification(etf_comex_analysis))
         content_parts.append("\n---\n\n")
+    
+    # LLM综合分析 - 结合所有信号给出综合判断
+    if config.llm.api_key:
+        logger.info("Step 6: LLM comprehensive analysis...")
+        from openai import OpenAI
+        
+        # 准备分析内容
+        analysis_prompt = f"""你是黄金白银市场专业分析师，请结合以下所有信息，给出今日综合分析和操作建议：
+
+# 当前行情
+- 黄金最新价格: {gold_price.price if gold_price else 'N/A'}
+- 白银最新价格: {silver_price.price if silver_price else 'N/A'}
+- 金银比: {f"{(gold_price.price / silver_price.price):.1f}" if gold_price and silver_price else 'N/A'}
+
+# 触发的预警信号
+{chr(10).join([f"- {a.message} → {a.suggestion}" for a in all_alerts]) if all_alerts else "无"}
+
+# 最新宏观大佬观点
+我们跟踪了5位顶级宏观大佬最新观点，请参考他们立场：
+"""
+        # 读取大佬观点
+        from src.monitor.guru_fetcher import GuruViewsFetcher
+        fetcher = GuruViewsFetcher(data_dir=config.data_dir)
+        guru_views = fetcher.get_cached_views()
+        for guru in guru_views:
+            analysis_prompt += f"- **{guru['name']}** ({guru['title']}): {guru['latest_view']} → 基调: {guru['tone']}\n"
+        
+        analysis_prompt += """
+# 要求
+1. 综合以上所有信息，给出今日黄金/白银市场的多空判断
+2. 结合技术信号、宏观观点、市场情绪，给出明确操作建议（多头/空头/观望）
+3. 说明主要逻辑和风险点
+4. 控制在300字以内，简洁明了
+
+请开始分析：
+"""
+        try:
+            client = OpenAI(
+                api_key=config.llm.api_key,
+                base_url=config.llm.base_url or None
+            )
+            response = client.chat.completions.create(
+                model=config.llm.model,
+                messages=[{"role": "user", "content": analysis_prompt}],
+                temperature=0.7,
+                max_tokens=600
+            )
+            analysis = response.choices[0].message.content.strip()
+            content_parts.append("\n---\n\n")
+            content_parts.append("### 🧠 AI 综合分析\n\n")
+            content_parts.append(analysis + "\n\n")
+            logger.info("LLM comprehensive analysis completed")
+        except Exception as e:
+            logger.error(f"Failed to generate LLM analysis: {e}")
     
     content_parts.append(f"📊 本次监控完成: {len(prices)} 价格, {len(news)} 新闻, {len(summaries)} 总结, {len(all_alerts)} 预警")
     
