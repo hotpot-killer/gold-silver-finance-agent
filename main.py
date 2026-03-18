@@ -52,6 +52,8 @@ class Config:
         gold: dict = field(default_factory=dict)
         silver: dict = field(default_factory=dict)
         etf_monitor: dict = field(default_factory=dict)
+        cot: dict = field(default_factory=dict)
+        economic_calendar: dict = field(default_factory=dict)
         news_sources: List[str] = field(default_factory=list)
     monitor: MonitorConfig = field(default_factory=MonitorConfig)
     
@@ -131,6 +133,8 @@ def load_config(config_path: str = "config/config.yaml") -> Config:
         config.monitor.gold = data['monitor'].get('gold', {})
         config.monitor.silver = data['monitor'].get('silver', {})
         config.monitor.etf_monitor = data['monitor'].get('etf_monitor', {})
+        config.monitor.cot = data['monitor'].get('cot', {})
+        config.monitor.economic_calendar = data['monitor'].get('economic_calendar', {})
         config.monitor.news_sources = data['monitor'].get('news_sources', [])
     
     if 'research' in data:
@@ -325,7 +329,7 @@ def run_once(config: Config) -> bool:
         logger.info(f"  Checked gold-silver ratio, found {len(alerts)} alerts")
     
     # COT持仓报告检查 - 每周更新，领先指标
-    if config.monitor.get('cot', {}).get('enabled', False):
+    if config.monitor.cot.get('enabled', False):
         logger.info("  Fetching COT (Commitment of Traders) data...")
         from src.monitor.cot import COTFetcher
         cot_fetcher = COTFetcher(data_dir=config.data_dir)
@@ -392,7 +396,7 @@ def run_once(config: Config) -> bool:
     silver_price = None
     
     # 经济日历 - 提前提醒明天高影响事件
-    if config.monitor.get('economic_calendar', {}).get('enabled', True):
+    if config.monitor.economic_calendar.get('enabled', True):
         from src.monitor.economic_calendar import EconomicCalendar
         calendar = EconomicCalendar()
         events = calendar.get_high_impact_events_next_day()

@@ -1,6 +1,6 @@
 import logging
 from dataclasses import dataclass
-from typing import List, Optional
+from typing import List, Optional, Dict
 import pandas as pd
 from .indicator import IndicatorCalculator
 
@@ -353,6 +353,8 @@ class AlertTrigger:
                         alert = self.check_cot_extreme(cot_alerts, extreme_info, config)
                         if alert:
                             alerts.append(alert)
+            else:
+                alert = None
                 
             if alert:
                 alerts.append(alert)
