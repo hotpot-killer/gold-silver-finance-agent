@@ -63,7 +63,36 @@ research:
   summary_points: 3
 
 # 预警规则配置（专注黄金白银）
+# 升级后：从被动监控 → 主动信号生成
 alerts:
+  # ========== RSI系列（升级后：背离+穿越+加速） ==========
+  # 黄金 RSI - 顶底背离 + 动量穿越 + 加速预警
+  - name: "黄金 RSI 动能信号"
+    asset: gold
+    enabled: true
+    type: "rsi"
+    params:
+      period: 14
+      overbought_cross: 65     # 从超买区回落穿越65触发空头信号（比到75再触发更早）
+      oversold_cross: 35     # 从超卖区回升穿越35触发多头信号
+      lookback: 10           # 背离检测回看周期
+      slope_threshold: 3    # RSI连续上涨加速阈值
+      max_deviation_from_ma200: 0.2
+  
+  # 白银 RSI - 顶底背离 + 动量穿越 + 加速预警
+  - name: "白银 RSI 动能信号"
+    asset: silver
+    enabled: true
+    type: "rsi"
+    params:
+      period: 14
+      overbought_cross: 65
+      oversold_cross: 35
+      lookback: 10
+      slope_threshold: 3
+      max_deviation_from_ma200: 0.2
+  
+  # ========== 均线系列（升级后：偏离 + 突破 + 金叉死叉） ==========
   # 黄金MA50偏离
   - name: "黄金MA50偏离"
     asset: gold
@@ -86,59 +115,59 @@ alerts:
       direction: "both"
       max_deviation_from_ma200: 0.2
   
-  # 黄金RSI超买超卖
-  - name: "黄金 RSI 超买超卖"
+  # 黄金 - MA突破 + 金叉死叉（主动趋势信号）
+  - name: "黄金均线信号"
     asset: gold
     enabled: true
-    type: "rsi"
+    type: "ma_break"
     params:
-      period: 14
-      overbought: 65
-      oversold: 35
-      mid: 50
-      max_deviation_from_ma200: 0.2
+      ma_period: 50       # 突破MA50触发
+      fast_ma: 20         # 金叉死叉快慢线
+      slow_ma: 50
   
-  # 白银RSI超买超卖
-  - name: "白银 RSI 超买超卖"
+  # 白银 - MA突破 + 金叉死叉（主动趋势信号）
+  - name: "白银均线信号"
     asset: silver
     enabled: true
-    type: "rsi"
+    type: "ma_break"
     params:
-      period: 14
-      overbought: 65
-      oversold: 35
-      mid: 50
-      max_deviation_from_ma200: 0.2
+      ma_period: 50
+      fast_ma: 20
+      slow_ma: 50
   
-  # 金银比极端值预警
-  - name: "金银比 极端区间"
-    asset: gold-silver
-    enabled: true
-    type: "ratio"
-    params:
-      high: 80
-      low: 60
-  
-  # 黄金波动率异常
+  # ========== 波动率系列（升级后：分级预警） ==========
+  # 黄金波动率 - 分级预警
   - name: "黄金波动率异常"
     asset: gold
     enabled: true
     type: "volatility"
     params:
       window: 20
-      threshold: 2.0  # 波动率超过2倍历史均值触发
+      mild_threshold: 1.5    # 1.5倍 → 温和预警：开始放大
+      strong_threshold: 2.0  # 2.0倍 → 强预警：大行情启动
       max_deviation_from_ma200: 0.2
   
-  # 白银波动率异常
+  # 白银波动率 - 分级预警
   - name: "白银波动率异常"
     asset: silver
     enabled: true
     type: "volatility"
     params:
       window: 20
-      threshold: 2.5  # 白银波动率更大
+      mild_threshold: 1.5
+      strong_threshold: 2.5  # 白银波动率更大
       max_deviation_from_ma200: 0.2
   
+  # ========== 金银比极端值预警 ==========
+  - name: "金银比 极端区间"
+    asset: gold-silver
+    enabled: true
+    type: "ratio"
+    params:
+      high: 85    # 85+ → 黄金相对白银极端高估
+      low: 65     # 65- → 黄金相对白银极端低估
+  
+  # ========== ETF持仓异动 ==========
   # GLD持仓异动（散户情绪）
   - name: "GLD 持仓异动 (散户情绪)"
     asset: gld
@@ -146,7 +175,8 @@ alerts:
     type: "volatility"
     params:
       window: 5
-      threshold: 1.5  # 持仓变化超过1.5倍日均变化触发
+      mild_threshold: 1.2
+      strong_threshold: 1.5  # 持仓变化超过1.5倍日均变化触发
   
   # SLV持仓异动（庄家动向）
   - name: "SLV 持仓异动 (庄家动向)"
@@ -155,7 +185,8 @@ alerts:
     type: "volatility"
     params:
       window: 5
-      threshold: 1.5  # 持仓变化超过1.5倍日均变化触发
+      mild_threshold: 1.2
+      strong_threshold: 1.5
 # 市场经验提示: 
 # - GLD (黄金ETF) 持仓变化反映散户情绪
 # - SLV (白银ETF) 持仓变化反映庄家操作动向

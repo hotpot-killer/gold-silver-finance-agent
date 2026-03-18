@@ -61,63 +61,178 @@ class AlertTrigger:
         return None
         
     def check_rsi(self, df: pd.DataFrame, config: dict) -> Optional[Alert]:
-        """检查RSI超买超卖
-        改进逻辑：只有进入超买/超卖区后，反向穿越中轴才触发，降低假信号
-        默认：超买阈值65，超卖阈值35，穿越50中轴触发
+        """检查RSI动量穿越 + 背离预警
+        升级逻辑：
+        1. 动量穿越：RSI从超买回落穿越65 / 从超卖回升穿越35 → 更早提示
+        2. 顶底背离提前预警：价格新高RSI不新高 = 顶背离提前预警
+        3. RSI斜率加速预警：连续上涨斜率过大提示加速
         """
         period = config.get('params', {}).get('period', 14)
-        overbought = config.get('params', {}).get('overbought', 65)
-        oversold = config.get('params', {}).get('oversold', 35)
-        mid = config.get('params', {}).get('mid', 50)
+        overbought_cross = config.get('params', {}).get('overbought_cross', 65)
+        oversold_cross = config.get('params', {}).get('oversold_cross', 35)
+        lookback = config.get('params', {}).get('lookback', 10)
+        slope_threshold = config.get('params', {}).get('slope_threshold', 3)
         
         rsi = IndicatorCalculator.rsi(df, period)
         
         if len(rsi) < 2:
             return None
         
-        current_rsi = rsi[-1]
-        prev_rsi = rsi[-2]
+        current_rsi = rsi.iloc[-1]
+        prev_rsi = rsi.iloc[-2]
         
-        # 超卖后向上穿越50中线 → 触发多头信号
-        if prev_rsi <= oversold and current_rsi > mid:
+        # 先检测背离 - 提前预警
+        divergence = IndicatorCalculator.check_rsi_divergence(df, period, lookback)
+        if divergence == 'top':
             return Alert(
                 asset=config.get('asset', 'unknown'),
-                alert_type='rsi',
-                message=f"RSI{period} 从超卖区({oversold}↓)向上穿越中线{mid}，当前={current_rsi:.1f}",
+                alert_type='rsi_divergence_top',
+                message=f"⚠️ RSI{period} 顶背离：价格创新高但RSI未创新高",
                 current_value=current_rsi,
-                threshold=mid,
-                suggestion="RSI从超卖区回升，空头力量耗尽，可能开启反弹"
+                threshold=0,
+                suggestion="价格新高但动能不足，潜在顶部反转信号，注意止盈"
+            )
+        if divergence == 'bottom':
+            return Alert(
+                asset=config.get('asset', 'unknown'),
+                alert_type='rsi_divergence_bottom',
+                message=f"⚠️ RSI{period} 底背离：价格创新低但RSI未创新低",
+                current_value=current_rsi,
+                threshold=0,
+                suggestion="价格新低但动能衰竭，潜在底部反转信号，关注布局机会"
             )
         
-        # 超买后向下穿越50中线 → 触发空头信号
-        if prev_rsi >= overbought and current_rsi < mid:
+        # 检测RSI斜率加速
+        slope = IndicatorCalculator.rsi_slope(df, period, 3)
+        if slope >= slope_threshold:
             return Alert(
                 asset=config.get('asset', 'unknown'),
-                alert_type='rsi',
-                message=f"RSI{period} 从超买区({overbought}↑)向下穿越中线{mid}，当前={current_rsi:.1f}",
+                alert_type='rsi_accelerate_up',
+                message=f"🚀 RSI{period} 加速上涨：连续{3}天RSI斜率={slope:.1f} > 阈值{slope_threshold}",
+                current_value=slope,
+                threshold=slope_threshold,
+                suggestion="上涨动能加速，趋势可能延续，顺势而为"
+            )
+        if slope <= -slope_threshold:
+            return Alert(
+                asset=config.get('asset', 'unknown'),
+                alert_type='rsi_accelerate_down',
+                message=f"📉 RSI{period} 加速下跌：连续{3}天RSI斜率={slope:.1f} < 阈值-{slope_threshold}",
+                current_value=slope,
+                threshold=-slope_threshold,
+                suggestion="下跌动能加速，趋势可能延续，注意规避风险"
+            )
+        
+        # 超卖后向上穿越35 → 触发多头信号（比穿越50更早）
+        if prev_rsi <= oversold_cross and current_rsi > oversold_cross:
+            return Alert(
+                asset=config.get('asset', 'unknown'),
+                alert_type='rsi_cross_up',
+                message=f"RSI{period} 从超卖区({oversold_cross}↓)向上突破，当前={current_rsi:.1f}",
                 current_value=current_rsi,
-                threshold=mid,
-                suggestion="RSI从超买区回落，多头力量耗尽，注意回调风险"
+                threshold=oversold_cross,
+                suggestion="RSI从超卖区回升，空头力量耗尽，可能开启反弹，关注做多机会"
+            )
+        
+        # 超买后向下穿越65 → 触发空头信号（比穿越50更早）
+        if prev_rsi >= overbought_cross and current_rsi < overbought_cross:
+            return Alert(
+                asset=config.get('asset', 'unknown'),
+                alert_type='rsi_cross_down',
+                message=f"RSI{period} 从超买区({overbought_cross}↑)向下突破，当前={current_rsi:.1f}",
+                current_value=current_rsi,
+                threshold=overbought_cross,
+                suggestion="RSI从超买区回落，多头力量开始衰减，注意回调风险"
             )
             
         return None
         
+    def check_ma_break(self, df: pd.DataFrame, config: dict) -> Optional[Alert]:
+        """检查价格突破均线 → 趋势启动信号
+        金叉死叉（快慢均线交叉）也在这里处理
+        """
+        ma_period = config.get('params', {}).get('ma_period', 50)
+        fast_ma = config.get('params', {}).get('fast_ma', 20)
+        slow_ma = config.get('params', {}).get('slow_ma', 50)
+        
+        # 先检查价格突破
+        break_type = IndicatorCalculator.check_price_break_ma(df, ma_period)
+        
+        if break_type == 'up_break':
+            return Alert(
+                asset=config.get('asset', 'unknown'),
+                alert_type='ma_break_up',
+                message=f"📈 价格从下方突破MA{ma_period}，形成上涨突破",
+                current_value=df.close.iloc[-1],
+                threshold=IndicatorCalculator.ma(df, ma_period).iloc[-1],
+                suggestion=f"价格突破{ma_period}日均线，上涨趋势可能启动，关注做多机会"
+            )
+        
+        if break_type == 'down_break':
+            return Alert(
+                asset=config.get('asset', 'unknown'),
+                alert_type='ma_break_down',
+                message=f"📉 价格从上方跌破MA{ma_period}，形成下跌突破",
+                current_value=df.close.iloc[-1],
+                threshold=IndicatorCalculator.ma(df, ma_period).iloc[-1],
+                suggestion=f"价格跌破{ma_period}日均线，下跌趋势可能启动，注意规避风险"
+            )
+        
+        # 检查快慢均线金叉死叉
+        cross_type = IndicatorCalculator.check_ma_cross(df, fast_ma, slow_ma)
+        if cross_type == 'golden_cross':
+            return Alert(
+                asset=config.get('asset', 'unknown'),
+                alert_type='golden_cross',
+                message=f"🥳 MA{fast_ma} 金叉 MA{slow_ma}",
+                current_value=0,
+                threshold=0,
+                suggestion=f"短期均线上穿长期均线，上涨趋势确立，趋势跟踪策略可入场"
+            )
+        
+        if cross_type == 'dead_cross':
+            return Alert(
+                asset=config.get('asset', 'unknown'),
+                alert_type='dead_cross',
+                message=f"💀 MA{fast_ma} 死叉 MA{slow_ma}",
+                current_value=0,
+                threshold=0,
+                suggestion=f"短期均线下穿长期均线，下跌趋势确立，建议减仓规避风险"
+            )
+            
+        return None
+    
     def check_volatility(self, df: pd.DataFrame, config: dict) -> Optional[Alert]:
-        """检查波动率异常"""
+        """检查波动率异常 - 分级预警：
+        1.5倍 → 温和预警（开始放大）
+        2.0倍 → 强预警（高波动确认）
+        """
         window = config.get('params', {}).get('window', 20)
-        threshold = config.get('params', {}).get('threshold', 2.0)
+        mild_threshold = config.get('params', {}).get('mild_threshold', 1.5)
+        strong_threshold = config.get('params', {}).get('strong_threshold', 2.0)
         
         vol = IndicatorCalculator.volatility(df, window)
         historical_vol = IndicatorCalculator.volatility(df.iloc[:-1], window)
+        if historical_vol == 0:
+            return None
         
-        if vol > historical_vol * threshold:
+        if vol > historical_vol * strong_threshold:
             return Alert(
                 asset=config.get('asset', 'unknown'),
-                alert_type='volatility',
-                message=f"当前波动率 {vol:.2f} 是历史均值 {historical_vol:.2f} 的 {threshold} 倍以上",
+                alert_type='volatility_strong',
+                message=f"⚡️ 波动率强力放大：当前 {vol:.2f} > {strong_threshold}x 历史均值 {historical_vol:.2f}",
                 current_value=vol,
-                threshold=historical_vol * threshold,
-                suggestion="波动率异常放大，市场分歧加剧，注意控制仓位"
+                threshold=historical_vol * strong_threshold,
+                suggestion="波动率已经强力放大，大行情大概率已经启动，密切关注方向信号"
+            )
+        elif vol > historical_vol * mild_threshold:
+            return Alert(
+                asset=config.get('asset', 'unknown'),
+                alert_type='volatility_mild',
+                message=f"⚠️ 波动率开始放大：当前 {vol:.2f} > {mild_threshold}x 历史均值 {historical_vol:.2f}",
+                current_value=vol,
+                threshold=historical_vol * mild_threshold,
+                suggestion="波动率开始扩张，可能酝酿大行情，提前做好准备"
             )
             
         return None
@@ -192,6 +307,18 @@ class AlertTrigger:
                     if deviation > max_deviation:
                         continue
                 alert = self.check_rsi(df, config)
+            elif alert_type == 'ma_break':
+                # 均线突破/金叉死叉（趋势启动信号）
+                if len(df) >= 200:
+                    ma_200 = IndicatorCalculator.ma(df, 200)
+                    current_price = df.close.iloc[-1]
+                    current_ma200 = ma_200.iloc[-1]
+                    deviation = abs(current_price - current_ma200) / current_ma200
+                    max_deviation = config.get('params', {}).get('max_deviation_from_ma200', 0.2)
+                    if deviation > max_deviation:
+                        # 趋势行情，突破才更有效，所以不过滤
+                        pass
+                alert = self.check_ma_break(df, config)
             elif alert_type == 'volatility':
                 # MA200过滤同理
                 if len(df) >= 200:
@@ -201,7 +328,8 @@ class AlertTrigger:
                     deviation = abs(current_price - current_ma200) / current_ma200
                     max_deviation = config.get('params', {}).get('max_deviation_from_ma200', 0.2)
                     if deviation > max_deviation:
-                        continue
+                        if deviation > max_deviation:
+                            pass
                 alert = self.check_volatility(df, config)
             elif alert_type == 'ratio':
                 # 金银比需要黄金和白银数据
