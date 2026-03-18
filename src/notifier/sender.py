@@ -90,17 +90,20 @@ class TelegramNotifier(BaseNotifier):
             return False
 
 class FeishuNotifier(BaseNotifier):
-    """飞书机器人通知"""
+    """飞书机器人通知 - 适配飞书webhook触发器"""
     def __init__(self, webhook_url: str):
         self.webhook_url = webhook_url
         
     def send(self, title: str, content: str) -> bool:
-        """发送飞书消息"""
+        """发送飞书消息
+        根据飞书webhook触发器文档要求：
+        - msg_type 必须为文本类型
+        - 参数用大括号括起来，由 msg_type 和键值对组成
+        """
+        full_text = f"{title}\n\n{content}"
         data = {
-            "msg_type": "markdown",
-            "content": {
-                "text": f"## {title}\n\n{content}"
-            }
+            "msg_type": "text",
+            "text": full_text
         }
         try:
             resp = requests.post(self.webhook_url, json=data, timeout=10)
