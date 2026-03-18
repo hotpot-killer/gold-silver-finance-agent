@@ -95,7 +95,7 @@ class GuruViewsFetcher:
                         "title": guru['title'],
                         "latest_view": self._get_default_view(guru['name']),
                         "tone": guru['tone_default'],
-                        "updated_at": datetime.now().strftime("%Y-%m-%d"),
+                        "updated_at": "默认观点",
                         "source_url": ""
                     })
             elif guru['source'] == 'baidu':
@@ -110,7 +110,7 @@ class GuruViewsFetcher:
                         "title": guru['title'],
                         "latest_view": self._get_default_view(guru['name']),
                         "tone": guru['tone_default'],
-                        "updated_at": datetime.now().strftime("%Y-%m-%d"),
+                        "updated_at": "默认观点",
                         "source_url": ""
                     })
             else:
@@ -120,7 +120,7 @@ class GuruViewsFetcher:
                     "title": guru['title'],
                     "latest_view": self._get_default_view(guru['name']),
                     "tone": guru['tone_default'],
-                    "updated_at": datetime.now().strftime("%Y-%m-%d"),
+                    "updated_at": "默认观点",
                     "source_url": ""
                 })
                 
