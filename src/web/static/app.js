@@ -155,6 +155,45 @@ createApp({
       return data.latest ? data.latest.close : null
     })
     
+    // 仪表盘统计
+    const recentAlerts = computed(() => {
+      return allAlerts.value.slice(0, 5) // 最近5条预警
+    })
+    
+    const hasRecentAlerts = computed(() => {
+      return recentAlerts.value.length > 0
+    })
+    
+    // 最近24小时预警数
+    const last24hAlertsCount = computed(() => {
+      const now = new Date()
+      const oneDayAgo = now.getTime() - 24 * 60 * 60 * 1000
+      let count = 0
+      allAlerts.value.forEach(alert => {
+        const [datePart, timePart] = alert.timestamp.split(' ')
+        const [year, month, day] = datePart.split('-')
+        const [hour, minute] = timePart.split(':')
+        const alertTime = new Date(year, month - 1, day, hour, minute).getTime()
+        if (alertTime >= oneDayAgo) count++
+      })
+      return count
+    })
+    
+    // 最近7天预警数
+    const last7dAlertsCount = computed(() => {
+      const now = new Date()
+      const sevenDaysAgo = now.getTime() - 7 * 24 * 60 * 60 * 1000
+      let count = 0
+      allAlerts.value.forEach(alert => {
+        const [datePart, timePart] = alert.timestamp.split(' ')
+        const [year, month, day] = datePart.split('-')
+        const [hour, minute] = timePart.split(':')
+        const alertTime = new Date(year, month - 1, day, hour, minute).getTime()
+        if (alertTime >= sevenDaysAgo) count++
+      })
+      return count
+    })
+    
     onMounted(async () => {
       await fetchData()
       await switchAsset('gold')
@@ -207,7 +246,7 @@ createApp({
       currentPage.value = 1
       await fetchData()
       await fetchPrice(selectedAsset.value)
-      updateChart()
+      initChart()
     }
     
     // 设置资产筛选
@@ -243,6 +282,10 @@ createApp({
       currentPrice,
       priceChange,
       priceLoading,
+      recentAlerts,
+      hasRecentAlerts,
+      last24hAlertsCount,
+      last7dAlertsCount,
       getTypeBadgeClass,
       setFilterAsset,
       setFilterType,
@@ -259,15 +302,42 @@ createApp({
         <div class="subtitle">📊 AI 赋能黄金白银主动监控 - 市场仪表盘</div>
       </header>
 
-      <!-- 统计卡片 -->
-      <div class="stats-row">
-        <div class="stat-card">
-          <div class="stat-number">{{ stats.total }}</div>
-          <div class="stat-label">总预警条数</div>
+      <!-- 仪表盘概览 -->
+      <div class="dashboard-section">
+        <div class="dashboard-stats">
+          <div class="stat-card">
+            <div class="stat-number">{{ stats.total }}</div>
+            <div class="stat-label">历史总预警</div>
+          </div>
+          <div class="stat-card">
+            <div class="stat-number">{{ last24hAlertsCount }}</div>
+            <div class="stat-label">24小时预警</div>
+          </div>
+          <div class="stat-card">
+            <div class="stat-number">{{ last7dAlertsCount }}</div>
+            <div class="stat-label">近7天预警</div>
+          </div>
+          <div class="stat-card">
+            <div v-if="currentPrice" class="stat-number">{{ formatPrice(currentPrice) }}</div>
+            <div v-else class="stat-number">-</div>
+            <div class="stat-label">当前 {{ selectedAsset === 'gold' ? '黄金' : '白银' }} 价格</div>
+          </div>
         </div>
-        <div v-for="[asset, count] in Object.entries(stats.by_asset || {})" :key="asset" class="stat-card">
-          <div class="stat-number">{{ count }}</div>
-          <div class="stat-label">{{ asset }}</div>
+
+        <div class="recent-alerts-card">
+          <div class="card-title">⏱️ 最近触发的预警</div>
+          <div v-if="hasRecentAlerts">
+            <div class="recent-alert-item" v-for="alert in recentAlerts" :key="alert.timestamp + alert.name">
+              <div class="recent-alert-header">
+                <span class="recent-alert-name">{{ alert.name }}</span>
+                <span :class="getTypeBadgeClass(alert.type)" style="display:inline-block">{{ alert.type }}</span>
+                <span class="badge badge-asset">{{ alert.asset }}</span>
+              </div>
+              <div class="recent-alert-message">{{ alert.message }}</div>
+              <div class="recent-alert-time">{{ alert.timestamp }}</div>
+            </div>
+          </div>
+          <div v-else class="empty-recent">暂无预警记录</div>
         </div>
       </div>
 

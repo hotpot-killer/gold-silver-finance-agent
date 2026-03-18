@@ -56,11 +56,15 @@
             font-size: 1.1rem;
             font-weight: 300;
         }
-        .stats-row {
-            display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
-            gap: 16px;
+        /* 仪表盘样式 */
+        .dashboard-section {
             margin-bottom: 24px;
+        }
+        .dashboard-stats {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 16px;
+            margin-bottom: 16px;
         }
         .stat-card {
             background: var(--card);
@@ -83,6 +87,51 @@
             color: var(--text-secondary);
             font-size: 0.9rem;
             margin-top: 8px;
+        }
+        .recent-alerts-card {
+            background: var(--card);
+            border-radius: 12px;
+            box-shadow: var(--shadow);
+            padding: 20px;
+        }
+        .card-title {
+            font-size: 1.1rem;
+            font-weight: 600;
+            color: var(--text-primary);
+            margin-bottom: 16px;
+            padding-bottom: 12px;
+            border-bottom: 1px solid var(--border);
+        }
+        .recent-alert-item {
+            padding: 12px 0;
+            border-bottom: 1px solid var(--border);
+        }
+        .recent-alert-item:last-child {
+            border-bottom: none;
+        }
+        .recent-alert-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 4px;
+        }
+        .recent-alert-name {
+            font-weight: 500;
+            color: var(--text-primary);
+        }
+        .recent-alert-time {
+            font-size: 0.8rem;
+            color: var(--text-secondary);
+        }
+        .recent-alert-message {
+            font-size: 0.9rem;
+            color: var(--text-secondary);
+        }
+        .empty-recent {
+            text-align: center;
+            color: var(--text-secondary);
+            padding: 20px;
+            font-size: 0.9rem;
         }
         .filters-section {
             background: var(--card);
@@ -348,7 +397,7 @@
             header {
                 padding: 24px 16px;
             }
-            .stats-row {
+            .dashboard-stats {
                 grid-template-columns: repeat(2, 1fr);
             }
             .stat-number {
