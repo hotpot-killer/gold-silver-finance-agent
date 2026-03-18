@@ -1,266 +1,151 @@
 # gold-silver-finance-agent
-[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 
-[English](./README-EN.md) | [中文文档](./README.md)
+🤖 **AI赋能黄金白银主动监控Agent** —— 从被动监控升级为主动信号生成，结合技术指标 + 市场预期 + 人群智慧 + LLM综合分析
 
-🤖 **AI 赋能黄金白银主动监控 Agent** - 24小时帮你盯着金银市场，睡觉时也能自动监控行情、分析新闻、推送异动预警
+## ✨ 核心特性
 
-## 🎯 项目理念
+### 🎯 从"被动报警" → "主动信号生成"
 
-> 2026 年的 AI 不再只是画 K 线图，而是帮你**主动干活**！
+| 功能 | 说明 |
+|------|------|
+| **技术前瞻信号** | RSI顶背离/底背离提前预警反转，动量穿越65/35更早触发，RSI加速提示趋势延续 |
+| **均线主动信号** | 价格突破MA50 + MA20/MA50金叉死叉 → 主动给出趋势启动信号 |
+| **波动率分级预警** | 1.5倍 → 温和提示"行情酝酿"，2倍 → "大行情已启动" |
+| **MA200过滤** | 所有震荡类信号只在非趋势行情触发，过滤趋势里的假信号 |
+| **金银比极端预警** | 金银比 >85 / <65 → 提示金银轮动机会 |
+| **COT持仓预警** | 每周自动抓取CFTC持仓，非商业净持仓极端拥挤提前预警反转 |
+| **宏观前置提醒** | 明天高影响事件（非农/CPI/利率决议）今天提前提醒波动率放大 |
 
-> 看着自己写的代码在睡觉时帮你盯着黄金白银，这种「掌控感」比看短视频爽得多！😎
+### 🔮 市场预期参考
 
-✨ **监控 Agent**: 
-- 24小时监控全球宏观新闻 
-- **COMEX 黄金/白银库存变化**监控
-- **GLD/SLV ETF 持仓变化**监控 (市场经验: GLD反映散户情绪，SLV反映庄家操作动向)
+- 仪表盘顶部直接链接 **Polymarket** (长周期预测) + **Kalshi** (短期周月预测)
+- 点击直达，随时查看市场定价概率
 
-📑 **研报/新闻 Agent**: 
-自动把长篇大论的财经新闻/研报浓缩成 **3条「对金银价格的具体影响」**
+### 🧠 人群智慧复合
 
-⚠️ **预警 Agent**: 
-当金价/银价触发你设定的技术规则（均线背离/RSI超买超卖/波动率异常），直接**钉钉/企业微信/Telegram 推送操作建议**
+- 5位顶级宏观大佬观点**每日自动抓取更新**：
+  - Peter Schiff (金虫之王) → 从Twitter/Nitter自动抓取
+  - Ray Dalio (桥水创始人) → 从Twitter/Nitter自动抓取
+  - Jim Rickards (《货币战争》作者) → 从Twitter/Nitter自动抓取
+  - 谢爱民 (闪电资管) → 从百度搜索自动抓取最新观点
+  - 张明 (社科院金融所副所长) → 从百度搜索自动抓取最新观点
+- 国外抓Twitter，国内抓百度，完全免费，不需要API Key
+- 多空观点都有，和技术信号互相印证
 
-## 🌟 市场经验内置
+### 📊 完整Web仪表盘
 
-| 品种 | 监控点 | 市场含义 |
-|------|--------|------|
-| **GLD** | 持仓变化 | 全球最大黄金ETF → 反映**散户持仓情绪** |
-| **SLV** | 持仓变化 | 全球最大白银ETF → 反映**庄家操作动向** |
-| **COMEX 库存** | 库存变化 | 库存减少 → 实物需求旺盛，对价格利好 |
+- 统计卡片总览
+- 大佬观点专区
+- 最近预警列表
+- 交互式K线图（黄金/白银切换）
+- 资产/预警类型筛选 + 分页
+- 优雅现代UI设计
 
-## 功能特色
+### 🤖 LLM全流程赋能
 
-- 👀 **睡觉也帮你盯着** - 定时自动运行，不用你天天盯盘
-- 🧠 **Multi-Agent 协作** - 分工明确，每个Agent专注做一件事
-- 📊 **技术指标分析** - 内置 ta-lib 技术指标计算，支持自定义预警规则
-- 📰 **多数据源** - Tushare + 华尔街见闻/雪球新闻 + COMEX库存 + GLD/SLV持仓
-- 🔔 **多渠道通知** - 钉钉/企业微信/Telegram 推送
-- 🛠️ **高度可配置** - 预警规则、通知渠道全部可配置
-- 🐳 **Docker 一键部署**
+1. **新闻研报自动总结** → 自动抓取黄金相关新闻，LLM总结要点
+2. **综合信号分析** → 整合技术信号 + 大佬观点 + 当前行情，LLM给出最终综合判断和操作建议
 
-## 项目结构
+### 📡 多渠道通知
+
+- 飞书 / 钉钉 / 企业微信 / Telegram 支持
+- 默认适配飞书webhook，满足国内用户使用
+
+## 🚀 快速开始
+
+### 1. 安装依赖
+
+```bash
+pip install -r requirements.txt
+```
+
+### 2. 配置
+
+复制 `config/config.example.yaml` 为 `config/config.yaml`，修改：
+- `tushare.token` → 你的tushare token（可选，用于国内股票）
+- `llm.api_key` → 你的OpenAI API key（用于新闻总结和综合分析，可选，不配置不影响基础功能）
+- `notify.feishu.webhook_url` → 你的飞书webhook地址
+- 其他配置保持默认即可
+
+### 3. 运行
+
+```bash
+# 运行一次，抓取数据
+python main.py --run-once
+
+# 启动定时监控（每60分钟运行一次）
+python main.py --schedule
+
+# 启动Web仪表盘
+python main.py --web --port 5000
+```
+
+## 📋 预警规则默认配置
+
+| 预警类型 | 阈值 | 说明 |
+|---------|------|------|
+| RSI动能信号 | 超买65 / 超卖35 | 顶底背离提前预警，穿越触发，加速提示 |
+| 均线偏离 | 黄金5% / 白银7% | 偏离MA50过大提示均值回归 |
+| 均线突破 | MA50突破 + MA20金叉/死叉 | 主动趋势启动信号 |
+| 波动率分级 | 1.5倍温和 / 2倍强力 | 提前感知行情启动 |
+| 金银比 | >85 / <65 | 极端区间提示轮动机会 |
+| COT持仓 | 黄金 >30% / <-20% | 机构极端拥挤预警反转 |
+
+所有规则参数都可以在配置文件修改调整。
+
+## 🎨 界面预览
+
+- 顶部渐变标题栏 + 前瞻预测市场链接
+- 统计卡片网格
+- 大佬观点响应式卡片网格
+- 最近预警列表
+- 交互式K线图
+- 优雅圆角 + 分层阴影 + 平滑交互动画
+
+## 🔧 项目结构
 
 ```
-gold-silver-finance-agent/
+├── config/             # 配置文件
+├── data/               # 数据缓存（价格历史/预警日志/大佬观点）
 ├── src/
-│   ├── monitor/          # 监控模块
-│   │   ├── __init__.py
-│   │   ├── news_monitor.py      # 宏观新闻监控
-│   │   └── price_monitor.py    # 金银价格 + ETF持仓 + COMEX库存监控 (Tushare)
-│   ├── research/         # AI分析模块
-│   │   ├── __init__.py
-│   │   └── report_summarizer.py  # 新闻/研报浓缩总结 + LLM 自动生成操作建议
-│   ├── alert/           # 预警分析模块
-│   │   ├── __init__.py
-│   │   ├── indicator.py       # 技术指标计算 (MA/RSI/MACD/ATR/布林带/波动率)
-│   │   ├── trigger.py        # 预警触发判断
-│   │   └── etf_comex_analyzer.py  # ETF-COMEX关联分析
-│   ├── notifier/        # 通知模块
-│   │   ├── __init__.py
-│   │   └── sender.py    # 钉钉/企业微信/飞书/Telegram/邮件推送
-│   └── web/             # Web界面模块
-│       ├── app.py       # Flask Web服务
-│       └── templates/
-│           └── index.html  # 历史预警页面
-├── config/
-│   └── config.example.yaml
-├── tests/               # 基础测试用例
-├── main.py              # 主入口
-├── pyproject.toml       # uv 项目配置
-├── Dockerfile           # Docker 镜像
-├── docker-compose.yml   # Docker Compose
-├── Makefile             # 简化命令
-└── README.md
+│   ├── alert/          # 指标计算 + 预警触发
+│   ├── monitor/        # 价格/新闻/COT/大佬观点抓取
+│   ├── notifier/       # 通知发送
+│   ├── research/       # 新闻总结（LLM）
+│   └── web/            # Web仪表盘
+├── main.py             # 入口
+└── requirements.txt    # 依赖
 ```
 
-## 快速开始
+## 📝 更新日志
 
-### 1. 克隆项目
-```bash
-git clone https://github.com/yourusername/gold-silver-finance-agent.git
-cd gold-silver-finance-agent
-```
+### 2026-03-18 重大升级：从被动监控 → 主动信号生成
 
-### 2. 安装依赖
+1. **技术指标前瞻化**
+   - RSI升级：顶背离/底背离提前预警 + 动量穿越更早触发 + RSI加速提示
+   - 均线升级：价格突破MA50 + 金叉死叉主动趋势信号
+   - 波动率分级：1.5倍温和预警 + 2倍强预警
+   - MA200过滤：只在非趋势行情触发震荡信号
 
-使用 uv 推荐：
-```bash
-# 安装 uv
-curl -LsSf https://astral.sh/uv/install.sh | sh
+2. **中级前瞻信号**
+   - 金银比阈值优化到 85/65
+   - COT持仓极端预警
+   - 宏观事件前置提醒（明天非农今天提醒）
 
-# 安装依赖
-uv sync
+3. **市场预期链接**
+   - Polymarket（长周期）+ Kalshi（短期）直接加入仪表盘
 
-# 安装 playwright
-uv run playwright install chromium
-```
+4. **人群智慧**
+   - 5位中外宏观大佬每日自动抓取最新观点
+   - 国外Twitter/Nitter，国内百度搜索，完全免费
 
-### 3. 配置
-```bash
-cp config/config.example.yaml config/config.yaml
-# 编辑填入你的:
-#  - Tushare token
-#  - OpenAI API key
-#  - 黄金/白银开关
-#  - 预警规则
-#  - 通知渠道配置
-```
+5. **LLM综合分析**
+   - 新闻研报自动总结
+   - 整合所有信息给出最终综合判断和操作建议
 
-### 4. 运行一次
-```bash
-uv run python main.py --run-once
-```
+6. **UI优雅化**
+   - 圆角柔化，阴影分层，动画细腻，响应式布局
 
-### 5. 启动定时监控
-```bash
-uv run python main.py --schedule
-```
+## 📄 License
 
-### 6. 启动 Web 界面查看历史预警
-```bash
-uv run python main.py --web --port 5000
-# 然后访问 http://localhost:5000 查看历史预警
-```
-
-### Docker 部署
-```bash
-make docker-build
-make docker-up
-```
-
-## 默认预警规则配置（针对黄金白银）
-
-```yaml
-alerts:
-  # 黄金MA50偏离
-  - name: "黄金MA50偏离"
-    asset: gold
-    enabled: true
-    type: "ma_deviation"
-    params:
-      ma_period: 50
-      threshold: 0.05  # 偏离超过5%触发
-      direction: "both"
-  
-  # 白银MA50偏离
-  - name: "白银MA50偏离"
-    asset: silver
-    enabled: true
-    type: "ma_deviation"
-    params:
-      ma_period: 50
-      threshold: 0.07  # 白银波动更大
-      direction: "both"
-  
-  # 黄金 RSI 超买超卖
-  - name: "黄金 RSI 超买超卖"
-    asset: gold
-    enabled: true
-    type: "rsi"
-    params:
-      period: 14
-      overbought: 70
-      oversold: 30
-  
-  # 白银 RSI 超买超卖
-  - name: "白银 RSI 超买超卖"
-    asset: silver
-    enabled: true
-    type: "rsi"
-    params:
-      period: 14
-      overbought: 75
-      oversold: 25
-  
-  # 黄金波动率异常
-  - name: "黄金波动率异常"
-    asset: gold
-    enabled: true
-    type: "volatility"
-    params:
-      window: 20
-      threshold: 2.0  # 波动率超过2倍历史均值触发
-  
-  # 白银波动率异常
-  - name: "白银波动率异常"
-    asset: silver
-    enabled: true
-    type: "volatility"
-    params:
-      window: 20
-      threshold: 2.5  # 白银波动率更大
-  
-  # GLD持仓异动（散户情绪）
-  - name: "GLD 持仓异动 (散户情绪)"
-    asset: gld
-    enabled: true
-    type: "volatility"
-    params:
-      window: 5
-      threshold: 1.5  # 持仓变化超过1.5倍日均变化触发
-  
-  # SLV持仓异动（庄家动向）
-  - name: "SLV 持仓异动 (庄家动向)"
-    asset: slv
-    enabled: true
-    type: "volatility"
-    params:
-      window: 5
-      threshold: 1.5  # 持仓变化超过1.5倍日均变化触发
-```
-
-## 技术指标支持
-
-- MA 均线偏离
-- RSI 超买超卖
-- Bollinger Bands 布林带突破
-- 波动率阈值异常
-- 完全自定义规则
-
-## 工作流程
-
-```mermaid
-graph TD
-    A[定时触发 交易时段] --> B[监控 Agent]
-    B --> C[抓取最新新闻 + 价格 + ETF持仓 + COMEX库存]
-    C --> D[研报 Agent]
-    D --> E[过滤出金银相关新闻 → AI浓缩成3条影响结论]
-    E --> F[预警 Agent]
-    F --> G[计算技术指标 → 判断是否触发预警]
-    G --> H[通知推送]
-    H --> I[钉钉/企业微信/Telegram 推送分析+建议]
-```
-
-## 快速开始开发
-
-```bash
-# 克隆
-git clone https://github.com/你的用户名/gold-silver-finance-agent.git
-cd gold-silver-finance-agent
-make install
-make install-browser
-make test
-```
-
-## 趣味点
-
-> 看着自己写的代码在睡觉时帮你盯着黄金白银，这种「掌控感」比看短视频爽得多！😎
-
-## 路线图
-
-- [x] 完整解析 GLD/SLV 持仓数据 ✅
-- [x] 完整解析 COMEX 库存数据 ✅
-- [x] 添加更多技术指标 (MACD/ATR) ✅
-- [x] Web 界面查看历史预警 ✅
-- [x] 支持更多新闻源 (华尔街见闻/雪球/新浪财经/财新) ✅
-- [x] LLM 自动生成操作建议 ✅
-
-## 贡献
-
-欢迎提交 Issue 和 Pull Request！
-
-## 许可证
-
-MIT License - 详见 [LICENSE](LICENSE) 文件
+MIT
