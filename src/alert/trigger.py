@@ -61,31 +61,43 @@ class AlertTrigger:
         return None
         
     def check_rsi(self, df: pd.DataFrame, config: dict) -> Optional[Alert]:
-        """检查RSI超买超卖"""
+        """检查RSI超买超卖
+        改进逻辑：只有进入超买/超卖区后，反向穿越中轴才触发，降低假信号
+        默认：超买阈值65，超卖阈值35，穿越50中轴触发
+        """
         period = config.get('params', {}).get('period', 14)
-        overbought = config.get('params', {}).get('overbought', 70)
-        oversold = config.get('params', {}).get('oversold', 30)
+        overbought = config.get('params', {}).get('overbought', 65)
+        oversold = config.get('params', {}).get('oversold', 35)
+        mid = config.get('params', {}).get('mid', 50)
         
         rsi = IndicatorCalculator.rsi(df, period)
-        current_rsi = rsi[-1]
         
-        if current_rsi >= overbought:
+        if len(rsi) < 2:
+            return None
+        
+        current_rsi = rsi[-1]
+        prev_rsi = rsi[-2]
+        
+        # 超卖后向上穿越50中线 → 触发多头信号
+        if prev_rsi <= oversold and current_rsi > mid:
             return Alert(
                 asset=config.get('asset', 'unknown'),
                 alert_type='rsi',
-                message=f"RSI{period} = {current_rsi:.1f} >= 超买阈值 {overbought}",
+                message=f"RSI{period} 从超卖区({oversold}↓)向上穿越中线{mid}，当前={current_rsi:.1f}",
                 current_value=current_rsi,
-                threshold=overbought,
-                suggestion="当前RSI超买，多头力量消耗过大，注意回调风险"
+                threshold=mid,
+                suggestion="RSI从超卖区回升，空头力量耗尽，可能开启反弹"
             )
-        elif current_rsi <= oversold:
+        
+        # 超买后向下穿越50中线 → 触发空头信号
+        if prev_rsi >= overbought and current_rsi < mid:
             return Alert(
                 asset=config.get('asset', 'unknown'),
                 alert_type='rsi',
-                message=f"RSI{period} = {current_rsi:.1f} <= 超卖阈值 {oversold}",
+                message=f"RSI{period} 从超买区({overbought}↑)向下穿越中线{mid}，当前={current_rsi:.1f}",
                 current_value=current_rsi,
-                threshold=oversold,
-                suggestion="当前RSI超卖，空头力量消耗过大，可能有反弹机会"
+                threshold=mid,
+                suggestion="RSI从超买区回落，多头力量耗尽，注意回调风险"
             )
             
         return None
@@ -109,25 +121,92 @@ class AlertTrigger:
             )
             
         return None
+    
+    def check_gold_silver_ratio(self, gold_df: pd.DataFrame, silver_df: pd.DataFrame, config: dict) -> Optional[Alert]:
+        """检查金银比极端值
+        正常区间 60-80，超过80或低于60都是极端
+        """
+        high_threshold = config.get('params', {}).get('high', 80)
+        low_threshold = config.get('params', {}).get('low', 60)
         
-    def check_all(self, symbol: str, df: pd.DataFrame) -> List[Alert]:
-        """检查所有预警规则"""
+        ratio = IndicatorCalculator.ratio(gold_df, silver_df)
+        if ratio <= 0:
+            return None
+        
+        if ratio >= high_threshold:
+            return Alert(
+                asset='gold-silver',
+                alert_type='ratio',
+                message=f"金银比 = {ratio:.1f} >= 极端上限 {high_threshold}",
+                current_value=ratio,
+                threshold=high_threshold,
+                suggestion="金银比极端高估，黄金相对于白银太贵，关注做空黄金/做多白银机会"
+            )
+        
+        if ratio <= low_threshold:
+            return Alert(
+                asset='gold-silver',
+                alert_type='ratio',
+                message=f"金银比 = {ratio:.1f} <= 极端下限 {low_threshold}",
+                current_value=ratio,
+                threshold=low_threshold,
+                suggestion="金银比极端低估，黄金相对于白银太便宜，关注做多黄金/做空白银机会"
+            )
+            
+        return None
+        
+    def check_all(self, symbol: str, df: pd.DataFrame, gold_df: pd.DataFrame = None, silver_df: pd.DataFrame = None) -> List[Alert]:
+        """检查所有预警规则
+        对于金银比，需要同时传入gold_df和silver_df
+        """
         alerts = []
         for config in self.configs:
             if not config.get('enabled', True):
                 continue
-            if config.get('asset') != symbol and config.get('asset') != 'all':
+            if config.get('asset') != symbol and config.get('asset') != 'all' and config.get('type') != 'ratio':
                 continue
                 
             alert_type = config.get('type')
             alert = None
             
             if alert_type == 'ma_deviation':
+                # MA200过滤：只在价格偏离MA200不太大的时候触发（非趋势行情）
+                ma_200 = IndicatorCalculator.ma(df, 200)
+                current_price = df.close.iloc[-1]
+                current_ma200 = ma_200.iloc[-1]
+                deviation = abs(current_price - current_ma200) / current_ma200
+                # 偏离超过20%认为是趋势行情，不触发预警
+                max_deviation = config.get('params', {}).get('max_deviation_from_ma200', 0.2)
+                if deviation > max_deviation:
+                    # 趋势行情，过滤掉，不触发
+                    continue
                 alert = self.check_ma_deviation(df, config)
             elif alert_type == 'rsi':
+                # MA200过滤同理
+                if len(df) >= 200:  # 有足够数据才过滤
+                    ma_200 = IndicatorCalculator.ma(df, 200)
+                    current_price = df.close.iloc[-1]
+                    current_ma200 = ma_200.iloc[-1]
+                    deviation = abs(current_price - current_ma200) / current_ma200
+                    max_deviation = config.get('params', {}).get('max_deviation_from_ma200', 0.2)
+                    if deviation > max_deviation:
+                        continue
                 alert = self.check_rsi(df, config)
             elif alert_type == 'volatility':
+                # MA200过滤同理
+                if len(df) >= 200:
+                    ma_200 = IndicatorCalculator.ma(df, 200)
+                    current_price = df.close.iloc[-1]
+                    current_ma200 = ma_200.iloc[-1]
+                    deviation = abs(current_price - current_ma200) / current_ma200
+                    max_deviation = config.get('params', {}).get('max_deviation_from_ma200', 0.2)
+                    if deviation > max_deviation:
+                        continue
                 alert = self.check_volatility(df, config)
+            elif alert_type == 'ratio':
+                # 金银比需要黄金和白银数据
+                if gold_df is not None and silver_df is not None and len(gold_df) > 0 and len(silver_df) > 0:
+                    alert = self.check_gold_silver_ratio(gold_df, silver_df, config)
                 
             if alert:
                 alerts.append(alert)

@@ -12,6 +12,17 @@ class IndicatorCalculator:
     def ma(df: pd.DataFrame, period: int = 50) -> pd.Series:
         """计算均线"""
         return ta.trend.sma_indicator(df.close, window=period)
+    
+    @staticmethod
+    def ratio(gold_df: pd.DataFrame, silver_df: pd.DataFrame) -> float:
+        """计算最新金银比 (黄金价格/白银价格)"""
+        if len(gold_df) == 0 or len(silver_df) == 0:
+            return 0
+        gold_price = gold_df['close'].iloc[-1]
+        silver_price = silver_df['close'].iloc[-1]
+        if silver_price == 0:
+            return 0
+        return gold_price / silver_price
         
     @staticmethod
     def rsi(df: pd.DataFrame, period: int = 14) -> pd.Series:

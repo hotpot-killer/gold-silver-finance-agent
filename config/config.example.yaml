@@ -29,12 +29,12 @@ monitor:
   # 监控黄金
   gold:
     enabled: true
-    symbol: "XAUUSD"  # COMEX伦敦金，使用新浪财经免费API获取
+    symbol: "XAUUSD"  # COMEX伦敦金，使用腾讯财经免费API获取
   
   # 监控白银
   silver:
     enabled: true
-    symbol: "XAGUSD"  # COMEX白银，使用新浪财经免费API获取
+    symbol: "XAGUSD"  # COMEX白银，使用腾讯财经免费API获取
   
   # 监控 ETF 持仓 
   # 市场经验：
@@ -73,6 +73,7 @@ alerts:
       ma_period: 50
       threshold: 0.05  # 偏离超过5%触发
       direction: "both"  # up / down / both
+      max_deviation_from_ma200: 0.2  # 只在偏离MA200不超过20%时触发（过滤强趋势行情，只抓震荡）
   
   # 白银MA50偏离
   - name: "白银MA50偏离"
@@ -83,6 +84,7 @@ alerts:
       ma_period: 50
       threshold: 0.07  # 白银波动更大，阈值高一点
       direction: "both"
+      max_deviation_from_ma200: 0.2
   
   # 黄金RSI超买超卖
   - name: "黄金 RSI 超买超卖"
@@ -91,8 +93,10 @@ alerts:
     type: "rsi"
     params:
       period: 14
-      overbought: 70
-      oversold: 30
+      overbought: 65
+      oversold: 35
+      mid: 50
+      max_deviation_from_ma200: 0.2
   
   # 白银RSI超买超卖
   - name: "白银 RSI 超买超卖"
@@ -101,8 +105,19 @@ alerts:
     type: "rsi"
     params:
       period: 14
-      overbought: 75
-      oversold: 25
+      overbought: 65
+      oversold: 35
+      mid: 50
+      max_deviation_from_ma200: 0.2
+  
+  # 金银比极端值预警
+  - name: "金银比 极端区间"
+    asset: gold-silver
+    enabled: true
+    type: "ratio"
+    params:
+      high: 80
+      low: 60
   
   # 黄金波动率异常
   - name: "黄金波动率异常"
@@ -112,6 +127,7 @@ alerts:
     params:
       window: 20
       threshold: 2.0  # 波动率超过2倍历史均值触发
+      max_deviation_from_ma200: 0.2
   
   # 白银波动率异常
   - name: "白银波动率异常"
@@ -121,6 +137,7 @@ alerts:
     params:
       window: 20
       threshold: 2.5  # 白银波动率更大
+      max_deviation_from_ma200: 0.2
   
   # GLD持仓异动（散户情绪）
   - name: "GLD 持仓异动 (散户情绪)"

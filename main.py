@@ -281,22 +281,31 @@ def run_once(config: Config) -> bool:
             all_alerts.extend(alerts)
     
     # 黄金单独处理
+    gold_df = None
     if config.monitor.gold.get('enabled', False):
-        gold_symbol = config.monitor.gold.get('symbol', 'AU9999')
-        df = price_monitor.get_history(gold_symbol, start_date='20240101')
-        if not df.empty:
-            alerts = trigger.check_all('gold', df)
+        gold_symbol = config.monitor.gold.get('symbol', 'XAUUSD')
+        gold_df = price_monitor.get_history(gold_symbol, start_date='20240101')
+        if not gold_df.empty:
+            alerts = trigger.check_all('gold', gold_df)
             all_alerts.extend(alerts)
             logger.info(f"Checked gold ({gold_symbol}), found {len(alerts)} alerts")
     
     # 白银单独处理
+    silver_df = None
     if config.monitor.silver.get('enabled', False):
-        silver_symbol = config.monitor.silver.get('symbol', 'AG9999')
-        df = price_monitor.get_history(silver_symbol, start_date='20240101')
-        if not df.empty:
-            alerts = trigger.check_all('silver', df)
+        silver_symbol = config.monitor.silver.get('symbol', 'XAGUSD')
+        silver_df = price_monitor.get_history(silver_symbol, start_date='20240101')
+        if not silver_df.empty:
+            alerts = trigger.check_all('silver', silver_df)
             all_alerts.extend(alerts)
             logger.info(f"Checked silver ({silver_symbol}), found {len(alerts)} alerts")
+    
+    # 金银比极端预警
+    if gold_df is not None and silver_df is not None and not gold_df.empty and not silver_df.empty:
+        # 检查金银比
+        alerts = trigger.check_all('gold-silver', None, gold_df=gold_df, silver_df=silver_df)
+        all_alerts.extend(alerts)
+        logger.info(f"Checked gold-silver ratio, found {len(alerts)} alerts")
     
     # GLD 持仓异动检查
     if config.monitor.etf_monitor.get('enabled', False) and config.monitor.etf_monitor.get('gld', True):
