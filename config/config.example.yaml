@@ -45,6 +45,15 @@ monitor:
     gld: true
     slv: true
   
+  # COT持仓报告监控（CFTC机构持仓，领先指标）
+  # 每周周五发布，提前反应机构极端仓位
+  cot:
+    enabled: true
+  
+  # 经济日历 - 提前提醒明天高影响宏观事件（非农/CPI/利率决议）
+  economic_calendar:
+    enabled: true
+  
   # 新闻源
   # 支持: wallstreetcn, xueqiu, sina, caixin
   news_sources:
@@ -166,6 +175,13 @@ alerts:
     params:
       high: 85    # 85+ → 黄金相对白银极端高估
       low: 65     # 65- → 黄金相对白银极端低估
+  
+  # ========== COT极端持仓预警 ==========
+  # COT持仓是典型领先指标：非商业净持仓极端拥挤往往预示反转
+  - name: "COT 极端持仓预警"
+    asset: cot
+    enabled: true
+    type: "cot_extreme"
   
   # ========== ETF持仓异动 ==========
   # GLD持仓异动（散户情绪）

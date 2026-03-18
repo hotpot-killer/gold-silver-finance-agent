@@ -307,6 +307,20 @@ def run_once(config: Config) -> bool:
         all_alerts.extend(alerts)
         logger.info(f"Checked gold-silver ratio, found {len(alerts)} alerts")
     
+    # COT持仓报告检查 - 每周更新，领先指标
+    cot_extreme_alerts = None
+    if config.monitor.get('cot', {}).get('enabled', False):
+        logger.info("Step 3.1: Fetching COT (Commitment of Traders) data...")
+        from src.monitor.cot import COTFetcher
+        cot_fetcher = COTFetcher(data_dir=config.data_dir)
+        cot_data = cot_fetcher.get_gold_silver_cot()
+        if cot_data:
+            cot_extreme_alerts = cot_fetcher.check_extreme_positioning(cot_data)
+            if cot_extreme_alerts:
+                alerts = trigger.check_all('cot', None, cot_alerts=cot_extreme_alerts)
+                all_alerts.extend(alerts)
+                logger.info(f"Checked COT positioning, found {len(alerts)} extreme alerts")
+    
     # GLD 持仓异动检查
     if config.monitor.etf_monitor.get('enabled', False) and config.monitor.etf_monitor.get('gld', True):
         # GLD 持仓变化也需要检查预警
@@ -360,6 +374,15 @@ def run_once(config: Config) -> bool:
     logger.info("Step 5: Sending notification...")
     
     content_parts = []
+    
+    # 经济日历 - 提前提醒明天高影响事件
+    if config.monitor.get('economic_calendar', {}).get('enabled', True):
+        logger.info("Checking economic calendar for tomorrow...")
+        from src.monitor.economic_calendar import EconomicCalendar
+        calendar = EconomicCalendar()
+        events = calendar.get_high_impact_events_next_day()
+        if events:
+            content_parts.append(calendar.format_events_for_notification(events))
     
     # 添加今日行情概览 - 主动提供市场概况，即使没有预警
     if len(prices) > 0:

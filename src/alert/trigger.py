@@ -270,7 +270,19 @@ class AlertTrigger:
             
         return None
         
-    def check_all(self, symbol: str, df: pd.DataFrame, gold_df: pd.DataFrame = None, silver_df: pd.DataFrame = None) -> List[Alert]:
+    def check_cot_extreme(self, cot_data: Dict, extreme_info: Dict, config: dict) -> Optional[Alert]:
+        """COT极端持仓预警"""
+        asset = extreme_info.get('extreme').split('_')[0]
+        return Alert(
+            asset=f"cot-{asset}",
+            alert_type='cot_extreme',
+            message=extreme_info['message'],
+            current_value=0,
+            threshold=0,
+            suggestion=extreme_info['suggestion']
+        )
+    
+    def check_all(self, symbol: str, df: pd.DataFrame, gold_df: pd.DataFrame = None, silver_df: pd.DataFrame = None, cot_alerts: Dict = None) -> List[Alert]:
         """检查所有预警规则
         对于金银比，需要同时传入gold_df和silver_df
         """
@@ -278,7 +290,7 @@ class AlertTrigger:
         for config in self.configs:
             if not config.get('enabled', True):
                 continue
-            if config.get('asset') != symbol and config.get('asset') != 'all' and config.get('type') != 'ratio':
+            if config.get('asset') != symbol and config.get('asset') != 'all' and config.get('type') not in ['ratio', 'cot_extreme']:
                 continue
                 
             alert_type = config.get('type')
@@ -328,13 +340,19 @@ class AlertTrigger:
                     deviation = abs(current_price - current_ma200) / current_ma200
                     max_deviation = config.get('params', {}).get('max_deviation_from_ma200', 0.2)
                     if deviation > max_deviation:
-                        if deviation > max_deviation:
-                            pass
+                        pass
                 alert = self.check_volatility(df, config)
             elif alert_type == 'ratio':
                 # 金银比需要黄金和白银数据
                 if gold_df is not None and silver_df is not None and len(gold_df) > 0 and len(silver_df) > 0:
                     alert = self.check_gold_silver_ratio(gold_df, silver_df, config)
+            elif alert_type == 'cot_extreme':
+                # COT极端持仓预警
+                if cot_alerts is not None and cot_alerts:
+                    for asset, extreme_info in cot_alerts.items():
+                        alert = self.check_cot_extreme(cot_alerts, extreme_info, config)
+                        if alert:
+                            alerts.append(alert)
                 
             if alert:
                 alerts.append(alert)
