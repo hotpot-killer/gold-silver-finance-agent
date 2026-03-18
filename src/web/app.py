@@ -1,5 +1,6 @@
 import logging
 import json
+import requests
 from datetime import datetime
 from fastapi import FastAPI
 from fastapi.staticfiles import StaticFiles
@@ -111,55 +112,98 @@ async def api_stats():
 @app.get("/api/price/{symbol}")
 async def api_price(symbol: str):
     """API - 获取价格历史数据用于K线图
-    - 对于 XAUUSD/XAGUSD 从本地CSV读取（国际黄金/白银）
+    - 对于 XAUUSD/XAGUSD 从本地CSV读取（国际黄金/白银），如果没有则实时获取
     - 对于其他symbol从tushare读取
     """
     from pathlib import Path
     import pandas as pd
+    from datetime import datetime
     
-    # 国际黄金/白银从本地CSV读取
+    # 国际黄金/白银
     if symbol in ['XAUUSD', 'XAGUSD']:
         data_dir = Path('./data')
         csv_path = data_dir / f"{symbol}_prices.csv"
-        if not csv_path.exists():
-            return {'error': f'No history data for {symbol}, please run monitoring first', 'data': []}
+        candles = []
         
-        try:
-            from datetime import datetime
-            df = pd.read_csv(csv_path)
-            df = df.sort_values('trade_date')
-            
-            # 获取最近一年的数据
-            if len(df) > 365:
-                df = df.tail(365)
-            
-            # 转换为K线图需要的格式
-            candles = []
-            for _, row in df.iterrows():
-                # 转换时间格式 trade_date YYYYMMDD -> timestamp
-                date_str = str(int(row.trade_date))
-                dt = datetime(int(date_str[:4]), int(date_str[4:6]), int(date_str[6:8]))
-                timestamp = int(dt.timestamp())
-                candles.append({
-                    'time': timestamp,
-                    'open': float(row.open),
-                    'high': float(row.high),
-                    'low': float(row.low),
-                    'close': float(row.close),
-                    'volume': float(row.vol) if row.vol else 0
-                })
-            
-            latest = candles[-1] if candles else None
-            
-            return {
-                'symbol': symbol,
-                'latest': latest,
-                'count': len(candles),
-                'data': candles
-            }
-        except Exception as e:
-            logger.error(f"Failed to read local price for {symbol}: {e}")
-            return {'error': str(e), 'data': []}
+        # 如果本地有历史数据，读取
+        if csv_path.exists():
+            try:
+                df = pd.read_csv(csv_path)
+                df = df.sort_values('trade_date')
+                
+                # 获取最近一年的数据
+                if len(df) > 365:
+                    df = df.tail(365)
+                
+                # 转换格式
+                for _, row in df.iterrows():
+                    date_str = str(int(row.trade_date))
+                    dt = datetime(int(date_str[:4]), int(date_str[4:6]), int(date_str[6:8]))
+                    timestamp = int(dt.timestamp())
+                    candles.append({
+                        'time': timestamp,
+                        'open': float(row.open),
+                        'high': float(row.high),
+                        'low': float(row.low),
+                        'close': float(row.close),
+                        'volume': float(row.vol) if row.vol else 0
+                    })
+            except Exception as e:
+                logger.error(f"Failed to read local price for {symbol}: {e}")
+        
+        # 如果本地没有数据或者数据为空，实时获取当前价格
+        if len(candles) == 0:
+            try:
+                # 实时获取当前价格
+                headers = {
+                    'User-Agent': 'Mozilla/5.0 (Windows NT 100.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36'
+                }
+                if symbol == 'XAUUSD':
+                    url = "https://qt.gtimg.cn/q=XAU"
+                else:
+                    url = "https://qt.gtimg.cn/q=XAG"
+                
+                resp = requests.get(url, headers=headers, timeout=10)
+                if resp.status_code == 200:
+                    text = resp.text
+                    if symbol == 'XAUUSD' and 'v_xau=' in text:
+                        data_part = text.split('v_xau=')[1].split('";')[0]
+                        parts = data_part.split(' ')
+                        if len(parts) >= 4:
+                            price = float(parts[1])
+                            prev_close = float(parts[2])
+                    elif symbol == 'XAGUSD' and 'v_xag=' in text:
+                        data_part = text.split('v_xag=')[1].split('";')[0]
+                        parts = data_part.split(' ')
+                        if len(parts) >= 4:
+                            price = float(parts[1])
+                            prev_close = float(parts[2])
+                    else:
+                        return {'error': 'Failed to parse price', 'data': []}
+                    
+                    today = datetime.now()
+                    today_str = today.strftime('%Y%m%d')
+                    timestamp = int(today.timestamp())
+                    candles.append({
+                        'time': timestamp,
+                        'open': price,
+                        'high': price,
+                        'low': price,
+                        'close': price,
+                        'volume': 0
+                    })
+            except Exception as e:
+                logger.error(f"Failed to fetch realtime price for {symbol}: {e}")
+                return {'error': str(e), 'data': []}
+        
+        latest = candles[-1] if len(candles) > 0 else None
+        
+        return {
+            'symbol': symbol,
+            'latest': latest,
+            'count': len(candles),
+            'data': candles
+        }
     
     # 其他symbol从tushare读取
     token = get_tushare_token()

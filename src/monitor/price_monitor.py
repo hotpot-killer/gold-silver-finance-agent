@@ -215,9 +215,11 @@ class PriceMonitor(BaseMonitor):
             return None
     
     def save_price_to_local(self, symbol: str, price: PriceData):
-        """保存价格到本地CSV文件，用于历史数据查询"""
+        """保存价格到本地CSV文件，用于历史数据查询
+        每天只保存一次，OHLC都用同一个价格，不影响指标计算
+        """
         csv_path = self.data_dir / f"{symbol}_prices.csv"
-        today_str = date.today().strftime("%Y%m%d")
+        today_str = int(date.today().strftime("%Y%m%d"))
         
         # 创建新DataFrame
         new_row = pd.DataFrame([{
@@ -233,13 +235,18 @@ class PriceMonitor(BaseMonitor):
             # 读取已有数据
             df = pd.read_csv(csv_path)
             # 如果今天已经有数据，更新，否则添加
-            if len(df[df['trade_date'] == int(today_str)]) > 0:
-                df.loc[df['trade_date'] == int(today_str), 'close'] = price.price
+            if len(df[df['trade_date'] == today_str]) > 0:
+                df.loc[df['trade_date'] == today_str, 'close'] = price.price
+                # 同时更新OHLC
+                df.loc[df['trade_date'] == today_str, 'open'] = price.price
+                df.loc[df['trade_date'] == today_str, 'high'] = price.price
+                df.loc[df['trade_date'] == today_str, 'low'] = price.price
             else:
                 df = pd.concat([df, new_row], ignore_index=True)
         else:
             df = new_row
         
+        df = df.sort_values('trade_date')
         df.to_csv(csv_path, index=False)
         logger.debug(f"Saved {symbol} price to {csv_path}")
         
