@@ -1,4 +1,4 @@
-const { createApp, ref, onMounted, computed } = Vue
+const { createApp, ref, onMounted, computed, nextTick } = Vue
 
 createApp({
   setup() {
@@ -18,6 +18,16 @@ createApp({
     // 分页
     const pageSize = ref(20)
     const currentPage = ref(1)
+    
+    // K线图相关
+    const selectedAsset = ref('gold')
+    const priceLoading = ref(false)
+    priceData = ref({
+      gold: { symbol: 'AU9999', data: [], latest: null },
+      silver: { symbol: 'AG9999', data: [], latest: null },
+    })
+    let chartInstance = null
+    let candlestickSeries = null
     
     const fetchData = async () => {
       loading.value = true
@@ -40,8 +50,114 @@ createApp({
       }
     }
     
+    const fetchPrice = async (asset) => {
+      const symbol = asset === 'gold' ? 'AU9999' : 'AG9999'
+      priceLoading.value = true
+      try {
+        const res = await fetch(`/api/price/${symbol}`)
+        const data = await res.json()
+        if (!data.error && data.data) {
+          priceData.value[asset].data = data.data
+          priceData.value[asset].latest = data.latest
+        }
+      } catch (e) {
+        console.error('Failed to fetch price:', e)
+      } finally {
+        priceLoading.value = false
+      }
+    }
+    
+    const initChart = () => {
+      const container = document.getElementById('kline-chart')
+      if (!container) return
+      
+      // 销毁旧图表
+      if (chartInstance) {
+        chartInstance.remove()
+      }
+      
+      chartInstance = LightweightCharts.createChart(container, {
+        layout: {
+          background: { color: '#ffffff' },
+          textColor: '#333333',
+        },
+        grid: {
+          vertLines: { color: '#f0f0f0' },
+          horzLines: { color: '#f0f0f0' },
+        },
+        priceScale: {
+          borderColor: '#cccccc',
+        },
+        timeScale: {
+          borderColor: '#cccccc',
+        },
+      })
+      
+      candlestickSeries = chartInstance.addCandlestickSeries({
+        upColor: '#ef4444',
+        downColor: '#10b981',
+        borderVisible: false,
+        wickUpColor: '#ef4444',
+        wickDownColor: '#10b981',
+      })
+      
+      updateChart()
+      chartInstance.timeScale().fitContent()
+      
+      // 响应窗口大小变化
+      const resizeObserver = new ResizeObserver(() => {
+        chartInstance.applyAutoSize()
+      })
+      resizeObserver.observe(container)
+    }
+    
+    const updateChart = () => {
+      if (!candlestickSeries) return
+      const data = priceData.value[selectedAsset.value].data.map(item => ({
+        time: item.time,
+        open: item.open,
+        high: item.high,
+        low: item.low,
+        close: item.close,
+      }))
+      candlestickSeries.setData(data)
+    }
+    
+    const switchAsset = async (asset) => {
+      selectedAsset.value = asset
+      await nextTick()
+      if (priceData.value[asset].data.length === 0) {
+        await fetchPrice(asset)
+      }
+      initChart()
+    }
+    
+    const formatPrice = (price) => {
+      if (price == null) return '-'
+      return price.toFixed(2)
+    }
+    
+    const priceChange = computed(() => {
+      const data = priceData.value[selectedAsset.value]
+      if (!data.latest || data.data.length < 2) return null
+      const prevClose = data.data[data.data.length - 2].close
+      const change = data.latest.close - prevClose
+      const changePct = (change / prevClose) * 100
+      return {
+        value: change,
+        pct: changePct,
+        direction: change >= 0 ? 'up' : 'down'
+      }
+    })
+    
+    const currentPrice = computed(() => {
+      const data = priceData.value[selectedAsset.value]
+      return data.latest ? data.latest.close : null
+    })
+    
     onMounted(async () => {
       await fetchData()
+      await switchAsset('gold')
     })
     
     // 资产选项列表
@@ -90,6 +206,8 @@ createApp({
     const refresh = async () => {
       currentPage.value = 1
       await fetchData()
+      await fetchPrice(selectedAsset.value)
+      updateChart()
     }
     
     // 设置资产筛选
@@ -109,14 +227,6 @@ createApp({
       return `badge badge-type-${type}`
     }
     
-    // 统计卡片数据
-    const statsList = computed(() => {
-      const result = [
-        { label: '总预警数', value: stats.value.total }
-      ]
-      return result
-    })
-    
     return {
       allAlerts,
       stats,
@@ -129,18 +239,24 @@ createApp({
       filteredAlerts,
       paginatedAlerts,
       hasMore,
+      selectedAsset,
+      currentPrice,
+      priceChange,
+      priceLoading,
       getTypeBadgeClass,
       setFilterAsset,
       setFilterType,
       loadMore,
-      refresh
+      refresh,
+      switchAsset,
+      formatPrice
     }
   },
   template: `
     <div class="container">
       <header>
         <h1>🤖 gold-silver-finance-agent</h1>
-        <div class="subtitle">📊 AI 赋能黄金白银主动监控 - 历史预警中心</div>
+        <div class="subtitle">📊 AI 赋能黄金白银主动监控 - 市场仪表盘</div>
       </header>
 
       <!-- 统计卡片 -->
@@ -155,9 +271,42 @@ createApp({
         </div>
       </div>
 
+      <!-- 价格和K线图区域 -->
+      <div class="price-section">
+        <div class="price-tabs">
+          <div 
+            class="price-tab" 
+            :class="{ active: selectedAsset === 'gold' }"
+            @click="switchAsset('gold')"
+          >
+            黄金 (AU9999)
+          </div>
+          <div 
+            class="price-tab" 
+            :class="{ active: selectedAsset === 'silver' }"
+            @click="switchAsset('silver')"
+          >
+            白银 (AG9999)
+          </div>
+        </div>
+        
+        <div v-if="priceLoading" class="price-loading">加载价格数据中...</div>
+        <div v-else>
+          <div class="current-price-card">
+            <div class="current-price">{{ formatPrice(currentPrice) }}</div>
+            <div v-if="priceChange" :class="['price-change', priceChange.direction]">
+              {{ priceChange.direction === 'up' ? '↑' : '↓' }} 
+              {{ formatPrice(Math.abs(priceChange.value)) }} 
+              ({{ formatPrice(Math.abs(priceChange.pct)) }}%)
+            </div>
+          </div>
+          <div id="kline-chart" class="kline-container"></div>
+        </div>
+      </div>
+
       <!-- 筛选区 -->
       <div class="filters-section">
-        <div class="filters-title">筛选</div>
+        <div class="filters-title">预警筛选</div>
         <div class="filters">
           <div class="filter-group" v-if="assetOptions.length > 0">
             <div class="filter-label">按资产</div>

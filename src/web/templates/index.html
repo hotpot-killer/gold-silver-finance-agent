@@ -5,6 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>gold-silver-finance-agent - 黄金白银智能监控</title>
     <script src="https://cdn.jsdelivr.net/npm/vue@3.4.27/dist/vue.global.prod.js"></script>
+    <script src="https://unpkg.com/lightweight-charts/dist/lightweight-charts.standalone.production.js"></script>
     <style>
         * {
             margin: 0;
@@ -152,6 +153,67 @@
         .refresh-btn:disabled {
             background: #94a3b8;
             cursor: not-allowed;
+        }
+        /* 价格卡片样式 */
+        .price-section {
+            background: var(--card);
+            border-radius: 12px;
+            box-shadow: var(--shadow);
+            padding: 20px;
+            margin-bottom: 24px;
+        }
+        .price-tabs {
+            display: flex;
+            gap: 12px;
+            margin-bottom: 16px;
+            border-bottom: 1px solid var(--border);
+            padding-bottom: 12px;
+        }
+        .price-tab {
+            padding: 8px 20px;
+            border-radius: 8px;
+            cursor: pointer;
+            font-weight: 500;
+            color: var(--text-secondary);
+            transition: all 0.2s;
+        }
+        .price-tab:hover {
+            background: #f1f5f9;
+        }
+        .price-tab.active {
+            background: var(--primary);
+            color: white;
+        }
+        .current-price-card {
+            display: flex;
+            align-items: baseline;
+            gap: 16px;
+            margin-bottom: 16px;
+        }
+        .current-price {
+            font-size: 2.5rem;
+            font-weight: bold;
+            color: var(--text-primary);
+        }
+        .price-change {
+            font-size: 1.2rem;
+        }
+        .price-change.up {
+            color: var(--danger);
+        }
+        .price-change.down {
+            color: var(--success);
+        }
+        .kline-container {
+            width: 100%;
+            height: 400px;
+            border-radius: 8px;
+            overflow: hidden;
+        }
+        .price-loading {
+            text-align: center;
+            padding: 100px 20px;
+            color: var(--text-secondary);
         }
         .alert-list {
             background: var(--card);
