@@ -50,7 +50,23 @@ class PriceMonitor(BaseMonitor):
         self.etf_monitor = etf_monitor
         self.data_dir = Path(data_dir)
         self.data_dir.mkdir(exist_ok=True)
-        self.fetcher = Fetcher()
+        
+        # 获取代理配置，从环境变量读取
+        self.proxies = {}
+        https_proxy = os.environ.get('https_proxy')
+        http_proxy = os.environ.get('http_proxy')
+        if https_proxy:
+            self.proxies['https'] = https_proxy
+        if http_proxy:
+            self.proxies['http'] = http_proxy
+        
+        # 配置Fetcher使用代理
+        from scrapling import Fetcher
+        if self.proxies:
+            self.fetcher = Fetcher(proxy=list(self.proxies.values())[0])
+        else:
+            self.fetcher = Fetcher()
+            
         if token:
             ts.set_token(token)
             self.pro = ts.pro_api()
@@ -136,7 +152,7 @@ class PriceMonitor(BaseMonitor):
             headers = {
                 'User-Agent': 'Mozilla/5.0 (Windows NT 100.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36'
             }
-            resp = requests.get(url, headers=headers, timeout=10)
+            resp = requests.get(url, headers=headers, timeout=10, proxies=self.proxies)
             if resp.status_code == 200:
                 data = resp.json()
                 if data.get('code') == 200 and data.get('data'):
@@ -169,7 +185,7 @@ class PriceMonitor(BaseMonitor):
             headers = {
                 'User-Agent': 'Mozilla/5.0 (Windows NT 100.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36'
             }
-            resp = requests.get(url, headers=headers, timeout=10)
+            resp = requests.get(url, headers=headers, timeout=10, proxies=self.proxies)
             if resp.status_code == 200:
                 data = resp.json()
                 if data.get('code') == 200 and data.get('data'):
