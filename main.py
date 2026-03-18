@@ -269,6 +269,13 @@ def run_once(config: Config) -> bool:
     
     logger.info(f"Summarized {len(summaries)} news items")
     
+    # 抓取宏观大佬最新观点（每天更新一次）
+    logger.info("Step 2.5: Fetching latest guru views...")
+    from src.monitor.guru_fetcher import GuruViewsFetcher
+    guru_fetcher = GuruViewsFetcher(data_dir=config.data_dir)
+    guru_views = guru_fetcher.get_cached_views()  # 自动缓存，一天更新一次
+    logger.info(f"Loaded {len(guru_views)} guru views")
+    
     # 3. 预警检查
     logger.info("Step 3: Checking alert rules...")
     trigger = AlertTrigger(config.alerts.alerts)

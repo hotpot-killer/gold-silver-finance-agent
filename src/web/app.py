@@ -285,6 +285,29 @@ async def api_price(symbol: str):
         logger.error(f"Failed to fetch price for {symbol}: {e}")
         return {'error': str(e), 'data': []}
 
+@app.get("/api/guru-views")
+async def api_guru_views():
+    """获取大佬最新观点"""
+    try:
+        from src.monitor.guru_fetcher import GuruViewsFetcher
+        from config.config import Config
+        
+        # 从配置读取数据目录
+        data_dir = "./data"
+        fetcher = GuruViewsFetcher(data_dir=data_dir)
+        views = fetcher.get_cached_views()
+        return {
+            'success': True,
+            'data': views
+        }
+    except Exception as e:
+        logger.error(f"Failed to fetch guru views: {e}")
+        return {
+            'success': False,
+            'error': str(e),
+            'data': []
+        }
+
 def run_web_server(host='0.0.0.0', port=5000):
     """启动Web服务器"""
     # 确保data目录存在
