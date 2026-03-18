@@ -361,6 +361,52 @@ def run_once(config: Config) -> bool:
     
     content_parts = []
     
+    # 添加今日行情概览 - 主动提供市场概况，即使没有预警
+    if len(prices) > 0:
+        content_parts.append("### 📈 今日行情概览\n\n")
+        # 找到黄金和白银最新价格
+        gold_price = None
+        silver_price = None
+        for p in prices:
+            if p.symbol in ['XAUUSD', 'gold']:
+                gold_price = p
+            if p.symbol in ['XAGUSD', 'silver']:
+                silver_price = p
+        
+        if gold_price:
+            change_emoji = '↑' if gold_price.change >= 0 else '↓'
+            change_color = '' if gold_price.change >= 0 else ''
+            content_parts.append(f"**COMEX黄金**: {gold_price.price:.2f}  {change_emoji} {abs(gold_price.change):.2f} ({gold_price.change_pct:.2f}%)\n\n")
+        
+        if silver_price:
+            change_emoji = '↑' if silver_price.change >= 0 else '↓'
+            content_parts.append(f"**COMEX白银**: {silver_price.price:.2f}  {change_emoji} {abs(silver_price.change):.2f} ({silver_price.change_pct:.2f}%)\n\n")
+        
+        # 如果黄金白银都有数据，显示金银比
+        if gold_price is not None and silver_price is not None and silver_price.price > 0:
+            ratio = gold_price.price / silver_price.price
+            if ratio > 80:
+                content_parts.append(f"**金银比**: {ratio:.1f} 🔺 接近极端高估区间\n\n")
+            elif ratio < 60:
+                content_parts.append(f"**金银比**: {ratio:.1f} 🔻 接近极端低估区间\n\n")
+            else:
+                content_parts.append(f"**金银比**: {ratio:.1f} ✅ 在正常区间(60-80)内\n\n")
+        
+        # 添加技术指标概览（如果有历史数据）
+        if gold_df is not None and len(gold_df) >= 14:
+            from src.alert.indicator import IndicatorCalculator
+            rsi = IndicatorCalculator.rsi(gold_df, 14)
+            current_rsi = rsi.iloc[-1]
+            content_parts.append(f"黄金 RSI(14): {current_rsi:.1f}\n")
+        
+        if silver_df is not None and len(silver_df) >= 14:
+            from src.alert.indicator import IndicatorCalculator
+            rsi = IndicatorCalculator.rsi(silver_df, 14)
+            current_rsi = rsi.iloc[-1]
+            content_parts.append(f"白银 RSI(14): {current_rsi:.1f}\n")
+        
+        content_parts.append("---\n\n")
+    
     if len(summaries) > 0:
         content_parts.append("### 📑 最新研报/新闻总结\n\n")
         for s in summaries:
@@ -374,7 +420,7 @@ def run_once(config: Config) -> bool:
         content_parts.append(format_alerts(all_alerts))
         content_parts.append("\n")
     else:
-        content_parts.append("✅ 没有触发预警规则，市场平稳。\n\n")
+        content_parts.append("✅ 当前没有触发预警规则，市场平稳运行。\n\n")
     
     # 添加 ETF-COMEX 关联分析
     if etf_comex_analysis is not None:
