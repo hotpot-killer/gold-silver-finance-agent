@@ -146,7 +146,7 @@ class PriceMonitor(BaseMonitor):
         return results
     
     def fetch_intl_gold_price(self) -> Optional[PriceData]:
-        """获取伦敦金/国际黄金最新价格
+        """获取伦敦现货黄金最新价格
         使用腾讯财经官方API - 国内网站直连
         """
         try:
@@ -167,7 +167,7 @@ class PriceMonitor(BaseMonitor):
                 change_pct = 0
                 
                 for metal in metals:
-                    if metal["code"] == "GC":  # COMEX 黄金期货
+                    if metal["code"] == "XAU":  # 伦敦现货黄金
                         price = float(metal["zxj"])
                         if "zd" in metal:
                             change = float(metal["zd"])
@@ -179,7 +179,7 @@ class PriceMonitor(BaseMonitor):
                     current_time = datetime.now()
                     return PriceData(
                         symbol="XAUUSD",
-                        name="COMEX黄金",
+                        name="伦敦现货黄金",
                         price=price,
                         change=change,
                         change_pct=change_pct,
@@ -192,7 +192,7 @@ class PriceMonitor(BaseMonitor):
             return None
     
     def fetch_intl_silver_price(self) -> Optional[PriceData]:
-        """获取国际白银最新价格
+        """获取伦敦现货白银最新价格
         使用腾讯财经官方API - 国内网站直连
         """
         try:
@@ -213,7 +213,7 @@ class PriceMonitor(BaseMonitor):
                 change_pct = 0
                 
                 for metal in metals:
-                    if metal["code"] == "SI":  # COMEX 白银期货
+                    if metal["code"] == "XAG":  # 伦敦现货白银
                         price = float(metal["zxj"])
                         if "zd" in metal:
                             change = float(metal["zd"])
@@ -225,7 +225,7 @@ class PriceMonitor(BaseMonitor):
                     current_time = datetime.now()
                     return PriceData(
                         symbol="XAGUSD",
-                        name="COMEX白银",
+                        name="伦敦现货白银",
                         price=price,
                         change=change,
                         change_pct=change_pct,
