@@ -143,35 +143,36 @@ class PriceMonitor(BaseMonitor):
     
     def fetch_intl_gold_price(self) -> Optional[PriceData]:
         """获取伦敦金/国际黄金最新价格
-        使用新浪财经免费API - 国内网站直连
+        使用腾讯财经免费API - 国内网站直连
         """
         try:
-            # 新浪财经免费API
-            url = "https://finance.sina.com.cn/json/quote.jsp?symbol=XAUUSD&symboltype=forex"
+            # 腾讯财经API - 伦敦金代码 XAU
+            url = "https://qt.gtimg.cn/q=XAU"
             headers = {
                 'User-Agent': 'Mozilla/5.0 (Windows NT 100.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36'
             }
             resp = requests.get(url, headers=headers, timeout=10)
             if resp.status_code == 200:
                 text = resp.text
-                # 解析JSON
-                import json
-                data = json.loads(text)
-                if data:
-                    latest = data[0]
-                    price = float(latest.get('price', 0))
-                    change = float(latest.get('diff', 0))
-                    change_pct = float(latest.get('per', 0).strip('%')) if latest.get('per') else 0
-                    current_time = datetime.now()
-                    return PriceData(
-                        symbol="XAUUSD",
-                        name="COMEX黄金",
-                        price=price,
-                        change=change,
-                        change_pct=change_pct,
-                        timestamp=current_time,
-                        volume=None
-                    )
+                # 格式: v_xau="~NYXAU:1984.56 1984.22 1985.43 1983.12..."
+                if 'v_xau=' in text:
+                    data_part = text.split('v_xau="')[1].split('";')[0]
+                    parts = data_part.split(' ')
+                    if len(parts) >= 4:
+                        price = float(parts[1])  # 当前价格
+                        prev_close = float(parts[2])  # 收盘价
+                        change = price - prev_close
+                        change_pct = (change / prev_close) * 100 if prev_close > 0 else 0
+                        current_time = datetime.now()
+                        return PriceData(
+                            symbol="XAUUSD",
+                            name="COMEX黄金",
+                            price=price,
+                            change=change,
+                            change_pct=change_pct,
+                            timestamp=current_time,
+                            volume=None
+                        )
             return None
         except Exception as e:
             logger.error(f"Failed to fetch international gold price: {e}")
@@ -179,33 +180,35 @@ class PriceMonitor(BaseMonitor):
     
     def fetch_intl_silver_price(self) -> Optional[PriceData]:
         """获取国际白银最新价格
-        使用新浪财经免费API - 国内网站直连
+        使用腾讯财经免费API - 国内网站直连
         """
         try:
-            url = "https://finance.sina.com.cn/json/quote.jsp?symbol=XAGUSD&symboltype=forex"
+            # 腾讯财经API - 纽约白银代码 XAG
+            url = "https://qt.gtimg.cn/q=XAG"
             headers = {
                 'User-Agent': 'Mozilla/5.0 (Windows NT 100.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36'
             }
             resp = requests.get(url, headers=headers, timeout=10)
             if resp.status_code == 200:
                 text = resp.text
-                import json
-                data = json.loads(text)
-                if data:
-                    latest = data[0]
-                    price = float(latest.get('price', 0))
-                    change = float(latest.get('diff', 0))
-                    change_pct = float(latest.get('per', 0).strip('%')) if latest.get('per') else 0
-                    current_time = datetime.now()
-                    return PriceData(
-                        symbol="XAGUSD",
-                        name="COMEX白银",
-                        price=price,
-                        change=change,
-                        change_pct=change_pct,
-                        timestamp=current_time,
-                        volume=None
-                    )
+                if 'v_xag=' in text:
+                    data_part = text.split('v_xag=')[1].split('";')[0]
+                    parts = data_part.split(' ')
+                    if len(parts) >= 4:
+                        price = float(parts[1])  # 当前价格
+                        prev_close = float(parts[2])  # 收盘价
+                        change = price - prev_close
+                        change_pct = (change / prev_close) * 100 if prev_close > 0 else 0
+                        current_time = datetime.now()
+                        return PriceData(
+                            symbol="XAGUSD",
+                            name="COMEX白银",
+                            price=price,
+                            change=change,
+                            change_pct=change_pct,
+                            timestamp=current_time,
+                            volume=None
+                        )
             return None
         except Exception as e:
             logger.error(f"Failed to fetch international silver price: {e}")
