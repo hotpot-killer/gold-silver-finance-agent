@@ -140,7 +140,14 @@ class IndicatorCalculator:
     def volatility(df: pd.DataFrame, window: int = 20) -> float:
         """计算最近N天波动率"""
         returns = df.close.pct_change().dropna()
-        return returns.rolling(window=window).std().iloc[-1]
+        # 如果数据量不足，返回0，不触发预警
+        if len(returns) < window:
+            return 0.0
+        vol_rolling = returns.rolling(window=window).std()
+        # 检查最后一个值是否存在
+        if len(vol_rolling.dropna()) == 0:
+            return 0.0
+        return vol_rolling.iloc[-1]
         
     @staticmethod
     def current_deviation_from_ma(df: pd.DataFrame, ma_period: int = 50) -> float:
