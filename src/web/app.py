@@ -155,30 +155,33 @@ async def api_price(symbol: str):
         try:
             from datetime import date
             headers = {
-                'User-Agent': 'Mozilla/5.0 (Windows NT 100.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36'
+                "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36",
+                "Referer": "https://stockapp.finance.qq.com/",
+                "Origin": "https://stockapp.finance.qq.com"
             }
-            if symbol == 'XAUUSD':
-                url = "https://qt.gtimg.cn/q=XAU"
-            else:
-                url = "https://qt.gtimg.cn/q=XAG"
-            
+            url = "https://proxy.finance.qq.com/ifzqgtimg/appstock/app/rank/worldCommodities?"
             resp = requests.get(url, headers=headers, timeout=10)
             if resp.status_code == 200:
-                text = resp.text
+                data = resp.json()
                 price = None
                 prev_close = None
-                if symbol == 'XAUUSD' and 'v_xau=' in text:
-                    data_part = text.split('v_xau=')[1].split('";')[0]
-                    parts = data_part.split(' ')
-                    if len(parts) >= 4:
-                        price = float(parts[1])
-                        prev_close = float(parts[2])
-                elif symbol == 'XAGUSD' and 'v_xag=' in text:
-                    data_part = text.split('v_xag=')[1].split('";')[0]
-                    parts = data_part.split(' ')
-                    if len(parts) >= 4:
-                        price = float(parts[1])
-                        prev_close = float(parts[2])
+                change = 0
+                if data.get("code") == 0 and "data" in data and "preciousMetal" in data["data"]:
+                    metals = data["data"]["preciousMetal"]
+                    if symbol == 'XAUUSD':
+                        for metal in metals:
+                            if metal["code"] == "GC":
+                                price = float(metal["zxj"])
+                                if "zd" in metal:
+                                    change = float(metal["zd"])
+                                break
+                    else: # XAGUSD
+                        for metal in metals:
+                            if metal["code"] == "SI":
+                                price = float(metal["zxj"])
+                                if "zd" in metal:
+                                    change = float(metal["zd"])
+                                break
                 
                 # 如果成功获取到价格，更新到本地CSV
                 if price is not None:
