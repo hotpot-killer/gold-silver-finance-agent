@@ -334,6 +334,46 @@ createApp({
           </div>
         </div>
 
+        <!-- 知名宏观大佬最新观点 -->
+        <div class="guru-section">
+          <div class="card-title">🤔 知名宏观大佬最新黄金观点（人群智慧参考）</div>
+          <div class="guru-grid">
+            <div class="guru-card">
+              <div class="guru-name">Peter Schiff</div>
+              <div class="guru-title">金虫之王 / 黄金坚定多头</div>
+              <div class="guru-view">📝 最新 (2026-03-16): "黄金回踩5000美元支撑位，因为市场还没理解战争会加速去美元化——现在就是买dip的时候。白银刚突破，矿业股被打到熊市区域，反而是买入机会。"</div>
+              <span class="guru-tone tone-bullish">极度看多 (目标 6000-7000+)</span>
+            </div>
+            <div class="guru-card">
+              <div class="guru-name">Ray Dalio</div>
+              <div class="guru-title">桥水创始人 / 宏观对冲之王</div>
+              <div class="guru-view">📝 最新 (2026-01): "黄金已经是全球第二大储备货币，是对法币风险的最佳对冲，建议组合里配 5-15%。"</div>
+              <span class="guru-tone tone-bullish">长期看多 / 战略配置</span>
+            </div>
+            <div class="guru-card">
+              <div class="guru-name">Jim Rickards</div>
+              <div class="guru-title">《货币战争》作者 / 极端看多派</div>
+              <div class="guru-view">📝 当前口径：2026年底可能冲1万美元（甚至更高），BRICS+去美元化是核心逻辑。</div>
+              <span class="guru-tone tone-bullish">极度看多 (目标 10000+)</span>
+            </div>
+            <div class="guru-card">
+              <div class="guru-name">谢爱民</div>
+              <div class="guru-title">闪电资管基金经理 / 国内黄金圈热门</div>
+              <div class="guru-view">📝 最新 (2026-02): "极端情况下2026年金价可达7000美元。"</div>
+              <span class="guru-tone tone-bullish">看多</span>
+            </div>
+            <div class="guru-card">
+              <div class="guru-name">张明</div>
+              <div class="guru-title">中国社科院金融所副所长 / 谨慎派代表</div>
+              <div class="guru-view">📝 最新观点：2026上半年可能回调 10-20% (美元震荡+获利了结)。</div>
+              <span class="guru-tone tone-bearish">短期谨慎看空</span>
+            </div>
+          </div>
+          <div style="margin-top: 12px; font-size: 0.85rem; color: var(--text-secondary);">
+            💡 提示：去大佬Twitter/X主页看最新动态，这里只保留最新核心观点供快速参考
+          </div>
+        </div>
+
         <div class="recent-alerts-card">
           <div class="card-title">⏱️ 最近触发的预警</div>
           <div v-if="hasRecentAlerts">

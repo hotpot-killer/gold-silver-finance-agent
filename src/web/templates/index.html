@@ -147,6 +147,63 @@
             font-weight: 500;
             color: var(--text-primary);
         }
+        /* 大佬观点专区样式 */
+        .guru-section {
+            background: var(--card);
+            border-radius: 12px;
+            box-shadow: var(--shadow);
+            padding: 20px;
+            margin-bottom: 24px;
+        }
+        .guru-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(350px, 1fr));
+            gap: 16px;
+        }
+        .guru-card {
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            padding: 16px;
+            transition: box-shadow 0.2s;
+        }
+        .guru-card:hover {
+            box-shadow: var(--shadow-lg);
+        }
+        .guru-name {
+            font-size: 1.1rem;
+            font-weight: 600;
+            color: var(--primary);
+            margin-bottom: 4px;
+        }
+        .guru-title {
+            font-size: 0.85rem;
+            color: var(--text-secondary);
+            margin-bottom: 10px;
+        }
+        .guru-view {
+            font-size: 0.9rem;
+            line-height: 1.5;
+            margin-bottom: 8px;
+        }
+        .guru-tone {
+            display: inline-block;
+            font-size: 0.75rem;
+            padding: 2px 8px;
+            border-radius: 12px;
+            font-weight: 500;
+        }
+        .tone-bullish {
+            background: #dcfce7;
+            color: #166534;
+        }
+        .tone-bearish {
+            background: #fee2e2;
+            color: #991b1b;
+        }
+        .tone-neutral {
+            background: #fef3c7;
+            color: #92400e;
+        }
         .recent-alert-time {
             font-size: 0.8rem;
             color: var(--text-secondary);
