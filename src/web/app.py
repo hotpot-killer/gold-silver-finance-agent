@@ -110,7 +110,58 @@ async def api_stats():
 
 @app.get("/api/price/{symbol}")
 async def api_price(symbol: str):
-    """API - 获取价格历史数据用于K线图"""
+    """API - 获取价格历史数据用于K线图
+    - 对于 XAUUSD/XAGUSD 从本地CSV读取（国际黄金/白银）
+    - 对于其他symbol从tushare读取
+    """
+    from pathlib import Path
+    import pandas as pd
+    
+    # 国际黄金/白银从本地CSV读取
+    if symbol in ['XAUUSD', 'XAGUSD']:
+        data_dir = Path('./data')
+        csv_path = data_dir / f"{symbol}_prices.csv"
+        if not csv_path.exists():
+            return {'error': f'No history data for {symbol}, please run monitoring first', 'data': []}
+        
+        try:
+            from datetime import datetime
+            df = pd.read_csv(csv_path)
+            df = df.sort_values('trade_date')
+            
+            # 获取最近一年的数据
+            if len(df) > 365:
+                df = df.tail(365)
+            
+            # 转换为K线图需要的格式
+            candles = []
+            for _, row in df.iterrows():
+                # 转换时间格式 trade_date YYYYMMDD -> timestamp
+                date_str = str(int(row.trade_date))
+                dt = datetime(int(date_str[:4]), int(date_str[4:6]), int(date_str[6:8]))
+                timestamp = int(dt.timestamp())
+                candles.append({
+                    'time': timestamp,
+                    'open': float(row.open),
+                    'high': float(row.high),
+                    'low': float(row.low),
+                    'close': float(row.close),
+                    'volume': float(row.vol) if row.vol else 0
+                })
+            
+            latest = candles[-1] if candles else None
+            
+            return {
+                'symbol': symbol,
+                'latest': latest,
+                'count': len(candles),
+                'data': candles
+            }
+        except Exception as e:
+            logger.error(f"Failed to read local price for {symbol}: {e}")
+            return {'error': str(e), 'data': []}
+    
+    # 其他symbol从tushare读取
     token = get_tushare_token()
     if not token:
         return {'error': 'Tushare token not configured', 'data': []}
@@ -124,7 +175,7 @@ async def api_price(symbol: str):
         df = pro.daily(ts_code=symbol, start_date=start_date)
         df = df.sort_values('trade_date')
         
-        # 转换为K线图需要的格式 [time, open, high, low, close]
+        # 转换为K线图需要的格式
         candles = []
         for _, row in df.iterrows():
             # 转换时间格式 trade_date YYYYMMDD -> timestamp

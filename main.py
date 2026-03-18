@@ -221,7 +221,8 @@ def run_once(config: Config) -> bool:
         config.monitor.stocks,
         config.monitor.gold.get('enabled', True),
         config.monitor.silver.get('enabled', True),
-        config.monitor.etf_monitor.get('enabled', True)
+        config.monitor.etf_monitor.get('enabled', True),
+        data_dir=config.data_dir
     )
     prices = price_monitor.fetch_latest()
     

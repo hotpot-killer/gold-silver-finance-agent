@@ -29,12 +29,12 @@ monitor:
   # 监控黄金
   gold:
     enabled: true
-    symbol: "AU9999"
+    symbol: "XAUUSD"  # COMEX伦敦金，使用新浪财经免费API获取
   
   # 监控白银
   silver:
     enabled: true
-    symbol: "AG9999"
+    symbol: "XAGUSD"  # COMEX白银，使用新浪财经免费API获取
   
   # 监控 ETF 持仓 
   # 市场经验：

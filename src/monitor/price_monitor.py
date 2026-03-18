@@ -1,10 +1,14 @@
 import logging
+import os
+import json
 from dataclasses import dataclass
 import pandas as pd
-from datetime import datetime
+from datetime import datetime, date
 from typing import List, Optional
 import tushare as ts
+import requests
 from scrapling import Fetcher
+from pathlib import Path
 from .base import BaseMonitor, PriceData
 
 logger = logging.getLogger(__name__)
@@ -24,12 +28,12 @@ class COMEXInventory:
     """COMEX库存数据"""
     commodity: str  # gold/silver
     date: str
-    inventory: float  # 库存
+    inventory: float
     change: float  # 变化
     change_pct: float  # 变化百分比
 
 class PriceMonitor(BaseMonitor):
-    """价格行情监控 - Tushare + 金银ETF/COMEX库存
+    """价格行情监控 - 国际黄金(COMEX)/白银 + Tushare国内 + 金银ETF/COMEX库存
     专注监控黄金白银市场
     """
     
@@ -37,23 +41,48 @@ class PriceMonitor(BaseMonitor):
                  stocks: List[str] = None, 
                  gold_enabled: bool = True, 
                  silver_enabled: bool = True, 
-                 etf_monitor: bool = True):
+                 etf_monitor: bool = True,
+                 data_dir: str = "./data"):
         self.token = token
         self.stocks = stocks or []  # 黄金白银相关股票
         self.gold_enabled = gold_enabled
         self.silver_enabled = silver_enabled
         self.etf_monitor = etf_monitor
+        self.data_dir = Path(data_dir)
+        self.data_dir.mkdir(exist_ok=True)
         self.fetcher = Fetcher()
-        ts.set_token(token)
-        self.pro = ts.pro_api()
+        if token:
+            ts.set_token(token)
+            self.pro = ts.pro_api()
+        else:
+            self.pro = None
         
     def fetch_latest(self) -> List[PriceData]:
         """获取最新价格数据"""
         results = []
         
+        # 获取国际黄金价格 (COMEX/伦敦金)
+        if self.gold_enabled:
+            gold_price = self.fetch_intl_gold_price()
+            if gold_price:
+                results.append(gold_price)
+                # 保存到本地历史数据
+                self.save_price_to_local('XAUUSD', gold_price)
+                logger.info(f"Fetched international gold price: {gold_price.price:.2f}")
+        
+        # 获取国际白银价格 (COMEX)
+        if self.silver_enabled:
+            silver_price = self.fetch_intl_silver_price()
+            if silver_price:
+                results.append(silver_price)
+                self.save_price_to_local('XAGUSD', silver_price)
+                logger.info(f"Fetched international silver price: {silver_price.price:.2f}")
+        
         # 获取股票实时行情（黄金白银相关个股）
         for symbol in self.stocks:
             try:
+                if not self.pro:
+                    continue
                 # 获取最新日线数据
                 df = self.pro.daily(ts_code=symbol)
                 if not df.empty:
@@ -70,7 +99,7 @@ class PriceMonitor(BaseMonitor):
             except Exception as e:
                 logger.error(f"Failed to fetch {symbol}: {e}")
                 
-        logger.info(f"Fetched {len(results)} price data for {len(self.stocks)} stocks")
+        logger.info(f"Fetched {len(results)} price data total")
         
         # 如果启用了ETF监控，添加GLD/SLV持仓
         if self.etf_monitor:
@@ -96,6 +125,95 @@ class PriceMonitor(BaseMonitor):
                 logger.info(f"COMEX silver inventory: {silver_inv.inventory:.0f} oz, change: {silver_inv.change_pct:.2f}%")
         
         return results
+    
+    def fetch_intl_gold_price(self) -> Optional[PriceData]:
+        """获取伦敦金/国际黄金最新价格
+        使用新浪财经免费API
+        """
+        try:
+            # 新浪财经API获取黄金价格
+            url = "https://finance.sina.com.cn/json/quote/intl/XAUUSD="
+            resp = requests.get(url, timeout=10)
+            if resp.status_code == 200:
+                # 解析返回的数据
+                data = resp.json()
+                if data and len(data) > 0:
+                    latest = data[0]
+                    price = float(latest.get('price', 0))
+                    change = float(latest.get('change', 0))
+                    change_pct = float(latest.get('change_pct', 0).strip('%'))
+                    current_time = datetime.now()
+                    return PriceData(
+                        symbol="XAUUSD",
+                        name="COMEX黄金",
+                        price=price,
+                        change=change,
+                        change_pct=change_pct,
+                        timestamp=current_time,
+                        volume=None
+                    )
+            return None
+        except Exception as e:
+            logger.error(f"Failed to fetch international gold price: {e}")
+            return None
+    
+    def fetch_intl_silver_price(self) -> Optional[PriceData]:
+        """获取国际白银最新价格
+        使用新浪财经免费API
+        """
+        try:
+            url = "https://finance.sina.com.cn/json/quote/intl/XAGUSD="
+            resp = requests.get(url, timeout=10)
+            if resp.status_code == 200:
+                data = resp.json()
+                if data and len(data) > 0:
+                    latest = data[0]
+                    price = float(latest.get('price', 0))
+                    change = float(latest.get('change', 0))
+                    change_pct = float(latest.get('change_pct', 0).strip('%'))
+                    current_time = datetime.now()
+                    return PriceData(
+                        symbol="XAGUSD",
+                        name="COMEX白银",
+                        price=price,
+                        change=change,
+                        change_pct=change_pct,
+                        timestamp=current_time,
+                        volume=None
+                    )
+            return None
+        except Exception as e:
+            logger.error(f"Failed to fetch international silver price: {e}")
+            return None
+    
+    def save_price_to_local(self, symbol: str, price: PriceData):
+        """保存价格到本地CSV文件，用于历史数据查询"""
+        csv_path = self.data_dir / f"{symbol}_prices.csv"
+        today_str = date.today().strftime("%Y%m%d")
+        
+        # 创建新DataFrame
+        new_row = pd.DataFrame([{
+            'trade_date': today_str,
+            'open': price.price,
+            'high': price.price,
+            'low': price.price,
+            'close': price.price,
+            'vol': price.volume or 0
+        }])
+        
+        if csv_path.exists():
+            # 读取已有数据
+            df = pd.read_csv(csv_path)
+            # 如果今天已经有数据，更新，否则添加
+            if len(df[df['trade_date'] == int(today_str)]) > 0:
+                df.loc[df['trade_date'] == int(today_str), 'close'] = price.price
+            else:
+                df = pd.concat([df, new_row], ignore_index=True)
+        else:
+            df = new_row
+        
+        df.to_csv(csv_path, index=False)
+        logger.debug(f"Saved {symbol} price to {csv_path}")
         
     def fetch_gld_holdings(self) -> Optional[ETFHoldings]:
         """获取SPDR Gold Trust (GLD) 最新持仓
@@ -223,8 +341,27 @@ class PriceMonitor(BaseMonitor):
             return None
         
     def get_history(self, symbol: str, start_date: str, end_date: str = None) -> pd.DataFrame:
-        """获取历史数据用于指标计算"""
+        """获取历史数据用于指标计算
+        对于国际黄金(XAUUSD)和白银(XAGUSD)，从本地CSV读取
+        对于股票，从tushare读取
+        """
+        # 如果是国际黄金/白银，从本地读取
+        if symbol in ['XAUUSD', 'XAGUSD', 'gold', 'silver']:
+            actual_symbol = 'XAUUSD' if symbol in ['gold', 'XAUUSD'] else 'XAGUSD'
+            csv_path = self.data_dir / f"{actual_symbol}_prices.csv"
+            if not csv_path.exists():
+                logger.warning(f"No local history found for {symbol}")
+                return pd.DataFrame()
+            
+            df = pd.read_csv(csv_path)
+            df = df.sort_values('trade_date')
+            return df
+        
+        # 如果是其他symbol，用tushare
         try:
+            if not self.pro:
+                logger.error(f"No tushare token configured for {symbol}")
+                return pd.DataFrame()
             df = self.pro.daily(ts_code=symbol, start_date=start_date, end_date=end_date)
             df = df.sort_values('trade_date')
             return df

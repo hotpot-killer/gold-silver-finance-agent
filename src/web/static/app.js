@@ -51,7 +51,7 @@ createApp({
     }
     
     const fetchPrice = async (asset) => {
-      const symbol = asset === 'gold' ? 'AU9999' : 'AG9999'
+      const symbol = asset === 'gold' ? 'XAUUSD' : 'XAGUSD'
       priceLoading.value = true
       try {
         const res = await fetch(`/api/price/${symbol}`)
