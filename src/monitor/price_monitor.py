@@ -77,25 +77,21 @@ class PriceMonitor(BaseMonitor):
             self.pro = None
         
     def fetch_latest(self) -> List[PriceData]:
-        """获取最新价格数据"""
+        """获取最新价格数据
+        获取伦敦现货 + COMEX期货 四种价格
+        """
         results = []
         
-        # 获取国际黄金价格 (COMEX/伦敦金)
-        if self.gold_enabled:
-            gold_price = self.fetch_intl_gold_price()
-            if gold_price:
-                results.append(gold_price)
-                # 保存到本地历史数据
-                self.save_price_to_local('XAUUSD', gold_price)
-                logger.info(f"Fetched international gold price: {gold_price.price:.2f}")
-        
-        # 获取国际白银价格 (COMEX)
-        if self.silver_enabled:
-            silver_price = self.fetch_intl_silver_price()
-            if silver_price:
-                results.append(silver_price)
-                self.save_price_to_local('XAGUSD', silver_price)
-                logger.info(f"Fetched international silver price: {silver_price.price:.2f}")
+        # 获取伦敦现货黄金 + COMEX黄金期货 + 伦敦现货白银 + COMEX白银期货
+        if self.gold_enabled or self.silver_enabled:
+            intl_prices = self.fetch_intl_prices()
+            for price in intl_prices:
+                # 伦敦现货保存到XAUUSD/XAGUSD，期货保存到GC/SI
+                symbol = price.symbol
+                results.append(price)
+                if symbol in ['XAUUSD', 'XAGUSD']:
+                    self.save_price_to_local(symbol, price)
+            logger.info(f"Fetched {len(intl_prices)} international prices")
         
         # 获取股票实时行情（黄金白银相关个股）
         for symbol in self.stocks:
@@ -145,10 +141,11 @@ class PriceMonitor(BaseMonitor):
         
         return results
     
-    def fetch_intl_gold_price(self) -> Optional[PriceData]:
-        """获取伦敦现货黄金最新价格
+    def fetch_intl_prices(self) -> List[PriceData]:
+        """获取伦敦现货 + COMEX期货黄金白银
         使用腾讯财经官方API - 国内网站直连
         """
+        results = []
         try:
             url = "https://proxy.finance.qq.com/ifzqgtimg/appstock/app/rank/worldCommodities?"
             headers = {
@@ -162,80 +159,87 @@ class PriceMonitor(BaseMonitor):
             
             if data.get("code") == 0 and "data" in data and "preciousMetal" in data["data"]:
                 metals = data["data"]["preciousMetal"]
-                price = None
-                change = 0
-                change_pct = 0
-                
+                # 伦敦现货黄金
                 for metal in metals:
-                    if metal["code"] == "XAU":  # 伦敦现货黄金
+                    if metal["code"] == "XAU":
                         price = float(metal["zxj"])
-                        if "zd" in metal:
-                            change = float(metal["zd"])
-                        if "zde" in metal:
-                            change_pct = float(metal["zde"])
+                        change = float(metal.get("zd", 0))
+                        change_pct = float(metal.get("zde", 0))
+                        current_time = datetime.now()
+                        results.append(PriceData(
+                            symbol="XAUUSD",
+                            name="伦敦现货黄金",
+                            price=price,
+                            change=change,
+                            change_pct=change_pct,
+                            timestamp=current_time,
+                            volume=None
+                        ))
+                        logger.info(f"Fetched London Spot Gold price: {price:.2f}")
                         break
                 
-                if price is not None:
-                    current_time = datetime.now()
-                    return PriceData(
-                        symbol="XAUUSD",
-                        name="伦敦现货黄金",
-                        price=price,
-                        change=change,
-                        change_pct=change_pct,
-                        timestamp=current_time,
-                        volume=None
-                    )
-            return None
-        except Exception as e:
-            logger.error(f"Failed to fetch international gold price: {e}")
-            return None
-    
-    def fetch_intl_silver_price(self) -> Optional[PriceData]:
-        """获取伦敦现货白银最新价格
-        使用腾讯财经官方API - 国内网站直连
-        """
-        try:
-            url = "https://proxy.finance.qq.com/ifzqgtimg/appstock/app/rank/worldCommodities?"
-            headers = {
-                "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36",
-                "Referer": "https://stockapp.finance.qq.com/",
-                "Origin": "https://stockapp.finance.qq.com"
-            }
-            resp = requests.get(url, headers=headers, timeout=10, proxies=self.proxies if self.proxies else None)
-            resp.raise_for_status()
-            data = resp.json()
-            
-            if data.get("code") == 0 and "data" in data and "preciousMetal" in data["data"]:
-                metals = data["data"]["preciousMetal"]
-                price = None
-                change = 0
-                change_pct = 0
-                
+                # COMEX黄金期货
                 for metal in metals:
-                    if metal["code"] == "XAG":  # 伦敦现货白银
+                    if metal["code"] == "GC":
                         price = float(metal["zxj"])
-                        if "zd" in metal:
-                            change = float(metal["zd"])
-                        if "zde" in metal:
-                            change_pct = float(metal["zde"])
+                        change = float(metal.get("zd", 0))
+                        change_pct = float(metal.get("zde", 0))
+                        current_time = datetime.now()
+                        results.append(PriceData(
+                            symbol="GC",
+                            name="COMEX黄金期货",
+                            price=price,
+                            change=change,
+                            change_pct=change_pct,
+                            timestamp=current_time,
+                            volume=None
+                        ))
+                        logger.info(f"Fetched COMEX Gold Futures price: {price:.2f}")
                         break
                 
-                if price is not None:
-                    current_time = datetime.now()
-                    return PriceData(
-                        symbol="XAGUSD",
-                        name="伦敦现货白银",
-                        price=price,
-                        change=change,
-                        change_pct=change_pct,
-                        timestamp=current_time,
-                        volume=None
-                    )
-            return None
+                # 伦敦现货白银
+                for metal in metals:
+                    if metal["code"] == "XAG":
+                        price = float(metal["zxj"])
+                        change = float(metal.get("zd", 0))
+                        change_pct = float(metal.get("zde", 0))
+                        current_time = datetime.now()
+                        results.append(PriceData(
+                            symbol="XAGUSD",
+                            name="伦敦现货白银",
+                            price=price,
+                            change=change,
+                            change_pct=change_pct,
+                            timestamp=current_time,
+                            volume=None
+                        ))
+                        logger.info(f"Fetched London Spot Silver price: {price:.2f}")
+                        break
+                
+                # COMEX白银期货
+                for metal in metals:
+                    if metal["code"] == "SI":
+                        price = float(metal["zxj"])
+                        change = float(metal.get("zd", 0))
+                        change_pct = float(metal.get("zde", 0))
+                        current_time = datetime.now()
+                        results.append(PriceData(
+                            symbol="SI",
+                            name="COMEX白银期货",
+                            price=price,
+                            change=change,
+                            change_pct=change_pct,
+                            timestamp=current_time,
+                            volume=None
+                        ))
+                        logger.info(f"Fetched COMEX Silver Futures price: {price:.2f}")
+                        break
+                
+            logger.info(f"Fetched {len(results)} international prices total")
+            return results
         except Exception as e:
-            logger.error(f"Failed to fetch international silver price: {e}")
-            return None
+            logger.error(f"Failed to fetch international prices: {e}")
+            return results
     
     def save_price_to_local(self, symbol: str, price: PriceData):
         """保存价格到本地CSV文件，用于历史数据查询
