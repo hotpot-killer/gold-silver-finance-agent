@@ -168,5 +168,6 @@ schedule:
   # 交易时段才运行
   only_trading_hours: true
   trading_hours:
-    start: "09:30"
-    end: "15:00"
+    # 伦敦金交易时间（北京时间）：周一 06:00 ~ 周六 04:00
+    start: "06:00"
+    end: "04:00"

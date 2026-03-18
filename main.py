@@ -279,7 +279,39 @@ def run_once(config: Config) -> bool:
             alerts = trigger.check_all(symbol, df)
             all_alerts.extend(alerts)
     
-    # TODO: gold 单独处理
+    # 黄金单独处理
+    if config.monitor.gold.get('enabled', False):
+        gold_symbol = config.monitor.gold.get('symbol', 'AU9999')
+        df = price_monitor.get_history(gold_symbol, start_date='20240101')
+        if not df.empty:
+            alerts = trigger.check_all('gold', df)
+            all_alerts.extend(alerts)
+            logger.info(f"Checked gold ({gold_symbol}), found {len(alerts)} alerts")
+    
+    # 白银单独处理
+    if config.monitor.silver.get('enabled', False):
+        silver_symbol = config.monitor.silver.get('symbol', 'AG9999')
+        df = price_monitor.get_history(silver_symbol, start_date='20240101')
+        if not df.empty:
+            alerts = trigger.check_all('silver', df)
+            all_alerts.extend(alerts)
+            logger.info(f"Checked silver ({silver_symbol}), found {len(alerts)} alerts")
+    
+    # GLD 持仓异动检查
+    if config.monitor.etf_monitor.get('enabled', False) and config.monitor.etf_monitor.get('gld', True):
+        # GLD 持仓变化也需要检查预警
+        df = price_monitor.get_history('GLD', start_date='20240101')
+        if not df.empty:
+            alerts = trigger.check_all('gld', df)
+            all_alerts.extend(alerts)
+    
+    # SLV 持仓异动检查
+    if config.monitor.etf_monitor.get('enabled', False) and config.monitor.etf_monitor.get('slv', True):
+        df = price_monitor.get_history('SLV', start_date='20240101')
+        if not df.empty:
+            alerts = trigger.check_all('slv', df)
+            all_alerts.extend(alerts)
+    
     logger.info(f"Found {len(all_alerts)} triggered alerts")
     
     # 记录预警到日志文件供Web界面查看
@@ -296,6 +328,7 @@ def run_once(config: Config) -> bool:
                 'asset': alert.asset,
                 'type': alert.type,
                 'message': alert.message,
+                'suggestion': alert.suggestion,
                 'timestamp': current_time
             }
             f.write(json.dumps(alert_log, ensure_ascii=False) + '\n')
@@ -389,10 +422,22 @@ def main():
             start_h, start_m = map(int, config.schedule.trading_hours.start.split(':'))
             end_h, end_m = map(int, config.schedule.trading_hours.end.split(':'))
             
-            start_dt = now.replace(hour=start_h, minute=start_m, second=0)
-            end_dt = now.replace(hour=end_h, minute=end_m, second=0)
+            # 伦敦金交易时间处理：如果结束时间早于开始时间，说明跨天
+            if end_h > start_h or (end_h == start_h and end_m > start_m):
+                # 同一天内
+                start_dt = now.replace(hour=start_h, minute=start_m, second=0)
+                end_dt = now.replace(hour=end_h, minute=end_m, second=0)
+                in_hours = start_dt <= now <= end_dt
+            else:
+                # 跨天（例如 06:00 ~ 次日 04:00）
+                if now.hour >= start_h or now.hour < end_h or (now.hour == end_h and now.minute < end_m):
+                    in_hours = True
+                else:
+                    in_hours = False
             
-            if start_dt <= now <= end_dt and now.weekday() < 5:  # 工作日
+            # 伦敦金：周一 (0) 到 周六 (5) 交易，周日 (6) 休市（实际周日傍晚已开盘，保留周日判断给配置控制）
+            # 如果需要周日也运行，可以把工作日范围改成 < 6
+            if in_hours and now.weekday() <= 5:  # 周一到周六
                 run_once(config)
             else:
                 logger.info("Not in trading hours, skipping")
