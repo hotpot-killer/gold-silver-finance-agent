@@ -24,7 +24,7 @@ createApp({
     const priceLoading = ref(false)
     const guruViews = ref([])
     const guruLoading = ref(false)
-    priceData = ref({
+    const priceData = ref({
       gold: { symbol: 'AU9999', data: [], latest: null },
       silver: { symbol: 'AG9999', data: [], latest: null },
     })

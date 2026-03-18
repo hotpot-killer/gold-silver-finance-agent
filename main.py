@@ -324,7 +324,7 @@ def run_once(config: Config) -> bool:
         if cot_data:
             cot_extreme_alerts = cot_fetcher.check_extreme_positioning(cot_data)
             if cot_extreme_alerts:
-                alerts = trigger.check_all('cot', None, cot_alerts=cot_extreme_alerts)
+                alerts = trigger.check_all('cot', None, None, None, cot_extreme_alerts)
                 all_alerts.extend(alerts)
                 logger.info(f"Checked COT positioning, found {len(alerts)} extreme alerts")
     

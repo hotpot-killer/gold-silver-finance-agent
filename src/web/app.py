@@ -290,9 +290,8 @@ async def api_guru_views():
     """获取大佬最新观点"""
     try:
         from src.monitor.guru_fetcher import GuruViewsFetcher
-        from config.config import Config
         
-        # 从配置读取数据目录
+        # 数据目录
         data_dir = "./data"
         fetcher = GuruViewsFetcher(data_dir=data_dir)
         views = fetcher.get_cached_views()
