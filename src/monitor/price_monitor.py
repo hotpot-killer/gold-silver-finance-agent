@@ -128,20 +128,23 @@ class PriceMonitor(BaseMonitor):
     
     def fetch_intl_gold_price(self) -> Optional[PriceData]:
         """获取伦敦金/国际黄金最新价格
-        使用新浪财经免费API
+        使用金投网免费API
         """
         try:
-            # 新浪财经API获取黄金价格
-            url = "https://finance.sina.com.cn/json/quote/intl/XAUUSD="
-            resp = requests.get(url, timeout=10)
+            # 金投网免费API获取黄金价格
+            url = "https://www.cngoldquote.com/api/getQuote?code=XAUUSD"
+            headers = {
+                'User-Agent': 'Mozilla/5.0 (Windows NT 100.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36'
+            }
+            resp = requests.get(url, headers=headers, timeout=10)
             if resp.status_code == 200:
-                # 解析返回的数据
                 data = resp.json()
-                if data and len(data) > 0:
-                    latest = data[0]
-                    price = float(latest.get('price', 0))
-                    change = float(latest.get('change', 0))
-                    change_pct = float(latest.get('change_pct', 0).strip('%'))
+                if data.get('code') == 200 and data.get('data'):
+                    latest = data['data']
+                    price = float(latest.get('lastPrice', 0))
+                    prev_close = float(latest.get('closePrice', 0))
+                    change = price - prev_close
+                    change_pct = (change / prev_close) * 100 if prev_close > 0 else 0
                     current_time = datetime.now()
                     return PriceData(
                         symbol="XAUUSD",
@@ -159,18 +162,22 @@ class PriceMonitor(BaseMonitor):
     
     def fetch_intl_silver_price(self) -> Optional[PriceData]:
         """获取国际白银最新价格
-        使用新浪财经免费API
+        使用金投网免费API
         """
         try:
-            url = "https://finance.sina.com.cn/json/quote/intl/XAGUSD="
-            resp = requests.get(url, timeout=10)
+            url = "https://www.cngoldquote.com/api/getQuote?code=XAGUSD"
+            headers = {
+                'User-Agent': 'Mozilla/5.0 (Windows NT 100.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36'
+            }
+            resp = requests.get(url, headers=headers, timeout=10)
             if resp.status_code == 200:
                 data = resp.json()
-                if data and len(data) > 0:
-                    latest = data[0]
-                    price = float(latest.get('price', 0))
-                    change = float(latest.get('change', 0))
-                    change_pct = float(latest.get('change_pct', 0).strip('%'))
+                if data.get('code') == 200 and data.get('data'):
+                    latest = data['data']
+                    price = float(latest.get('lastPrice', 0))
+                    prev_close = float(latest.get('closePrice', 0))
+                    change = price - prev_close
+                    change_pct = (change / prev_close) * 100 if prev_close > 0 else 0
                     current_time = datetime.now()
                     return PriceData(
                         symbol="XAGUSD",

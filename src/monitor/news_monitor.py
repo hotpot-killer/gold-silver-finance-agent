@@ -48,14 +48,16 @@ class NewsMonitor(BaseMonitor):
         
     def _parse_wallstreetcn(self, cutoff: datetime) -> List[NewsItem]:
         """解析华尔街见闻"""
+        from parsel import Selector
         url = "https://wallstreetcn.com/news"
         page = self.fetcher.get(url)
+        selector = Selector(page.text)
         results = []
         
-        for article in page.select('.article-item'):
+        for article in selector.css('.article-item'):
             try:
-                title = article.select_one('.title').get_text().strip()
-                url = article.select_one('a').get('href')
+                title = article.css('.title::text').get().strip()
+                url = article.css('a::attr(href)').get()
                 results.append(NewsItem(
                     title=title,
                     content='',
@@ -70,14 +72,16 @@ class NewsMonitor(BaseMonitor):
         
     def _parse_xueqiu(self, cutoff: datetime) -> List[NewsItem]:
         """解析雪球"""
+        from parsel import Selector
         url = "https://xueqiu.com/news"
         page = self.fetcher.get(url)
+        selector = Selector(page.text)
         results = []
         
-        for article in page.select('.news-item'):
+        for article in selector.css('.news-item'):
             try:
-                title = article.select_one('.title').get_text().strip()
-                url = article.select_one('a').get('href')
+                title = article.css('.title::text').get().strip()
+                url = article.css('a::attr(href)').get()
                 results.append(NewsItem(
                     title=title,
                     content='',
