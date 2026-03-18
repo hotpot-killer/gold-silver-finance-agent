@@ -101,8 +101,8 @@ class Config:
         only_trading_hours: bool = True
         @dataclass
         class TradingHours:
-            start: str = "09:30"
-            end: str = "15:00"
+            start: str = "06:00"
+            end: str = "04:00"
         trading_hours: TradingHours = field(default_factory=TradingHours)
     schedule: ScheduleConfig = field(default_factory=ScheduleConfig)
 
@@ -160,8 +160,8 @@ def load_config(config_path: str = "config/config.yaml") -> Config:
     if 'schedule' in data:
         config.schedule.only_trading_hours = data['schedule'].get('only_trading_hours', True)
         if 'trading_hours' in data['schedule']:
-            config.schedule.trading_hours.start = data['schedule']['trading_hours'].get('start', '09:30')
-            config.schedule.trading_hours.end = data['schedule']['trading_hours'].get('end', '15:00')
+            config.schedule.trading_hours.start = data['schedule']['trading_hours'].get('start', '06:00')
+            config.schedule.trading_hours.end = data['schedule']['trading_hours'].get('end', '04:00')
     
     logging.getLogger().setLevel(config.log_level)
     return config
@@ -209,11 +209,23 @@ def send_notification(config: Config, title: str, content: str) -> bool:
     return notified
 
 def run_once(config: Config) -> bool:
-    """运行一次完整监控流程"""
+    """
+    运行一次完整监控流程
+    ===========================================
+    Step 1: 获取最新数据（价格 + 新闻）
+    Step 2: 新闻研报总结（LLM过滤总结）
+    Step 3: 检查所有预警规则（技术指标 + COT + ETF）
+    Step 4: 更新宏观大佬观点（每日自动更新缓存）
+    Step 5: 组装通知 + LLM综合分析（技术+观点→最终结论）
+    Step 6: 发送通知
+    ===========================================
+    """
     logger.info("Starting finance agent monitoring round...")
     
-    # 1. 监控 - 获取新闻和价格
-    logger.info("Step 1: Fetching latest data...")
+    # ===========================================
+    # Step 1: 获取最新数据
+    # ===========================================
+    logger.info("▶️ Step 1: Fetching latest data...")
     
     # 价格监控 - 专注黄金白银
     price_monitor = PriceMonitor(
@@ -230,12 +242,14 @@ def run_once(config: Config) -> bool:
     news_monitor = NewsMonitor(config.monitor.news_sources)
     news = news_monitor.fetch_latest(hours=config.monitor.interval)
     
-    logger.info(f"Fetched {len(prices)} prices, {len(news)} news")
+    logger.info(f"✅ Completed: Fetched {len(prices)} prices, {len(news)} news")
     
-    # 2. 研报总结 - 如果有相关新闻
+    # ===========================================
+    # Step 2: 新闻研报总结 - LLM过滤总结相关新闻
+    # ===========================================
     summaries = []
     if config.research.auto_fetch and len(news) > 0:
-        logger.info("Step 2: Summarizing related news/reports...")
+        logger.info("▶️ Step 2: Summarizing related news/reports...")
         summarizer = ReportSummarizer(
             config.llm.api_key,
             config.llm.model,
@@ -250,7 +264,7 @@ def run_once(config: Config) -> bool:
         if config.research.only_related:
             news = summarizer.filter_related(news, my_assets)
         
-        for news_item in news[:5]:  # 最多处理5条
+        for news_item in news[:5]:  # 最多处理5条，避免通知太长
             try:
                 summary = summarizer.summarize(
                     news_item.content or news_item.title,
@@ -267,20 +281,17 @@ def run_once(config: Config) -> bool:
             except Exception as e:
                 logger.error(f"Failed to summarize {news_item.title}: {e}")
     
-    logger.info(f"Summarized {len(summaries)} news items")
+    logger.info(f"✅ Completed: Summarized {len(summaries)} news items")
     
-    # 抓取宏观大佬最新观点（每天更新一次）
-    logger.info("Step 2.5: Fetching latest guru views...")
-    from src.monitor.guru_fetcher import GuruViewsFetcher
-    guru_fetcher = GuruViewsFetcher(data_dir=config.data_dir)
-    guru_views = guru_fetcher.get_cached_views()  # 自动缓存，一天更新一次
-    logger.info(f"Loaded {len(guru_views)} guru views")
+    # ===========================================
+    # Step 3: 检查所有预警规则
+    # ===========================================
+    logger.info("▶️ Step 3: Checking all alert rules...")
     
-    # 3. 预警检查
-    logger.info("Step 3: Checking alert rules...")
     trigger = AlertTrigger(config.alerts.alerts)
     all_alerts = []
     
+    # 自选股检查
     for symbol in config.monitor.stocks:
         df = price_monitor.get_history(symbol, start_date='20240101')
         if not df.empty:
@@ -295,7 +306,7 @@ def run_once(config: Config) -> bool:
         if not gold_df.empty:
             alerts = trigger.check_all('gold', gold_df)
             all_alerts.extend(alerts)
-            logger.info(f"Checked gold ({gold_symbol}), found {len(alerts)} alerts")
+            logger.info(f"  Checked gold ({gold_symbol}), found {len(alerts)} alerts")
     
     # 白银单独处理
     silver_df = None
@@ -305,19 +316,17 @@ def run_once(config: Config) -> bool:
         if not silver_df.empty:
             alerts = trigger.check_all('silver', silver_df)
             all_alerts.extend(alerts)
-            logger.info(f"Checked silver ({silver_symbol}), found {len(alerts)} alerts")
+            logger.info(f"  Checked silver ({silver_symbol}), found {len(alerts)} alerts")
     
     # 金银比极端预警
     if gold_df is not None and silver_df is not None and not gold_df.empty and not silver_df.empty:
-        # 检查金银比
         alerts = trigger.check_all('gold-silver', None, gold_df=gold_df, silver_df=silver_df)
         all_alerts.extend(alerts)
-        logger.info(f"Checked gold-silver ratio, found {len(alerts)} alerts")
+        logger.info(f"  Checked gold-silver ratio, found {len(alerts)} alerts")
     
     # COT持仓报告检查 - 每周更新，领先指标
-    cot_extreme_alerts = None
     if config.monitor.get('cot', {}).get('enabled', False):
-        logger.info("Step 3.1: Fetching COT (Commitment of Traders) data...")
+        logger.info("  Fetching COT (Commitment of Traders) data...")
         from src.monitor.cot import COTFetcher
         cot_fetcher = COTFetcher(data_dir=config.data_dir)
         cot_data = cot_fetcher.get_gold_silver_cot()
@@ -326,24 +335,22 @@ def run_once(config: Config) -> bool:
             if cot_extreme_alerts:
                 alerts = trigger.check_all('cot', None, None, None, cot_extreme_alerts)
                 all_alerts.extend(alerts)
-                logger.info(f"Checked COT positioning, found {len(alerts)} extreme alerts")
+                logger.info(f"  Checked COT positioning, found {len(alerts)} extreme alerts")
     
-    # GLD 持仓异动检查
-    if config.monitor.etf_monitor.get('enabled', False) and config.monitor.etf_monitor.get('gld', True):
-        # GLD 持仓变化也需要检查预警
-        df = price_monitor.get_history('GLD', start_date='20240101')
-        if not df.empty:
-            alerts = trigger.check_all('gld', df)
-            all_alerts.extend(alerts)
+    # GLD/SLV 持仓异动检查
+    if config.monitor.etf_monitor.get('enabled', False):
+        if config.monitor.etf_monitor.get('gld', True):
+            df = price_monitor.get_history('GLD', start_date='20240101')
+            if not df.empty:
+                alerts = trigger.check_all('gld', df)
+                all_alerts.extend(alerts)
+        if config.monitor.etf_monitor.get('slv', True):
+            df = price_monitor.get_history('SLV', start_date='20240101')
+            if not df.empty:
+                alerts = trigger.check_all('slv', df)
+                all_alerts.extend(alerts)
     
-    # SLV 持仓异动检查
-    if config.monitor.etf_monitor.get('enabled', False) and config.monitor.etf_monitor.get('slv', True):
-        df = price_monitor.get_history('SLV', start_date='20240101')
-        if not df.empty:
-            alerts = trigger.check_all('slv', df)
-            all_alerts.extend(alerts)
-    
-    logger.info(f"Found {len(all_alerts)} triggered alerts")
+    logger.info(f"✅ Completed: Found {len(all_alerts)} triggered alerts")
     
     # 记录预警到日志文件供Web界面查看
     import json
@@ -364,27 +371,28 @@ def run_once(config: Config) -> bool:
             }
             f.write(json.dumps(alert_log, ensure_ascii=False) + '\n')
     
-    logger.info(f"Logged {len(all_alerts)} alerts to {alert_log_path}")
+    logger.info(f"  Logged {len(all_alerts)} alerts to {alert_log_path}")
     
-    # 4. ETF-COMEX 关联分析
-    etf_comex_analysis = None
-    if config.monitor.etf_monitor.get('enabled', False):
-        logger.info("Step 4: ETF-COMEX correlation analysis...")
-        from src.alert import ETFCOMEXAnalyzer
-        # 这里获取最新变化，框架已经打好，具体数据获取在price_monitor
-        # 这里整合分析结果
-        # 预留整合位置，具体数据解析后续完善
-        # 现在先做好框架
-        # etf_comex_analysis = ETFCOMEXAnalyzer.analize(...)
+    # ===========================================
+    # Step 4: 更新宏观大佬观点（每天更新一次缓存）
+    # ===========================================
+    logger.info("▶️ Step 4: Fetching latest macro guru views...")
+    from src.monitor.guru_fetcher import GuruViewsFetcher
+    guru_fetcher = GuruViewsFetcher(data_dir=config.data_dir)
+    guru_views = guru_fetcher.get_cached_views()  # 自动缓存，一天更新一次
+    logger.info(f"✅ Completed: Loaded {len(guru_views)} guru views")
     
-    # 5. 发送通知
-    logger.info("Step 5: Sending notification...")
+    # ===========================================
+    # Step 5: 组装通知内容 + LLM综合分析
+    # ===========================================
+    logger.info("▶️ Step 5: Building notification content...")
     
     content_parts = []
+    gold_price = None
+    silver_price = None
     
     # 经济日历 - 提前提醒明天高影响事件
     if config.monitor.get('economic_calendar', {}).get('enabled', True):
-        logger.info("Checking economic calendar for tomorrow...")
         from src.monitor.economic_calendar import EconomicCalendar
         calendar = EconomicCalendar()
         events = calendar.get_high_impact_events_next_day()
@@ -392,8 +400,6 @@ def run_once(config: Config) -> bool:
             content_parts.append(calendar.format_events_for_notification(events))
     
     # 添加今日行情概览 - 主动提供市场概况，即使没有预警
-    gold_price = None
-    silver_price = None
     if len(prices) > 0:
         content_parts.append("### 📈 今日行情概览\n\n")
         # 找到黄金和白银最新价格
@@ -405,7 +411,6 @@ def run_once(config: Config) -> bool:
         
         if gold_price:
             change_emoji = '↑' if gold_price.change >= 0 else '↓'
-            change_color = '' if gold_price.change >= 0 else ''
             content_parts.append(f"**COMEX黄金**: {gold_price.price:.2f}  {change_emoji} {abs(gold_price.change):.2f} ({gold_price.change_pct:.2f}%)\n\n")
         
         if silver_price:
@@ -422,7 +427,7 @@ def run_once(config: Config) -> bool:
             else:
                 content_parts.append(f"**金银比**: {ratio:.1f} ✅ 在正常区间(60-80)内\n\n")
         
-        # 添加技术指标概览（如果有历史数据）
+        # 添加技术指标概览
         if gold_df is not None and len(gold_df) >= 14:
             from src.alert.indicator import IndicatorCalculator
             rsi = IndicatorCalculator.rsi(gold_df, 14)
@@ -437,6 +442,7 @@ def run_once(config: Config) -> bool:
         
         content_parts.append("---\n\n")
     
+    # 最新研报/新闻总结
     if len(summaries) > 0:
         content_parts.append("### 📑 最新研报/新闻总结\n\n")
         for s in summaries:
@@ -445,6 +451,7 @@ def run_once(config: Config) -> bool:
                 content_parts.append(f"{i}. {point}\n")
             content_parts.append("\n---\n\n")
     
+    # 触发预警列表
     if len(all_alerts) > 0:
         content_parts.append("### ⚠️ 触发预警\n\n")
         content_parts.append(format_alerts(all_alerts))
@@ -452,18 +459,26 @@ def run_once(config: Config) -> bool:
     else:
         content_parts.append("✅ 当前没有触发预警规则，市场平稳运行。\n\n")
     
-    # 添加 ETF-COMEX 关联分析
-    if etf_comex_analysis is not None:
+    # 4. ETF-COMEX 关联分析（预留框架）
+    etf_comex_analysis = None
+    if config.monitor.etf_monitor.get('enabled', False):
+        logger.info("Step 4: ETF-COMEX correlation analysis...")
         from src.alert import ETFCOMEXAnalyzer
-        content_parts.append(ETFCOMEXAnalyzer.format_for_notification(etf_comex_analysis))
-        content_parts.append("\n---\n\n")
+        # 这里获取最新变化，框架已经打好，具体数据获取在price_monitor
+        # 这里整合分析结果
+        # 预留整合位置，具体数据解析后续完善
+        # etf_comex_analysis = ETFCOMEXAnalyzer.analize(...)
+        if etf_comex_analysis is not None:
+            content_parts.append(ETFCOMEXAnalyzer.format_for_notification(etf_comex_analysis))
+            content_parts.append("\n---\n\n")
     
-    # LLM综合分析 - 结合所有信号给出综合判断
-    if config.llm.api_key:
-        logger.info("Step 6: LLM comprehensive analysis...")
-        from openai import OpenAI
+    # ===========================================
+    # Step 6: LLM综合分析 - 结合所有信号给出最终判断
+    # ===========================================
+    if config.llm.api_key and gold_price and silver_price:
+        logger.info("▶️ Step 6: Generating LLM comprehensive analysis...")
         
-        # 准备分析内容
+        # 准备prompt
         analysis_prompt = f"""你是黄金白银市场专业分析师，请结合以下所有信息，给出今日综合分析和操作建议：
 
 # 当前行情
@@ -477,10 +492,7 @@ def run_once(config: Config) -> bool:
 # 最新宏观大佬观点
 我们跟踪了5位顶级宏观大佬最新观点，请参考他们立场：
 """
-        # 读取大佬观点
-        from src.monitor.guru_fetcher import GuruViewsFetcher
-        fetcher = GuruViewsFetcher(data_dir=config.data_dir)
-        guru_views = fetcher.get_cached_views()
+        # 加入大佬观点
         for guru in guru_views:
             analysis_prompt += f"- **{guru['name']}** ({guru['title']}): {guru['latest_view']} → 基调: {guru['tone']}\n"
         
@@ -494,6 +506,7 @@ def run_once(config: Config) -> bool:
 请开始分析：
 """
         try:
+            from openai import OpenAI
             client = OpenAI(
                 api_key=config.llm.api_key,
                 base_url=config.llm.base_url or None
@@ -508,23 +521,28 @@ def run_once(config: Config) -> bool:
             content_parts.append("\n---\n\n")
             content_parts.append("### 🧠 AI 综合分析\n\n")
             content_parts.append(analysis + "\n\n")
-            logger.info("LLM comprehensive analysis completed")
+            logger.info("✅ Completed: LLM comprehensive analysis")
         except Exception as e:
             logger.error(f"Failed to generate LLM analysis: {e}")
     
+    # 页脚统计信息
     content_parts.append(f"📊 本次监控完成: {len(prices)} 价格, {len(news)} 新闻, {len(summaries)} 总结, {len(all_alerts)} 预警")
     
+    # ===========================================
+    # 发送通知
+    # ===========================================
     full_content = ''.join(content_parts)
     title = f"🤖 Active Finance Agent 监控报告 - {datetime.now().strftime('%Y-%m-%d %H:%M')}"
     
+    logger.info("📤 Sending notification...")
     notified = send_notification(config, title, full_content)
     
     if notified:
-        logger.info("Notification sent successfully")
+        logger.info("✅ Notification sent successfully")
     else:
-        logger.info("No notification channels enabled or send failed")
+        logger.info("ℹ️ No notification channels enabled or send failed")
     
-    logger.info("Monitoring round completed")
+    logger.info("✅ Monitoring round completed!\n")
     return True
 
 def main():
@@ -554,29 +572,27 @@ def main():
         run_once(config)
     elif args.schedule:
         # 定时运行
-        scheduler = TaskScheduler()
-        
+        # 判断是否在交易时段
         def job():
-            # 判断是否在交易时段
+            # 伦敦金交易时间处理：如果结束时间早于开始时间，说明跨天
             now = datetime.now()
             start_h, start_m = map(int, config.schedule.trading_hours.start.split(':'))
             end_h, end_m = map(int, config.schedule.trading_hours.end.split(':'))
             
-            # 伦敦金交易时间处理：如果结束时间早于开始时间，说明跨天
+            # 跨天（例如 06:00 ~ 次日 04:00）
             if end_h > start_h or (end_h == start_h and end_m > start_m):
                 # 同一天内
                 start_dt = now.replace(hour=start_h, minute=start_m, second=0)
                 end_dt = now.replace(hour=end_h, minute=end_m, second=0)
                 in_hours = start_dt <= now <= end_dt
             else:
-                # 跨天（例如 06:00 ~ 次日 04:00）
+                # 跨天
                 if now.hour >= start_h or now.hour < end_h or (now.hour == end_h and now.minute < end_m):
                     in_hours = True
                 else:
                     in_hours = False
             
-            # 伦敦金：周一 (0) 到 周六 (5) 交易，周日 (6) 休市（实际周日傍晚已开盘，保留周日判断给配置控制）
-            # 如果需要周日也运行，可以把工作日范围改成 < 6
+            # 伦敦金：周一 (0) 到 周六 (5) 交易，周日 (6) 休市
             if in_hours and now.weekday() <= 5:  # 周一到周六
                 run_once(config)
             else:
@@ -589,7 +605,7 @@ def main():
         # 立即运行一次
         job()
         
-        # 开始调度 - 使用schedule每interval_minutes分钟运行
+        # 开始调度
         import schedule
         schedule.every(interval_minutes).minutes.do(job)
         
