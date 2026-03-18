@@ -300,6 +300,16 @@ createApp({
       <header>
         <h1>🤖 gold-silver-finance-agent</h1>
         <div class="subtitle">📊 AI 赋能黄金白银主动监控 - 市场仪表盘</div>
+        <div class="forward-markets">
+          <h3>🔮 前瞻预测市场（点击查看最新市场概率）</h3>
+          <div class="market-links">
+            <a href="https://polymarket.com/predictions/gold" target="_blank" class="market-link">Polymarket 黄金价格预测</a>
+            <a href="https://polymarket.com/" target="_blank" class="market-link">Polymarket 首页</a>
+            <a href="https://www.cmegroup.com/markets/metals/precious.html" target="_blank" class="market-link">CME 贵金属</a>
+            <a href="https://www.ishares.com/us/products/239751/gld-spdr-gold-trust" target="_blank" class="market-link">GLD 持仓</a>
+            <a href="https://www.ishares.com/us/products/239728/slv-isharess-silver-trust" target="_blank" class="market-link">SLV 持仓</a>
+          </div>
+        </div>
       </header>
 
       <!-- 仪表盘概览 -->
