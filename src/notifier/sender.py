@@ -98,12 +98,14 @@ class FeishuNotifier(BaseNotifier):
         """发送飞书消息
         根据飞书webhook触发器文档要求：
         - msg_type 必须为文本类型
-        - 参数用大括号括起来，由 msg_type 和键值对组成
+        - 文本消息内容必须放在 content.text
         """
         full_text = f"{title}\n\n{content}"
         data = {
             "msg_type": "text",
-            "text": full_text
+            "content": {
+                "text": full_text
+            }
         }
         try:
             resp = requests.post(self.webhook_url, json=data, timeout=10)
@@ -112,7 +114,8 @@ class FeishuNotifier(BaseNotifier):
                 logger.info("Feishu notification sent")
                 return True
             else:
-                logger.error(f"Feishu send failed: {result.get('msg')}")
+                error_msg = result.get('msg', 'Unknown error')
+                logger.error(f"Feishu send failed: {error_msg}")
                 return False
         except Exception as e:
             logger.error(f"Feishu exception: {e}")
