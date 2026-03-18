@@ -144,15 +144,16 @@ class PriceMonitor(BaseMonitor):
     
     def fetch_intl_gold_price(self) -> Optional[PriceData]:
         """获取伦敦金/国际黄金最新价格
-        使用金投网免费API
+        使用金投网免费API - 国内网站直连
         """
         try:
-            # 金投网免费API获取黄金价格
+            # 金投网免费API获取黄金价格 - 国内网站不需要代理
             url = "https://www.cngoldquote.com/api/getQuote?code=XAUUSD"
             headers = {
                 'User-Agent': 'Mozilla/5.0 (Windows NT 100.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36'
             }
-            resp = requests.get(url, headers=headers, timeout=10, proxies=self.proxies)
+            # 国内网站直连，不走代理
+            resp = requests.get(url, headers=headers, timeout=10)
             if resp.status_code == 200:
                 data = resp.json()
                 if data.get('code') == 200 and data.get('data'):
@@ -178,14 +179,15 @@ class PriceMonitor(BaseMonitor):
     
     def fetch_intl_silver_price(self) -> Optional[PriceData]:
         """获取国际白银最新价格
-        使用金投网免费API
+        使用金投网免费API - 国内网站直连
         """
         try:
+            # 金投网国内网站不需要代理
             url = "https://www.cngoldquote.com/api/getQuote?code=XAGUSD"
             headers = {
                 'User-Agent': 'Mozilla/5.0 (Windows NT 100.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36'
             }
-            resp = requests.get(url, headers=headers, timeout=10, proxies=self.proxies)
+            resp = requests.get(url, headers=headers, timeout=10)
             if resp.status_code == 200:
                 data = resp.json()
                 if data.get('code') == 200 and data.get('data'):
