@@ -187,8 +187,10 @@ class GuruViewsFetcher:
     def _fetch_from_baidu(self, guru: Dict) -> Optional[Dict]:
         """从百度搜索抓取最新观点"""
         try:
+            import urllib.parse
             search_key = guru.get('search_key', f"{guru['name']} 黄金 最新观点")
-            url = f"https://www.baidu.com/s?wd={search_key}"
+            encoded_key = urllib.parse.quote(search_key)
+            url = f"https://www.baidu.com/s?wd={encoded_key}"
             headers = {
                 "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36",
                 "Referer": "https://www.baidu.com/"
@@ -232,13 +234,17 @@ class GuruViewsFetcher:
             if len(content) > 200:
                 content = content[:200] + "..."
                 
+            # 百度链接是相对路径 /s?wd=... 直接拼域名
+            full_source_url = source_url
+            if source_url.startswith('/'):
+                full_source_url = f"https://www.baidu.com{source_url}"
             return {
                 "name": guru['name'],
                 "title": guru['title'],
                 "latest_view": content.strip(),
                 "tone": tone,
                 "updated_at": datetime.now().strftime("%Y-%m-%d"),
-                "source_url": f"https://www.baidu.com{source_url}" if source_url else ""
+                "source_url": full_source_url if source_url else ""
             }
             
         except Exception as e:
