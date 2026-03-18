@@ -64,7 +64,8 @@ class PriceMonitor(BaseMonitor):
         from scrapling import Fetcher
         if self.proxies:
             # 新版本在创建Fetcher时传递proxy
-            self.fetcher = Fetcher(proxy=list(self.proxies.values())[0])
+            proxy_url = list(self.proxies.values())[0]
+            self.fetcher = Fetcher(proxy=proxy_url)
         else:
             self.fetcher = Fetcher()
             

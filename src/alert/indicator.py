@@ -123,11 +123,6 @@ class IndicatorCalculator:
         return None
         
     @staticmethod
-    def rsi(df: pd.DataFrame, period: int = 14) -> pd.Series:
-        """计算RSI"""
-        return ta.momentum.rsi(df.close, window=period)
-        
-    @staticmethod
     def bollinger_bands(df: pd.DataFrame, period: int = 20, nbdevup: float = 2, nbdevdn: float = 2):
         """计算布林带"""
         indicator = ta.volatility.BollingerBands(df.close, window=period, window_dev=nbdevup)
