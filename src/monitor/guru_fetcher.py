@@ -39,6 +39,7 @@ class GuruViewsFetcher:
                 "name": "Peter Schiff",
                 "title": "金虫之王 / 黄金坚定多头",
                 "twitter": "PeterSchiff",
+                "source": "twitter",
                 "tone_default": "bullish",
                 "keywords": ["gold", "silver", "金价", "白银"]
             },
@@ -46,6 +47,7 @@ class GuruViewsFetcher:
                 "name": "Ray Dalio",
                 "title": "桥水创始人 / 宏观对冲之王",
                 "twitter": "RayDalio",
+                "source": "twitter",
                 "tone_default": "bullish",
                 "keywords": ["gold", "reserve", "currency", "黄金"]
             },
@@ -53,21 +55,24 @@ class GuruViewsFetcher:
                 "name": "Jim Rickards",
                 "title": "《货币战争》作者 / 极端看多派",
                 "twitter": "JamesGRickards",
+                "source": "twitter",
                 "tone_default": "bullish",
                 "keywords": ["gold", "dollar", "brics", "黄金"]
             },
-            # 中文大佬我们从其他来源抓取，这里先保留结构
+            # 中文大佬从百度搜索抓取最新观点
             {
                 "name": "谢爱民",
                 "title": "闪电资管基金经理 / 国内黄金圈热门",
-                "twitter": "",
+                "source": "baidu",
+                "search_key": "谢爱民 黄金 最新观点",
                 "tone_default": "bullish",
                 "keywords": ["黄金"]
             },
             {
                 "name": "张明",
                 "title": "中国社科院金融所副所长 / 谨慎派代表",
-                "twitter": "",
+                "source": "baidu",
+                "search_key": "张明 黄金 最新观点",
                 "tone_default": "bearish",
                 "keywords": ["黄金"]
             }
@@ -78,24 +83,38 @@ class GuruViewsFetcher:
         results = []
         
         for guru in self.gurus:
-            if not guru['twitter']:
-                # 没有Twitter，使用已有数据或默认
-                results.append({
-                    "name": guru['name'],
-                    "title": guru['title'],
-                    "latest_view": self._get_default_view(guru['name']),
-                    "tone": guru['tone_default'],
-                    "updated_at": datetime.now().strftime("%Y-%m-%d"),
-                    "source_url": ""
-                })
-                continue
-                
-            # 尝试从Nitter抓取
-            view = self._fetch_from_nitter(guru)
-            if view:
-                results.append(view)
+            if guru['source'] == 'twitter':
+                # 尝试从Nitter抓取
+                view = self._fetch_from_nitter(guru)
+                if view:
+                    results.append(view)
+                else:
+                    # 抓取失败，使用默认
+                    results.append({
+                        "name": guru['name'],
+                        "title": guru['title'],
+                        "latest_view": self._get_default_view(guru['name']),
+                        "tone": guru['tone_default'],
+                        "updated_at": datetime.now().strftime("%Y-%m-%d"),
+                        "source_url": ""
+                    })
+            elif guru['source'] == 'baidu':
+                # 从百度搜索抓取
+                view = self._fetch_from_baidu(guru)
+                if view:
+                    results.append(view)
+                else:
+                    # 抓取失败，使用默认
+                    results.append({
+                        "name": guru['name'],
+                        "title": guru['title'],
+                        "latest_view": self._get_default_view(guru['name']),
+                        "tone": guru['tone_default'],
+                        "updated_at": datetime.now().strftime("%Y-%m-%d"),
+                        "source_url": ""
+                    })
             else:
-                # 抓取失败，使用默认
+                # 默认
                 results.append({
                     "name": guru['name'],
                     "title": guru['title'],
@@ -164,6 +183,67 @@ class GuruViewsFetcher:
                 continue
                 
         return None
+    
+    def _fetch_from_baidu(self, guru: Dict) -> Optional[Dict]:
+        """从百度搜索抓取最新观点"""
+        try:
+            search_key = guru.get('search_key', f"{guru['name']} 黄金 最新观点")
+            url = f"https://www.baidu.com/s?wd={search_key}"
+            headers = {
+                "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36",
+                "Referer": "https://www.baidu.com/"
+            }
+            resp = requests.get(url, headers=headers, timeout=15, proxies=None)
+            resp.raise_for_status()
+            
+            soup = BeautifulSoup(resp.text, 'html.parser')
+            # 查找搜索结果
+            results = soup.select('.result')
+            if not results:
+                return None
+                
+            # 取第一条结果
+            first = results[0]
+            title_el = first.select_one('h3 a')
+            content_el = first.select_one('.c-abstract')
+            
+            title = title_el.get_text() if title_el else ""
+            content = content_el.get_text() if content_el else ""
+            source_url = title_el.get('href') if title_el else ""
+            
+            if not content:
+                # 尝试其他选择器
+                content_el = first.select_one('.content-right')
+                if content_el:
+                    content = content_el.get_text()
+                    
+            if not content:
+                return None
+                
+            # 简单判断语气
+            content_lower = content.lower()
+            tone = guru['tone_default']
+            if '下跌' in content_lower or '回调' in content_lower or '看空' in content_lower:
+                tone = 'bearish'
+            elif '上涨' in content_lower or '看多' in content_lower or '买入' in content_lower:
+                tone = 'bullish'
+                
+            # 截取前200字，太长显示不下
+            if len(content) > 200:
+                content = content[:200] + "..."
+                
+            return {
+                "name": guru['name'],
+                "title": guru['title'],
+                "latest_view": content.strip(),
+                "tone": tone,
+                "updated_at": datetime.now().strftime("%Y-%m-%d"),
+                "source_url": f"https://www.baidu.com{source_url}" if source_url else ""
+            }
+            
+        except Exception as e:
+            logger.warning(f"Failed to fetch {guru['name']} from baidu: {e}")
+            return None
     
     def _get_default_view(self, name: str) -> str:
         """默认观点，当抓取失败时使用"""
