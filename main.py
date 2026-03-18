@@ -25,87 +25,90 @@ logging.basicConfig(
 )
 logger = logging.getLogger(__name__)
 
+# 顶级配置类，方便IDE识别
+@dataclass
+class TushareConfig:
+    token: str = ""
+
+@dataclass
+class LLMConfig:
+    provider: str = "openai"
+    api_key: str = ""
+    model: str = "gpt-4o-mini"
+    base_url: str = ""
+
+@dataclass
+class MonitorConfig:
+    interval: int = 60
+    stocks: List[str] = field(default_factory=list)
+    gold: dict = field(default_factory=dict)
+    silver: dict = field(default_factory=dict)
+    etf_monitor: dict = field(default_factory=dict)
+    cot: dict = field(default_factory=dict)
+    economic_calendar: dict = field(default_factory=dict)
+    news_sources: List[str] = field(default_factory=list)
+
+@dataclass
+class ResearchConfig:
+    auto_fetch: bool = True
+    only_related: bool = True
+    summary_points: int = 3
+
+@dataclass
+class AlertConfig:
+    alerts: List[dict] = field(default_factory=list)
+
+@dataclass
+class DingTalkNotifyConfig:
+    enabled: bool = False
+    webhook_url: str = ""
+    secret: str = ""
+
+@dataclass
+class WorkWechatNotifyConfig:
+    enabled: bool = False
+    webhook_url: str = ""
+
+@dataclass
+class FeishuNotifyConfig:
+    enabled: bool = False
+    webhook_url: str = ""
+
+@dataclass
+class TelegramNotifyConfig:
+    enabled: bool = False
+    bot_token: str = ""
+    chat_id: str = ""
+
+@dataclass
+class NotifyConfig:
+    dingtalk: DingTalkNotifyConfig = field(default_factory=DingTalkNotifyConfig)
+    workwechat: WorkWechatNotifyConfig = field(default_factory=WorkWechatNotifyConfig)
+    feishu: FeishuNotifyConfig = field(default_factory=FeishuNotifyConfig)
+    telegram: TelegramNotifyConfig = field(default_factory=TelegramNotifyConfig)
+
+@dataclass
+class TradingHoursConfig:
+    start: str = "06:00"
+    end: str = "04:00"
+
+@dataclass
+class ScheduleConfig:
+    only_trading_hours: bool = True
+    trading_hours: TradingHoursConfig = field(default_factory=TradingHoursConfig)
+
 @dataclass
 class Config:
     """配置类"""
     log_level: str = "INFO"
     data_dir: str = "./data"
     cache_dir: str = "./cache"
-    
-    @dataclass
-    class TushareConfig:
-        token: str = ""
     tushare: TushareConfig = field(default_factory=TushareConfig)
-    
-    @dataclass
-    class LLMConfig:
-        provider: str = "openai"
-        api_key: str = ""
-        model: str = "gpt-4o-mini"
-        base_url: str = ""
     llm: LLMConfig = field(default_factory=LLMConfig)
-    
-    @dataclass
-    class MonitorConfig:
-        interval: int = 60
-        stocks: List[str] = field(default_factory=list)
-        gold: dict = field(default_factory=dict)
-        silver: dict = field(default_factory=dict)
-        etf_monitor: dict = field(default_factory=dict)
-        cot: dict = field(default_factory=dict)
-        economic_calendar: dict = field(default_factory=dict)
-        news_sources: List[str] = field(default_factory=list)
     monitor: MonitorConfig = field(default_factory=MonitorConfig)
-    
-    @dataclass
-    class ResearchConfig:
-        auto_fetch: bool = True
-        only_related: bool = True
-        summary_points: int = 3
     research: ResearchConfig = field(default_factory=ResearchConfig)
-    
-    @dataclass
-    class AlertConfig:
-        alerts: List[dict] = field(default_factory=list)
     alerts: AlertConfig = field(default_factory=AlertConfig)
-    
-    @dataclass
-    class NotifyConfig:
-        @dataclass
-        class DingTalkConfig:
-            enabled: bool = False
-            webhook_url: str = ""
-            secret: str = ""
-        dingtalk: DingTalkConfig = field(default_factory=DingTalkConfig)
-        
-        @dataclass
-        class WorkWechatConfig:
-            enabled: bool = False
-            webhook_url: str = ""
-        workwechat: WorkWechatConfig = field(default_factory=WorkWechatConfig)
-        
-        @dataclass
-        class FeishuConfig:
-            enabled: bool = False
-            webhook_url: str = ""
-        feishu: FeishuConfig = field(default_factory=FeishuConfig)
-        
-        @dataclass
-        class TelegramConfig:
-            enabled: bool = False
-            bot_token: str = ""
-            chat_id: str = ""
-        telegram: TelegramConfig = field(default_factory=TelegramConfig)
     notify: NotifyConfig = field(default_factory=NotifyConfig)
-    
-    @dataclass
-    class ScheduleConfig:
-        only_trading_hours: bool = True
-        @dataclass
-        class TradingHours:
-            start: str = "06:00"
-            end: str = "04:00"
-        trading_hours: TradingHours = field(default_factory=TradingHours)
     schedule: ScheduleConfig = field(default_factory=ScheduleConfig)
 
 def load_config(config_path: str = "config/config.yaml") -> Config:
