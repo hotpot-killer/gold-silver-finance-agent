@@ -60,12 +60,11 @@ class PriceMonitor(BaseMonitor):
         if http_proxy:
             self.proxies['http'] = http_proxy
         
-        # 配置Fetcher使用代理
+        # 配置Fetcher使用代理 - 适配新版本scrapling
         from scrapling import Fetcher
         if self.proxies:
-            self.fetcher = Fetcher(proxy=list(self.proxies.values())[0])
-        else:
-            self.fetcher = Fetcher()
+            Fetcher.configure(proxy=list(self.proxies.values())[0])
+        self.fetcher = Fetcher()
             
         if token:
             ts.set_token(token)
@@ -144,24 +143,25 @@ class PriceMonitor(BaseMonitor):
     
     def fetch_intl_gold_price(self) -> Optional[PriceData]:
         """获取伦敦金/国际黄金最新价格
-        使用金投网免费API - 国内网站直连
+        使用新浪财经免费API - 国内网站直连
         """
         try:
-            # 金投网免费API获取黄金价格 - 国内网站不需要代理
-            url = "https://www.cngoldquote.com/api/getQuote?code=XAUUSD"
+            # 新浪财经免费API
+            url = "https://finance.sina.com.cn/json/quote.jsp?symbol=XAUUSD&symboltype=forex"
             headers = {
                 'User-Agent': 'Mozilla/5.0 (Windows NT 100.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36'
             }
-            # 国内网站直连，不走代理
             resp = requests.get(url, headers=headers, timeout=10)
             if resp.status_code == 200:
-                data = resp.json()
-                if data.get('code') == 200 and data.get('data'):
-                    latest = data['data']
-                    price = float(latest.get('lastPrice', 0))
-                    prev_close = float(latest.get('closePrice', 0))
-                    change = price - prev_close
-                    change_pct = (change / prev_close) * 100 if prev_close > 0 else 0
+                text = resp.text
+                # 解析JSON
+                import json
+                data = json.loads(text)
+                if data:
+                    latest = data[0]
+                    price = float(latest.get('price', 0))
+                    change = float(latest.get('diff', 0))
+                    change_pct = float(latest.get('per', 0).strip('%')) if latest.get('per') else 0
                     current_time = datetime.now()
                     return PriceData(
                         symbol="XAUUSD",
@@ -179,23 +179,23 @@ class PriceMonitor(BaseMonitor):
     
     def fetch_intl_silver_price(self) -> Optional[PriceData]:
         """获取国际白银最新价格
-        使用金投网免费API - 国内网站直连
+        使用新浪财经免费API - 国内网站直连
         """
         try:
-            # 金投网国内网站不需要代理
-            url = "https://www.cngoldquote.com/api/getQuote?code=XAGUSD"
+            url = "https://finance.sina.com.cn/json/quote.jsp?symbol=XAGUSD&symboltype=forex"
             headers = {
                 'User-Agent': 'Mozilla/5.0 (Windows NT 100.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36'
             }
             resp = requests.get(url, headers=headers, timeout=10)
             if resp.status_code == 200:
-                data = resp.json()
-                if data.get('code') == 200 and data.get('data'):
-                    latest = data['data']
-                    price = float(latest.get('lastPrice', 0))
-                    prev_close = float(latest.get('closePrice', 0))
-                    change = price - prev_close
-                    change_pct = (change / prev_close) * 100 if prev_close > 0 else 0
+                text = resp.text
+                import json
+                data = json.loads(text)
+                if data:
+                    latest = data[0]
+                    price = float(latest.get('price', 0))
+                    change = float(latest.get('diff', 0))
+                    change_pct = float(latest.get('per', 0).strip('%')) if latest.get('per') else 0
                     current_time = datetime.now()
                     return PriceData(
                         symbol="XAGUSD",
