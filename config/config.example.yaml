@@ -250,3 +250,15 @@ schedule:
     # 伦敦金交易时间（北京时间）：周一 06:00 ~ 周六 04:00
     start: "06:00"
     end: "04:00"
+
+# 宏观数据 API keys
+# FRED API key 免费申请: https://fred.stlouisfed.org/docs/api/api_key.html
+data_api:
+  fred: "your-fred-api-key-here"
+
+# 长期概率预测
+forecast:
+  enabled: false            # 是否启用长期预测功能
+  use_mixed_model: false   # True=使用混合模型(XGBoost + LLM)，False=使用MVP LLM-only版本
+  xgb_model_path: "./models/gold_xgb.joblib"  # 预训练XGBoost模型路径
+
