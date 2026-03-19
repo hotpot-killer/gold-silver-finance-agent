@@ -106,18 +106,18 @@ createApp({
       
       chartInstance = LightweightCharts.createChart(container, {
         layout: {
-          background: { color: '#ffffff' },
-          textColor: '#333333',
+          background: { type: 'solid', color: '#020617' },
+          textColor: '#cbd5e1',
         },
         grid: {
-          vertLines: { color: '#f0f0f0' },
-          horzLines: { color: '#f0f0f0' },
+          vertLines: { color: '#1e293b' },
+          horzLines: { color: '#1e293b' },
         },
         priceScale: {
-          borderColor: '#cccccc',
+          borderColor: '#334155',
         },
         timeScale: {
-          borderColor: '#cccccc',
+          borderColor: '#334155',
         },
       })
       
@@ -328,8 +328,8 @@ createApp({
   template: `
     <div class="container">
       <header>
-        <h1>🤖 gold-silver-finance-agent</h1>
-        <div class="subtitle">📊 AI 赋能黄金白银主动监控 - 市场仪表盘</div>
+        <h1><span class="emoji">🤖</span> gold-silver-finance-agent</h1>
+        <div class="subtitle">📊 AI 赋能黄金白银主动监控 - 高端市场仪表盘</div>
         <div class="forward-markets">
           <h3>🔮 前瞻预测市场（点击查看最新市场概率）</h3>
           <div class="hint">AI 综合分析会参考这些平台反映的市场一致预期</div>
@@ -373,7 +373,7 @@ createApp({
         <!-- 知名宏观大佬最新观点 -->
         <div class="guru-section">
           <div class="card-title">🤔 知名宏观大佬最新黄金观点（人群智慧参考）</div>
-          <div v-if="guruLoading" style="text-align:center; padding:20px; color:var(--text-secondary);">加载中...</div>
+          <div v-if="guruLoading" style="text-align:center; padding:20px; color:var(--text-muted);">加载中...</div>
           <div class="guru-grid" v-else>
             <div class="guru-card" v-for="guru in guruViews" :key="guru.name">
               <div class="guru-name">{{ guru.name }}</div>
@@ -385,7 +385,7 @@ createApp({
               <a v-if="guru.source_url" :href="guru.source_url" target="_blank" style="display:inline-block; margin-left:8px; font-size:0.8rem; color:var(--primary);">查看原文 →</a>
             </div>
           </div>
-          <div style="margin-top: 12px; font-size: 0.85rem; color: var(--text-secondary);">
+          <div style="margin-top: 16px; font-size: 0.85rem; color: var(--text-muted);">
             💡 提示：每天自动抓取Twitter最新观点，点击"查看原文"看完整内容
           </div>
         </div>
@@ -532,7 +532,7 @@ createApp({
       </div>
 
       <footer>
-        <p>gold-silver-finance-agent | 黄金白银 AI 智能监控</p>
+        <p>gold-silver-finance-agent | 黄金白银 AI 智能监控 · 高端仪表盘</p>
       </footer>
     </div>
   `
