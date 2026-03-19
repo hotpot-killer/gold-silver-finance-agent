@@ -2,13 +2,14 @@ import logging
 import json
 import requests
 from datetime import datetime
-from fastapi import FastAPI
+from fastapi import FastAPI, Request
 from fastapi.staticfiles import StaticFiles
 from fastapi.responses import HTMLResponse
 from fastapi.middleware.cors import CORSMiddleware
 from pathlib import Path
 import tushare as ts
 import uvicorn
+from typing import Optional, Dict, Any
 
 logger = logging.getLogger(__name__)
 
@@ -313,14 +314,15 @@ async def api_guru_views():
         }
 
 @app.post("/api/chat")
-async def api_chat(request: dict):
+async def api_chat(request: Request):
     """聊天 API - 基于当前信息进行 AI 对话"""
     try:
         from typing import Optional, Dict, Any
         
         # 解析请求
-        user_message = request.get('message', '')
-        context = request.get('context', {})
+        json_body = await request.json()
+        user_message = json_body.get('message', '')
+        context = json_body.get('context', {})
         
         # 读取配置，获取 LLM API key
         config_path = Path('config/config.yaml')
