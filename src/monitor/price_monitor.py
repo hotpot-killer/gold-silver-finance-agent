@@ -160,10 +160,15 @@ class PriceMonitor(BaseMonitor):
             data = resp.json()
             
             def parse_and_append_item(item: dict, symbol: str, name: str, save_to_local: bool = False):
-                """Parse price item from API response and append to results"""
+                """Parse price item from API response and append to results
+                Field mapping from Tencent finance API:
+                - zxj: current price
+                - zd: change percentage → change_pct
+                - zde: absolute price change → change
+                """
                 price = float(item["zxj"])
-                change = float(item.get("zd", 0))
-                change_pct = float(item.get("zde", 0))
+                change_pct = float(item.get("zd", 0))     # zd → 百分比涨跌
+                change = float(item.get("zde", 0))       # zde → 绝对涨跌
                 current_time = datetime.now()
                 price_data = PriceData(
                     symbol=symbol,

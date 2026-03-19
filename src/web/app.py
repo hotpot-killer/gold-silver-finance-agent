@@ -164,7 +164,7 @@ async def api_price(symbol: str):
             if resp.status_code == 200:
                 data = resp.json()
                 price = None
-                change = 0
+                change_pct = 0
                 target_code_map = {
                     'XAUUSD': 'XAU',       # 伦敦现货黄金
                     'XAGUSD': 'XAG',       # 伦敦现货白银
