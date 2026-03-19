@@ -463,7 +463,7 @@ body::before {
     /* 原样式保持不变 */
 }
 
-/* 原有样式补充 */
+/* 改进后的沙盘样式 */
 .sandbox-section {
     background: linear-gradient(135deg, rgba(239, 68, 68, 0.12) 0%, rgba(245, 158, 11, 0.1) 50%, rgba(99, 102, 241, 0.08) 100%);
     backdrop-filter: blur(12px);
@@ -486,19 +486,59 @@ body::before {
     background: linear-gradient(90deg, var(--danger), var(--warning), var(--primary));
 }
 
+.sandbox-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 28px;
+    flex-wrap: wrap;
+    gap: 16px;
+}
+
 .sandbox-title {
     font-size: 1.5rem;
     font-weight: 800;
-    margin-bottom: 28px;
     display: flex;
     align-items: center;
     gap: 12px;
     color: var(--text-primary);
 }
 
+.sandbox-controls {
+    display: flex;
+    gap: 12px;
+    align-items: center;
+}
+
+.sandbox-update-time {
+    font-size: 0.9rem;
+    color: var(--text-muted);
+}
+
+.sandbox-refresh-btn {
+    background: linear-gradient(135deg, var(--primary) 0%, var(--secondary) 100%);
+    border: none;
+    border-radius: 12px;
+    padding: 10px 20px;
+    color: white;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.2s;
+}
+
+.sandbox-refresh-btn:hover:not(:disabled) {
+    transform: translateY(-1px);
+    box-shadow: 0 6px 20px rgba(99, 102, 241, 0.35);
+}
+
+.sandbox-refresh-btn:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+}
+
 .sandbox-grid {
     display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+    grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
     gap: 24px;
 }
 
@@ -530,15 +570,24 @@ body::before {
     background: linear-gradient(180deg, var(--danger), var(--warning));
 }
 
-.sandbox-card:hover {
+.sandbox-card-interactive {
+    cursor: pointer;
+}
+
+.sandbox-card-interactive:hover {
     transform: translateY(-6px);
     box-shadow: 0 16px 48px rgba(0,0,0,0.35);
     border-color: rgba(99, 102, 241, 0.4);
 }
 
-.sandbox-card.danger:hover {
+.sandbox-card-interactive.danger:hover {
     box-shadow: 0 16px 48px rgba(239, 68, 68, 0.2);
     border-color: rgba(239, 68, 68, 0.5);
+}
+
+.sandbox-card-interactive[data-selected="true"] {
+    border-color: var(--primary);
+    box-shadow: 0 0 0 2px rgba(99, 102, 241, 0.25), 0 16px 48px rgba(99, 102, 241, 0.2);
 }
 
 .sandbox-card-header {
@@ -552,6 +601,22 @@ body::before {
     font-size: 1.15rem;
     font-weight: 700;
     color: var(--text-primary);
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+.scenario-number {
+    background: linear-gradient(135deg, var(--primary) 0%, var(--secondary) 100%);
+    color: white;
+    width: 28px;
+    height: 28px;
+    border-radius: 8px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 0.85rem;
+    font-weight: 800;
 }
 
 .sandbox-card-prob {
@@ -566,14 +631,38 @@ body::before {
     background: linear-gradient(135deg, var(--danger) 0%, var(--warning) 100%);
 }
 
-.sandbox-card-price {
-    font-size: 1.7rem;
-    font-weight: 800;
-    background: linear-gradient(135deg, var(--text-primary) 0%, var(--text-secondary) 100%);
-    -webkit-background-clip: text;
-    -webkit-text-fill-color: transparent;
-    background-clip: text;
-    margin-bottom: 12px;
+.sandbox-card-body {
+    margin-bottom: 16px;
+}
+
+.price-grid {
+    display: grid;
+    gap: 12px;
+}
+
+.price-item {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 12px 16px;
+    background: rgba(15, 23, 42, 0.6);
+    border-radius: 12px;
+    border: 1px solid var(--border);
+}
+
+.price-label {
+    font-weight: 600;
+    color: var(--text-secondary);
+}
+
+.price-value {
+    font-size: 1.1rem;
+    font-weight: 700;
+    color: var(--text-primary);
+}
+
+.sandbox-card-action-row {
+    margin-bottom: 16px;
 }
 
 .sandbox-card-action {
@@ -581,7 +670,6 @@ body::before {
     padding: 9px 20px;
     border-radius: 12px;
     font-weight: 600;
-    margin-top: 14px;
 }
 
 .sandbox-card-action.buy {
@@ -597,9 +685,17 @@ body::before {
 }
 
 .sandbox-triggers {
-    margin-top: 18px;
-    padding-top: 18px;
+    padding-top: 16px;
     border-top: 1px solid var(--border);
+}
+
+.triggers-title {
+    font-size: 0.85rem;
+    font-weight: 700;
+    color: var(--text-muted);
+    margin-bottom: 10px;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
 }
 
 .sandbox-trigger {
@@ -616,6 +712,105 @@ body::before {
     color: var(--warning);
     font-weight: bold;
     font-size: 1.2rem;
+}
+
+/* 情景详情面板 */
+.scenario-detail-panel {
+    margin-top: 28px;
+    background: rgba(15, 23, 42, 0.9);
+    border: 1px solid var(--primary);
+    border-radius: 16px;
+    padding: 24px;
+    animation: slideDown 0.3s ease;
+}
+
+@keyframes slideDown {
+    from {
+        opacity: 0;
+        transform: translateY(-10px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+.detail-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 20px;
+    padding-bottom: 16px;
+    border-bottom: 1px solid var(--border);
+}
+
+.detail-title {
+    font-size: 1.25rem;
+    font-weight: 700;
+    color: var(--text-primary);
+}
+
+.detail-close-btn {
+    background: none;
+    border: none;
+    color: var(--text-muted);
+    font-size: 1.8rem;
+    cursor: pointer;
+    line-height: 1;
+    padding: 0;
+    width: 36px;
+    height: 36px;
+    border-radius: 8px;
+    transition: all 0.2s;
+}
+
+.detail-close-btn:hover {
+    background: rgba(255, 255, 255, 0.1);
+    color: var(--text-primary);
+}
+
+.detail-content {
+    display: grid;
+    gap: 16px;
+}
+
+.detail-section {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 12px 16px;
+    background: rgba(30, 41, 59, 0.6);
+    border-radius: 12px;
+    border: 1px solid var(--border);
+}
+
+.detail-label {
+    font-weight: 600;
+    color: var(--text-secondary);
+}
+
+.detail-value {
+    font-weight: 700;
+    color: var(--text-primary);
+}
+
+.detail-action {
+    display: inline-block;
+    padding: 6px 14px;
+    border-radius: 10px;
+    font-weight: 600;
+}
+
+.detail-action.buy {
+    background: linear-gradient(135deg, var(--success) 0%, #059669 100%);
+}
+
+.detail-action.sell {
+    background: linear-gradient(135deg, var(--danger) 0%, #dc2626 100%);
+}
+
+.detail-action.wait {
+    background: linear-gradient(135deg, var(--warning) 0%, #d97706 100%);
 }
 
 .dashboard-section {

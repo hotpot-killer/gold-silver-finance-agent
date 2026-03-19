@@ -40,29 +40,91 @@
 
           <!-- 中东局势沙盘 -->
           <div class="sandbox-section">
-            <div class="sandbox-title">
-              🌍 中东局势推演沙盘
+            <div class="sandbox-header">
+              <div class="sandbox-title">
+                🌍 中东局势推演沙盘
+              </div>
+              <div class="sandbox-controls">
+                <span class="sandbox-update-time">
+                  更新于: {{ lastUpdateTime }}
+                </span>
+                <button class="sandbox-refresh-btn" @click="refreshScenarios" :disabled="scenariosLoading">
+                  {{ scenariosLoading ? '刷新中...' : '🔄 刷新' }}
+                </button>
+              </div>
             </div>
+            
             <div class="sandbox-grid">
               <div 
-                v-for="s in middleEastScenarios" 
+                v-for="(s, index) in middleEastScenarios" 
                 :key="s.name"
                 :class="getScenarioCardClass(s.type)"
+                class="sandbox-card-interactive"
+                @click="selectScenario(index)"
+                :data-selected="selectedScenarioIndex === index"
               >
                 <div class="sandbox-card-header">
-                  <div class="sandbox-card-name">{{ s.name }}</div>
-                  <div :class="getProbClass(s.probability)">{{ (s.probability * 100).toFixed(0) }}%</div>
+                  <div class="sandbox-card-name">
+                    <span class="scenario-number">#{{ index + 1 }}</span>
+                    {{ s.name }}
+                  </div>
+                  <div :class="getProbClass(s.probability)">
+                    {{ (s.probability * 100).toFixed(0) }}%
+                  </div>
                 </div>
-                <div class="sandbox-card-price">黄金: {{ s.gold_price_range }}</div>
-                <div style="font-size: 0.9rem; color: var(--text-secondary); margin-bottom: 4px;">白银: {{ s.silver_price_range }}</div>
-                <div style="font-size: 0.9rem; color: var(--text-secondary); margin-bottom: 12px;">原油: {{ s.crude_price_range }}</div>
-                <div :class="['sandbox-card-action', s.suggested_action]">
-                  {{ s.action_text }}
+                
+                <div class="sandbox-card-body">
+                  <div class="price-grid">
+                    <div class="price-item">
+                      <span class="price-label">🥇 黄金</span>
+                      <span class="price-value">{{ s.gold_price_range }}</span>
+                    </div>
+                    <div class="price-item">
+                      <span class="price-label">🥈 白银</span>
+                      <span class="price-value">{{ s.silver_price_range }}</span>
+                    </div>
+                    <div class="price-item">
+                      <span class="price-label">🛢️ 原油</span>
+                      <span class="price-value">{{ s.crude_price_range }}</span>
+                    </div>
+                  </div>
                 </div>
+                
+                <div class="sandbox-card-action-row">
+                  <div :class="['sandbox-card-action', s.suggested_action]">
+                    {{ s.action_text }}
+                  </div>
+                </div>
+                
                 <div class="sandbox-triggers">
+                  <div class="triggers-title">⚠️ 触发信号</div>
                   <div v-for="t in s.trigger_signals" :key="t" class="sandbox-trigger">
                     {{ t }}
                   </div>
+                </div>
+              </div>
+            </div>
+            
+            <!-- 情景详情面板 -->
+            <div v-if="selectedScenarioIndex !== null" class="scenario-detail-panel">
+              <div class="detail-header">
+                <h3 class="detail-title">情景分析 #{{ selectedScenarioIndex + 1 }}</h3>
+                <button class="detail-close-btn" @click="selectedScenarioIndex = null">×</button>
+              </div>
+              <div class="detail-content">
+                <div class="detail-section">
+                  <span class="detail-label">情景名称</span>
+                  <span class="detail-value">{{ middleEastScenarios[selectedScenarioIndex]?.name }}</span>
+                </div>
+                <div class="detail-section">
+                  <span class="detail-label">发生概率</span>
+                  <span class="detail-value">{{ (middleEastScenarios[selectedScenarioIndex]?.probability * 100).toFixed(0) }}%</span>
+                </div>
+                <div class="detail-section">
+                  <span class="detail-label">建议操作</span>
+                  <span :class="['detail-action', middleEastScenarios[selectedScenarioIndex]?.suggested_action]">
+                    {{ middleEastScenarios[selectedScenarioIndex]?.action_text }}
+                  </span>
                 </div>
               </div>
             </div>
@@ -285,6 +347,23 @@ const chatMessages = ref([])
 const chatLoading = ref(false)
 const chatMessagesRef = ref(null)
 const middleEastScenarios = ref([])
+const scenariosLoading = ref(false)
+const selectedScenarioIndex = ref(null)
+const lastUpdateTime = ref('')
+
+const refreshScenarios = async () => {
+  scenariosLoading.value = true
+  await fetchMiddleEastScenarios()
+  scenariosLoading.value = false
+}
+
+const selectScenario = (index) => {
+  if (selectedScenarioIndex.value === index) {
+    selectedScenarioIndex.value = null
+  } else {
+    selectedScenarioIndex.value = index
+  }
+}
 
 const fetchMiddleEastScenarios = async () => {
   try {
@@ -292,6 +371,7 @@ const fetchMiddleEastScenarios = async () => {
     const data = await res.json()
     if (data.success) {
       middleEastScenarios.value = data.data
+      lastUpdateTime.value = new Date().toLocaleString('zh-CN')
     }
   } catch (e) {
     console.error('Failed to fetch Middle East scenarios:', e)
