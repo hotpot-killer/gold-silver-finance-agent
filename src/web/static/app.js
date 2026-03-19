@@ -41,7 +41,7 @@ createApp({
     const chatMessages = ref([])
     const chatLoading = ref(false)
     
-    // 中东局势沙盘数据
+    // 中东局势沙盘数据（重点关注伊朗局势）
     const middleEastScenarios = ref([
       {
         name: '维持现状 (Status Quo)',
@@ -53,9 +53,9 @@ createApp({
         suggested_action: 'wait',
         action_text: '观望持有',
         trigger_signals: [
-          '以色列与哈马斯停火协议继续生效',
-          '伊朗不直接介入冲突',
-          '霍尔木兹海峡航运正常'
+          '伊朗局势保持稳定，无新的军事行动',
+          '霍尔木兹海峡航运正常',
+          '以色列与伊朗未发生直接冲突'
         ]
       },
       {
@@ -68,9 +68,9 @@ createApp({
         suggested_action: 'sell',
         action_text: '减持黄金',
         trigger_signals: [
-          '中东多方达成长期和平协议',
-          '美国解除对伊朗部分制裁',
-          '也门胡塞武装停止袭击商船'
+          '美国与伊朗达成新的协议',
+          '伊朗石油出口恢复正常',
+          '地缘紧张局势缓解'
         ]
       },
       {
@@ -83,9 +83,9 @@ createApp({
         suggested_action: 'buy',
         action_text: '增持黄金',
         trigger_signals: [
-          '以色列扩大地面军事行动',
-          '伊朗革命卫队直接参战',
-          '霍尔木兹海峡航运受阻'
+          '伊朗革命卫队发动军事行动',
+          '霍尔木兹海峡航运受阻',
+          '伊朗核设施受到打击'
         ]
       },
       {
@@ -98,9 +98,9 @@ createApp({
         suggested_action: 'buy',
         action_text: '重仓做多',
         trigger_signals: [
-          '中东地区爆发全面战争',
-          '美国直接军事介入',
-          '霍尔木兹海峡完全封锁'
+          '伊朗与美国/以色列爆发全面冲突',
+          '霍尔木兹海峡完全封锁',
+          '中东地区爆发大规模战争'
         ]
       }
     ])
