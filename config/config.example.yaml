@@ -76,6 +76,10 @@ research:
   # 输出总结条数
   summary_points: 3
 
+# 长期概率预测配置（新增：基于宏观因子+LLM的多情景概率预测）
+forecast:
+  enabled: false            # 是否启用长期预测功能，需要yfinance + LLM API
+
 # 预警规则配置（专注黄金白银）
 # 升级后：从被动监控 → 主动信号生成
 alerts:

@@ -57,6 +57,10 @@ class ResearchConfig:
     summary_points: int = 3
 
 @dataclass
+class ForecastConfig:
+    enabled: bool = False
+
+@dataclass
 class AlertConfig:
     alerts: List[dict] = field(default_factory=list)
 
@@ -109,6 +113,7 @@ class Config:
     llm: LLMConfig = field(default_factory=LLMConfig)
     monitor: MonitorConfig = field(default_factory=MonitorConfig)
     research: ResearchConfig = field(default_factory=ResearchConfig)
+    forecast: ForecastConfig = field(default_factory=ForecastConfig)
     alerts: AlertConfig = field(default_factory=AlertConfig)
     notify: NotifyConfig = field(default_factory=NotifyConfig)
     schedule: ScheduleConfig = field(default_factory=ScheduleConfig)
@@ -147,6 +152,9 @@ def load_config(config_path: str = "config/config.yaml") -> Config:
         config.research.auto_fetch = data['research'].get('auto_fetch', True)
         config.research.only_related = data['research'].get('only_related', True)
         config.research.summary_points = data['research'].get('summary_points', 3)
+    
+    if 'forecast' in data:
+        config.forecast.enabled = data['forecast'].get('enabled', False)
     
     if 'alerts' in data:
         config.alerts.alerts = data['alerts']
