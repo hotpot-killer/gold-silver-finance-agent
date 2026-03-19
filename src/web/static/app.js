@@ -33,6 +33,70 @@ createApp({
     let chartInstance = null
     let candlestickSeries = null
     
+    // 中东局势沙盘数据
+    const middleEastScenarios = ref([
+      {
+        name: '维持现状 (Status Quo)',
+        type: 'status-quo',
+        probability: 0.55,
+        gold_price_range: '4800-5100',
+        silver_price_range: '74-78',
+        crude_price_range: '95-105',
+        suggested_action: 'wait',
+        action_text: '观望持有',
+        trigger_signals: [
+          '以色列与哈马斯停火协议继续生效',
+          '伊朗不直接介入冲突',
+          '霍尔木兹海峡航运正常'
+        ]
+      },
+      {
+        name: '局势缓和 (De-escalation)',
+        type: 'de-escalation',
+        probability: 0.2,
+        gold_price_range: '4600-4900',
+        silver_price_range: '71-75',
+        crude_price_range: '88-98',
+        suggested_action: 'sell',
+        action_text: '减持黄金',
+        trigger_signals: [
+          '中东多方达成长期和平协议',
+          '美国解除对伊朗部分制裁',
+          '也门胡塞武装停止袭击商船'
+        ]
+      },
+      {
+        name: '局势升级 (Escalation)',
+        type: 'escalation',
+        probability: 0.2,
+        gold_price_range: '5100-5400',
+        silver_price_range: '78-83',
+        crude_price_range: '105-115',
+        suggested_action: 'buy',
+        action_text: '增持黄金',
+        trigger_signals: [
+          '以色列扩大地面军事行动',
+          '伊朗革命卫队直接参战',
+          '霍尔木兹海峡航运受阻'
+        ]
+      },
+      {
+        name: '重大危机 (Major Crisis)',
+        type: 'major-crisis',
+        probability: 0.05,
+        gold_price_range: '5400-5900',
+        silver_price_range: '83-92',
+        crude_price_range: '115-130',
+        suggested_action: 'buy',
+        action_text: '重仓做多',
+        trigger_signals: [
+          '中东地区爆发全面战争',
+          '美国直接军事介入',
+          '霍尔木兹海峡完全封锁'
+        ]
+      }
+    ])
+    
     const fetchGuruViews = async () => {
       guruLoading.value = true
       try {
@@ -294,6 +358,21 @@ createApp({
       return `badge badge-type-${type}`
     }
     
+    // 获取情景卡片class
+    const getScenarioCardClass = (type) => {
+      if (type === 'major-crisis' || type === 'escalation') {
+        return 'sandbox-card danger'
+      }
+      return 'sandbox-card'
+    }
+    
+    const getProbClass = (prob) => {
+      if (prob > 0.4) {
+        return 'sandbox-card-prob'
+      }
+      return 'sandbox-card-prob high'
+    }
+    
     return {
       allAlerts,
       stats,
@@ -322,27 +401,49 @@ createApp({
       loadMore,
       refresh,
       switchAsset,
-      formatPrice
+      formatPrice,
+      middleEastScenarios,
+      getScenarioCardClass,
+      getProbClass
     }
   },
   template: `
     <div class="container">
       <header>
         <h1><span class="emoji">🤖</span> gold-silver-finance-agent</h1>
-        <div class="subtitle">📊 AI 赋能黄金白银主动监控 - 高端市场仪表盘</div>
-        <div class="forward-markets">
-          <h3>🔮 前瞻预测市场（点击查看最新市场概率）</h3>
-          <div class="hint">AI 综合分析会参考这些平台反映的市场一致预期</div>
-          <div class="market-links">
-            <a href="https://polymarket.com/predictions/gold" target="_blank" class="market-link">Polymarket (长周期预测)</a>
-            <a href="https://kalshi.com/markets" target="_blank" class="market-link">Kalshi (短期/周月级)</a>
-            <a href="https://www.cmegroup.com/markets/metals/precious.html" target="_blank" class="market-link">CME 贵金属</a>
-            <a href="https://www.cmegroup.com/markets/energy/crude-oil/crude-oil-wti-light-sweet.html" target="_blank" class="market-link">CME WTI原油</a>
-            <a href="https://www.ishares.com/us/products/239751/gld-spdr-gold-trust" target="_blank" class="market-link">GLD 持仓</a>
-            <a href="https://www.ishares.com/us/products/239728/slv-isharess-silver-trust" target="_blank" class="market-link">SLV 持仓</a>
+        <div class="subtitle">📊 AI 赋能黄金白银主动监控 - 专业市场分析平台</div>
+      </header>
+
+      <!-- 中东局势推演沙盘 - 核心重点 -->
+      <div class="sandbox-section">
+        <div class="sandbox-title">
+          🌍 中东局势推演沙盘
+          <span style="font-size: 0.9rem; font-weight: 400; opacity: 0.8; margin-left: auto;">黄金价格最关键影响因素</span>
+        </div>
+        <div class="sandbox-grid">
+          <div 
+            v-for="s in middleEastScenarios" 
+            :key="s.name"
+            :class="getScenarioCardClass(s.type)"
+          >
+            <div class="sandbox-card-header">
+              <div class="sandbox-card-name">{{ s.name }}</div>
+              <div :class="getProbClass(s.probability)">{{ (s.probability * 100).toFixed(0) }}%</div>
+            </div>
+            <div class="sandbox-card-price">黄金: {{ s.gold_price_range }}</div>
+            <div style="font-size: 0.9rem; color: var(--text-secondary); margin-bottom: 4px;">白银: {{ s.silver_price_range }}</div>
+            <div style="font-size: 0.9rem; color: var(--text-secondary); margin-bottom: 12px;">原油: {{ s.crude_price_range }}</div>
+            <div :class="['sandbox-card-action', s.suggested_action]">
+              {{ s.action_text }}
+            </div>
+            <div class="sandbox-triggers">
+              <div v-for="t in s.trigger_signals" :key="t" class="sandbox-trigger">
+                {{ t }}
+              </div>
+            </div>
           </div>
         </div>
-      </header>
+      </div>
 
       <!-- 仪表盘概览 -->
       <div class="dashboard-section">
@@ -371,22 +472,18 @@ createApp({
         </div>
 
         <!-- 知名宏观大佬最新观点 -->
-        <div class="guru-section">
-          <div class="card-title">🤔 知名宏观大佬最新黄金观点（人群智慧参考）</div>
+        <div class="recent-alerts-card" style="margin-bottom: 32px;">
+          <div class="card-title">🤔 知名宏观大佬最新黄金观点</div>
           <div v-if="guruLoading" style="text-align:center; padding:20px; color:var(--text-muted);">加载中...</div>
-          <div class="guru-grid" v-else>
-            <div class="guru-card" v-for="guru in guruViews" :key="guru.name">
-              <div class="guru-name">{{ guru.name }}</div>
-              <div class="guru-title">{{ guru.title }}</div>
-              <div class="guru-view">📝 最新 ({{ guru.updated_at }}): {{ guru.latest_view }}</div>
-              <span :class="['guru-tone', guru.tone === 'bullish' ? 'tone-bullish' : guru.tone === 'bearish' ? 'tone-bearish' : 'tone-neutral']">
+          <div v-else style="display:grid; grid-template-columns: repeat(auto-fit, minmax(360px, 1fr)); gap:20px;">
+            <div v-for="guru in guruViews" :key="guru.name" style="border:1px solid var(--border); border-radius:12px; padding:20px; background: linear-gradient(135deg, rgba(30,41,59,0.95) 0%, rgba(15,23,42,0.95) 100%);">
+              <div style="font-size:1.1rem; font-weight:700; color:var(--primary);">{{ guru.name }}</div>
+              <div style="font-size:0.85rem; color:var(--text-muted); margin-bottom:10px;">{{ guru.title }}</div>
+              <div style="font-size:0.95rem; line-height:1.6; color:var(--text-secondary);">📝 最新 ({{ guru.updated_at }}): {{ guru.latest_view }}</div>
+              <span :style="guru.tone === 'bullish' ? 'background:rgba(16,185,129,0.2); color:#34d399; border:1px solid rgba(16,185,129,0.3);' : guru.tone === 'bearish' ? 'background:rgba(239,68,68,0.2); color:#f87171; border:1px solid rgba(239,68,68,0.3);' : 'background:rgba(245,158,11,0.2); color:#fbbf24; border:1px solid rgba(245,158,11,0.3);'" style="display:inline-block; font-size:0.78rem; padding:4px 12px; border-radius:20px; font-weight:600; margin-top:10px;">
                 {{ guru.tone === 'bullish' ? '看多' : guru.tone === 'bearish' ? '看空' : '中性' }}
               </span>
-              <a v-if="guru.source_url" :href="guru.source_url" target="_blank" style="display:inline-block; margin-left:8px; font-size:0.8rem; color:var(--primary);">查看原文 →</a>
             </div>
-          </div>
-          <div style="margin-top: 16px; font-size: 0.85rem; color: var(--text-muted);">
-            💡 提示：每天自动抓取Twitter最新观点，点击"查看原文"看完整内容
           </div>
         </div>
 
@@ -532,7 +629,7 @@ createApp({
       </div>
 
       <footer>
-        <p>gold-silver-finance-agent | 黄金白银 AI 智能监控 · 高端仪表盘</p>
+        <p>gold-silver-finance-agent | 黄金白银 AI 智能监控 · 专业金融分析平台</p>
       </footer>
     </div>
   `

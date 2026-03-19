@@ -17,9 +17,9 @@
             --primary-dark: #4f46e5;
             --secondary: #8b5cf6;
             --accent: #06b6d4;
-            --success: #10b981;
             --warning: #f59e0b;
             --danger: #ef4444;
+            --success: #10b981;
             --bg: #020617;
             --bg-secondary: #0f172a;
             --bg-card: #1e293b;
@@ -33,6 +33,8 @@
             --shadow-lg: 0 20px 60px rgba(0,0,0,0.5);
             --glow-primary: 0 0 30px rgba(99, 102, 241, 0.3);
             --glow-accent: 0 0 25px rgba(6, 182, 212, 0.25);
+            --glow-danger: 0 0 25px rgba(239, 68, 68, 0.25);
+            --glow-warning: 0 0 25px rgba(245, 158, 11, 0.25);
         }
         body {
             font-family: -apple-system, BlinkMacSystemFont, 'SF Pro Display', 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
@@ -50,20 +52,21 @@
             width: 100%;
             height: 100%;
             background-image: 
-                radial-gradient(circle at 20% 20%, rgba(99, 102, 241, 0.15) 0%, transparent 50%),
-                radial-gradient(circle at 80% 80%, rgba(6, 182, 212, 0.1) 0%, transparent 50%);
+                radial-gradient(circle at 20% 20%, rgba(99, 102, 241, 0.12) 0%, transparent 50%),
+                radial-gradient(circle at 80% 80%, rgba(6, 182, 212, 0.08) 0%, transparent 50%),
+                radial-gradient(circle at 50% 10%, rgba(239, 68, 68, 0.06) 0%, transparent 40%);
             pointer-events: none;
             z-index: 0;
         }
         .container {
-            max-width: 1440px;
+            max-width: 1600px;
             margin: 0 auto;
             padding: 24px;
             position: relative;
             z-index: 1;
         }
         header {
-            background: linear-gradient(135deg, rgba(99, 102, 241, 0.2) 0%, rgba(139, 92, 246, 0.15) 50%, rgba(6, 182, 212, 0.1) 100%);
+            background: linear-gradient(135deg, rgba(99, 102, 241, 0.18) 0%, rgba(139, 92, 246, 0.12) 50%, rgba(6, 182, 212, 0.08) 100%);
             backdrop-filter: blur(20px);
             border: 1px solid rgba(255,255,255,0.1);
             color: white;
@@ -81,91 +84,150 @@
             right: -20%;
             width: 60%;
             height: 200%;
-            background: linear-gradient(90deg, transparent, rgba(255,255,255,0.08), transparent);
+            background: linear-gradient(90deg, transparent, rgba(255,255,255,0.1), transparent);
             transform: rotate(25deg);
-            animation: shimmer 8s infinite;
+            animation: shimmer 10s infinite;
         }
         @keyframes shimmer {
             0% { transform: translateX(-100%) rotate(25deg); }
             100% { transform: translateX(100%) rotate(25deg); }
         }
         h1 {
-            font-size: 2.5rem;
+            font-size: 2.6rem;
             margin-bottom: 12px;
             font-weight: 800;
-            letter-spacing: -0.5px;
+            letter-spacing: -0.8px;
             display: flex;
             align-items: center;
             gap: 12px;
         }
         h1 .emoji {
-            font-size: 2.8rem;
+            font-size: 3rem;
             filter: drop-shadow(0 4px 12px rgba(99, 102, 241, 0.5));
         }
         .subtitle {
-            opacity: 0.9;
-            font-size: 1.15rem;
+            opacity: 0.95;
+            font-size: 1.2rem;
             font-weight: 300;
             letter-spacing: 0.3px;
         }
-        /* 前瞻市场链接 */
-        .forward-markets {
-            margin-top: 28px;
-            background: rgba(255,255,255,0.08);
-            backdrop-filter: blur(10px);
-            border-radius: 20px;
-            padding: 24px;
-            border: 1px solid rgba(255,255,255,0.12);
-        }
-        .forward-markets h3 {
-            font-size: 1.2rem;
-            margin-bottom: 12px;
-            font-weight: 700;
-            display: flex;
-            align-items: center;
-            gap: 10px;
-        }
-        .forward-markets .hint {
-            font-size: 0.9rem;
-            opacity: 0.85;
-            margin-bottom: 20px;
-            font-weight: 300;
-        }
-        .market-links {
-            display: flex;
-            flex-wrap: wrap;
-            gap: 14px;
-        }
-        .market-link {
-            background: linear-gradient(135deg, rgba(255,255,255,0.12) 0%, rgba(255,255,255,0.06) 100%);
-            color: white;
-            padding: 12px 22px;
-            border-radius: 14px;
-            text-decoration: none;
-            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-            border: 1px solid rgba(255,255,255,0.15);
-            font-weight: 500;
+        /* 中东局势沙盘 - 核心重点 */
+        .sandbox-section {
+            background: linear-gradient(135deg, rgba(239, 68, 68, 0.1) 0%, rgba(245, 158, 11, 0.08) 50%, rgba(99, 102, 241, 0.06) 100%);
+            backdrop-filter: blur(12px);
+            border-radius: 24px;
+            padding: 32px;
+            margin-bottom: 32px;
+            border: 1px solid rgba(239, 68, 68, 0.2);
+            box-shadow: var(--shadow-lg), var(--glow-danger);
             position: relative;
             overflow: hidden;
         }
-        .market-link::before {
+        .sandbox-section::before {
             content: '';
             position: absolute;
             top: 0;
-            left: -100%;
+            left: 0;
             width: 100%;
-            height: 100%;
-            background: linear-gradient(90deg, transparent, rgba(255,255,255,0.2), transparent);
-            transition: left 0.5s;
+            height: 4px;
+            background: linear-gradient(90deg, var(--danger), var(--warning), var(--primary));
         }
-        .market-link:hover::before {
-            left: 100%;
+        .sandbox-title {
+            font-size: 1.6rem;
+            font-weight: 800;
+            margin-bottom: 24px;
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            color: var(--text-primary);
         }
-        .market-link:hover {
-            background: linear-gradient(135deg, rgba(99, 102, 241, 0.4) 0%, rgba(6, 182, 212, 0.25) 100%);
-            transform: translateY(-3px) scale(1.02);
-            box-shadow: 0 10px 30px rgba(99, 102, 241, 0.3), var(--glow-accent);
-            border-color: rgba(99, 102, 241, 0.5);
+        .sandbox-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+            gap: 20px;
+        }
+        .sandbox-card {
+            background: linear-gradient(135deg, rgba(30, 41, 59, 0.95) 0%, rgba(15, 23, 42, 0.95) 100%);
+            border: 1px solid var(--border);
+            border-radius: 16px;
+            padding: 24px;
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            position: relative;
+        }
+        .sandbox-card:hover {
+            transform: translateY(-4px);
+            box-shadow: 0 12px 40px rgba(239, 68, 68, 0.15);
+            border-color: rgba(245, 158, 11, 0.4);
+        }
+        .sandbox-card.danger {
+            border-color: rgba(239, 68, 68, 0.4);
+        }
+        .sandbox-card.danger:hover {
+            box-shadow: 0 12px 40px rgba(239, 68, 68, 0.25);
+        }
+        .sandbox-card-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-start;
+            margin-bottom: 16px;
+        }
+        .sandbox-card-name {
+            font-size: 1.15rem;
+            font-weight: 700;
+            color: var(--text-primary);
+        }
+        .sandbox-card-prob {
+            font-size: 1.3rem;
+            font-weight: 800;
+            padding: 4px 14px;
+            border-radius: 20px;
+            background: linear-gradient(135deg, var(--primary) 0%, var(--secondary) 100%);
+        }
+        .sandbox-card-prob.high {
+            background: linear-gradient(135deg, var(--danger) 0%, var(--warning) 100%);
+        }
+        .sandbox-card-price {
+            font-size: 1.5rem;
+            font-weight: 800;
+            background: linear-gradient(135deg, var(--text-primary) 0%, var(--text-secondary) 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+            margin-bottom: 12px;
+        }
+        .sandbox-card-action {
+            display: inline-block;
+            padding: 8px 18px;
+            border-radius: 12px;
+            font-weight: 600;
+            margin-top: 12px;
+        }
+        .sandbox-card-action.buy {
+            background: linear-gradient(135deg, var(--success) 0%, #059669 100%);
+        }
+        .sandbox-card-action.sell {
+            background: linear-gradient(135deg, var(--danger) 0%, #dc2626 100%);
+        }
+        .sandbox-card-action.wait {
+            background: linear-gradient(135deg, var(--warning) 0%, #d97706 100%);
+        }
+        .sandbox-triggers {
+            margin-top: 16px;
+            padding-top: 16px;
+            border-top: 1px solid var(--border);
+        }
+        .sandbox-trigger {
+            font-size: 0.85rem;
+            color: var(--text-secondary);
+            margin-bottom: 6px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+        .sandbox-trigger::before {
+            content: '•';
+            color: var(--warning);
+            font-weight: bold;
         }
         /* 仪表盘样式 */
         .dashboard-section {
@@ -260,182 +322,6 @@
             font-weight: 600;
             color: var(--text-primary);
             font-size: 1.02rem;
-        }
-        /* 大佬观点专区样式 */
-        .guru-section {
-            background: linear-gradient(135deg, var(--bg-card) 0%, rgba(30, 41, 59, 0.85) 100%);
-            backdrop-filter: blur(10px);
-            border-radius: 20px;
-            box-shadow: var(--shadow);
-            padding: 28px;
-            margin-bottom: 32px;
-            border: 1px solid var(--border);
-        }
-        .guru-grid {
-            display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(380px, 1fr));
-            gap: 24px;
-        }
-        .guru-card {
-            border: 1px solid var(--border);
-            border-radius: 16px;
-            padding: 24px;
-            transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
-            background: linear-gradient(135deg, rgba(30, 41, 59, 0.9) 0%, rgba(15, 23, 42, 0.9) 100%);
-            position: relative;
-            overflow: hidden;
-        }
-        .guru-card::before {
-            content: '';
-            position: absolute;
-            top: 0;
-            left: 0;
-            width: 4px;
-            height: 100%;
-            background: linear-gradient(180deg, var(--primary), var(--accent));
-        }
-        .guru-card:hover {
-            transform: translateY(-5px);
-            box-shadow: var(--shadow-lg), 0 0 25px rgba(99, 102, 241, 0.2);
-            border-color: var(--primary);
-        }
-        .guru-name {
-            font-size: 1.15rem;
-            font-weight: 700;
-            color: var(--text-primary);
-            margin-bottom: 6px;
-        }
-        .guru-title {
-            font-size: 0.85rem;
-            color: var(--text-muted);
-            margin-bottom: 14px;
-        }
-        .guru-view {
-            font-size: 0.95rem;
-            line-height: 1.6;
-            margin-bottom: 10px;
-            color: var(--text-secondary);
-        }
-        .guru-tone {
-            display: inline-block;
-            font-size: 0.78rem;
-            padding: 4px 12px;
-            border-radius: 20px;
-            font-weight: 600;
-            letter-spacing: 0.3px;
-        }
-        .tone-bullish {
-            background: linear-gradient(135deg, rgba(16, 185, 129, 0.2) 0%, rgba(16, 185, 129, 0.1) 100%);
-            color: #34d399;
-            border: 1px solid rgba(16, 185, 129, 0.3);
-        }
-        .tone-bearish {
-            background: linear-gradient(135deg, rgba(239, 68, 68, 0.2) 0%, rgba(239, 68, 68, 0.1) 100%);
-            color: #f87171;
-            border: 1px solid rgba(239, 68, 68, 0.3);
-        }
-        .tone-neutral {
-            background: linear-gradient(135deg, rgba(245, 158, 11, 0.2) 0%, rgba(245, 158, 11, 0.1) 100%);
-            color: #fbbf24;
-            border: 1px solid rgba(245, 158, 11, 0.3);
-        }
-        .recent-alert-time {
-            font-size: 0.82rem;
-            color: var(--text-muted);
-        }
-        .recent-alert-message {
-            font-size: 0.9rem;
-            color: var(--text-secondary);
-            line-height: 1.6;
-        }
-        .empty-recent {
-            text-align: center;
-            color: var(--text-muted);
-            padding: 32px 20px;
-            font-size: 0.95rem;
-        }
-        .filters-section {
-            background: linear-gradient(135deg, var(--bg-card) 0%, rgba(30, 41, 59, 0.85) 100%);
-            backdrop-filter: blur(10px);
-            padding: 28px;
-            border-radius: 20px;
-            box-shadow: var(--shadow);
-            margin-bottom: 32px;
-            border: 1px solid var(--border);
-        }
-        .filters-title {
-            font-weight: 700;
-            margin-bottom: 20px;
-            color: var(--text-primary);
-            font-size: 1.15rem;
-        }
-        .filters {
-            display: flex;
-            flex-wrap: wrap;
-            gap: 16px;
-            align-items: center;
-        }
-        .filter-group {
-            display: flex;
-            flex-direction: column;
-            gap: 10px;
-        }
-        .filter-label {
-            font-size: 0.85rem;
-            color: var(--text-secondary);
-            font-weight: 600;
-            text-transform: uppercase;
-            letter-spacing: 0.5px;
-        }
-        .filter-buttons {
-            display: flex;
-            flex-wrap: wrap;
-            gap: 10px;
-        }
-        .filter-btn {
-            padding: 8px 18px;
-            border: 1px solid var(--border);
-            background: linear-gradient(135deg, rgba(30, 41, 59, 0.8) 0%, rgba(15, 23, 42, 0.8) 100%);
-            border-radius: 24px;
-            cursor: pointer;
-            font-size: 0.9rem;
-            font-weight: 500;
-            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-            color: var(--text-secondary);
-        }
-        .filter-btn:hover {
-            border-color: var(--primary);
-            color: var(--primary);
-            transform: translateY(-1px);
-        }
-        .filter-btn.active {
-            background: linear-gradient(135deg, var(--primary) 0%, var(--secondary) 100%);
-            border-color: transparent;
-            color: white;
-            box-shadow: 0 4px 20px rgba(99, 102, 241, 0.3);
-        }
-        .refresh-btn {
-            background: linear-gradient(135deg, var(--success) 0%, #059669 100%);
-            color: white;
-            border: none;
-            padding: 10px 24px;
-            border-radius: 12px;
-            cursor: pointer;
-            font-size: 0.95rem;
-            font-weight: 600;
-            margin-left: auto;
-            transition: all 0.3s;
-            box-shadow: 0 4px 16px rgba(16, 185, 129, 0.3);
-        }
-        .refresh-btn:hover {
-            transform: translateY(-2px);
-            box-shadow: 0 8px 24px rgba(16, 185, 129, 0.4);
-        }
-        .refresh-btn:disabled {
-            background: var(--text-muted);
-            cursor: not-allowed;
-            box-shadow: none;
-            transform: none;
         }
         /* 价格卡片样式 */
         .price-section {
@@ -611,37 +497,6 @@
             color: var(--text-muted);
             font-size: 1.1rem;
         }
-        .load-more {
-            text-align: center;
-            padding: 28px;
-        }
-        .load-more-btn {
-            background: transparent;
-            border: 1px solid var(--primary);
-            color: var(--primary);
-            padding: 12px 36px;
-            border-radius: 12px;
-            cursor: pointer;
-            font-size: 0.95rem;
-            font-weight: 600;
-            transition: all 0.3s;
-        }
-        .load-more-btn:hover {
-            background: linear-gradient(135deg, var(--primary) 0%, var(--secondary) 100%);
-            color: white;
-            transform: translateY(-2px);
-            box-shadow: 0 8px 24px rgba(99, 102, 241, 0.35);
-        }
-        .load-more-btn:disabled {
-            opacity: 0.5;
-            cursor: not-allowed;
-            transform: none;
-            box-shadow: none;
-        }
-        .no-more {
-            color: var(--text-muted);
-            font-size: 0.9rem;
-        }
         footer {
             text-align: center;
             margin-top: 40px;
@@ -674,6 +529,9 @@
             .price-tab {
                 flex: 1 1 45%;
                 text-align: center;
+            }
+            .sandbox-grid {
+                grid-template-columns: 1fr;
             }
         }
     </style>
