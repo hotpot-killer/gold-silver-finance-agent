@@ -165,11 +165,12 @@ async def api_price(symbol: str):
                 data = resp.json()
                 price = None
                 change = 0
-                target_code = {
-                    'XAUUSD': 'GC',
-                    'XAGUSD': 'SI', 
-                    'CL': 'CL',
-                }.get(symbol)
+                target_code_map = {
+                    'XAUUSD': 'XAU',       # 伦敦现货黄金
+                    'XAGUSD': 'XAG',       # 伦敦现货白银
+                    'CL': 'CL',            # WTI原油
+                }
+                target_code = target_code_map.get(symbol)
                 
                 if data.get("code") == 0 and "data" in data and target_code:
                     # Select correct list based on asset type
@@ -183,8 +184,8 @@ async def api_price(symbol: str):
                         for item in items:
                             if item["code"] == target_code:
                                 price = float(item["zxj"])
-                                if "zd" in item:
-                                    change = float(item["zd"])
+                                if "zde" in item:
+                                    change = float(item["zde"])  # zde already is percentage change
                                 break
                 
                 # 如果成功获取到价格，更新到本地CSV
