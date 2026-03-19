@@ -719,6 +719,40 @@ def run_once(config: Config) -> bool:
         except Exception as e:
             logger.error(f"Failed to run scenario simulation: {e}");
     
+    # ===========================================
+    # Step 9: 中东局势多情景推演（参考MiroFish思想）
+    # 模拟中东局势各种演进方向，预测黄金/白银/原油价格走势，给出操作建议
+    # ===========================================
+    if config.scenario.enabled and config.llm.api_key and gold_price and silver_price and crude_oil_price:
+        logger.info("▶️ Step 9: Running Middle East scenario simulation (MiroFish-style)...");
+        from src.research.middle_east_scenario import MiddleEastScenarioSimulator
+        
+        simulator = MiddleEastScenarioSimulator(
+            config.llm.api_key,
+            config.llm.model,
+            config.llm.base_url
+        );
+        
+        # 准备新闻列表
+        news_titles = [n.title for n in news if any(kw.lower() in n.title.lower() for kw in ['中东','以色列','哈马斯','伊朗','也门','胡塞','海湾','原油','油价','石油','中东局势','巴以','伊核','霍尔木兹'])][:10]
+        if len(news_titles) == 0:
+            news_titles = [n.title for n in news[:10]]
+        
+        try:
+            scenarios = simulator.simulate(
+                current_gold_price=gold_price.price,
+                current_silver_price=silver_price.price,
+                current_crude_price=crude_oil_price.price,
+                recent_news=news_titles,
+            );
+            if len(scenarios) > 0:
+                content_parts.append("\n---\n\n");
+                content_parts.append("## 🌍 中东局势多情景推演（参考MiroFish思想）\n\n");
+                content_parts.append(simulator.format_for_report(scenarios) + "\n\n");
+                logger.info("✅ Completed: Middle East scenario simulation");
+        except Exception as e:
+            logger.error(f"Failed to run Middle East scenario simulation: {e}");
+    
     # 免责声明 + 版本更新提示
     content_parts.append("\n---\n\n");
     content_parts.append("## ⚠️ 免责声明\n\n");
