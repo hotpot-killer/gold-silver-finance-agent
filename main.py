@@ -57,6 +57,10 @@ class ResearchConfig:
     summary_points: int = 3
 
 @dataclass
+class DataApiConfig:
+    fred: str = ""
+
+@dataclass
 class ForecastConfig:
     enabled: bool = False
     use_mixed_model: bool = False
@@ -122,6 +126,7 @@ class Config:
     research: ResearchConfig = field(default_factory=ResearchConfig)
     forecast: ForecastConfig = field(default_factory=ForecastConfig)
     scenario: ScenarioConfig = field(default_factory=ScenarioConfig)
+    data_api: DataApiConfig = field(default_factory=DataApiConfig)
     alerts: AlertConfig = field(default_factory=AlertConfig)
     notify: NotifyConfig = field(default_factory=NotifyConfig)
     schedule: ScheduleConfig = field(default_factory=ScheduleConfig)
@@ -168,6 +173,9 @@ def load_config(config_path: str = "config/config.yaml") -> Config:
     
     if 'scenario' in data:
         config.scenario.enabled = data['scenario'].get('enabled', False)
+    
+    if 'data_api' in data:
+        config.data_api.fred = data['data_api'].get('fred', '')
     
     if 'alerts' in data:
         config.alerts.alerts = data['alerts']
@@ -483,8 +491,10 @@ def run_once(config: Config) -> bool:
         content_parts.append("|----------|--------|-------------------|--------------|\n");
         
         # 金银比
+        gold_silver_ratio = None
         if gold_price is not None and silver_price is not None and silver_price.price > 0:
-            gs_ratio = gold_price.price / silver_price.price
+            gold_silver_ratio = gold_price.price / silver_price.price
+            gs_ratio = gold_silver_ratio
             if gs_ratio > 85:
                 interpretation = "🔺 白银极端低估区间"
             elif gs_ratio < 55:
@@ -496,8 +506,10 @@ def run_once(config: Config) -> bool:
             content_parts.append("| **金银比** | -      | 数据缺失         | 55–85       |\n");
         
         # 金油比
+        gold_oil_ratio = None
         if gold_price is not None and crude_oil_price is not None and crude_oil_price.price > 0:
-            go_ratio = gold_price.price / crude_oil_price.price
+            gold_oil_ratio = gold_price.price / crude_oil_price.price
+            go_ratio = gold_oil_ratio
             if go_ratio > 50:
                 interpretation = "🟡 黄金仍偏贵，原油更有机会"
             elif go_ratio > 40:
@@ -594,6 +606,71 @@ def run_once(config: Config) -> bool:
                 logger.info("✅ Completed: LLM comprehensive analysis with Middle East局势 integration")
         except Exception as e:
             logger.error(f"Failed to generate LLM analysis: {e}");
+    
+    # ===========================================
+    # Step 7: 长期概率预测（新增 - 混合模型）
+    # ===========================================
+    if config.forecast.enabled and config.llm.api_key and gold_price and crude_oil_price:
+        logger.info("▶️ Step 7: Generating long-term probability forecast (mixed model)...");
+        
+        if config.forecast.use_mixed_model:
+            # 使用混合模型: Macro Agent + Quant Agent + LLM Scenario + Risk Agent
+            from src.research.forecast_mixed import MixedGoldForecaster
+            
+            forecaster = MixedGoldForecaster(
+                openai_api_key=config.llm.api_key,
+                openai_model=config.llm.model,
+                openai_base_url=config.llm.base_url,
+                fred_api_key=config.data_api.get('fred', None) if 'data_api' in config else None,
+                xgb_model_path=config.forecast.xgb_model_path,
+            );
+            
+            try:
+                forecast_text = forecaster.forecast(
+                    current_gold_price=gold_price.price,
+                    gold_silver_ratio=gold_silver_ratio if gold_silver_ratio else 0,
+                    gold_oil_ratio=gold_oil_ratio if gold_oil_ratio else 0,
+                    geo_risk_score=geo_risk_score if 'geo_risk_score' in locals() else len([n for n in news if any(kw.lower() in n.title.lower() for kw in ['中东','以色列','哈马斯','伊朗','也门','胡塞','海湾','原油','油价','石油','中东局势','巴以','伊核','霍尔木兹'])]) * 2,
+                    middle_east_news=[n for n in news if any(kw.lower() in n.title.lower() for kw in ['中东','以色列','哈马斯','伊朗','也门','胡塞','海湾','原油','油价','石油','中东局势','巴以','伊核','霍尔木兹'])],
+                );
+                if forecast_text:
+                    content_parts.append("\n---\n\n");
+                    content_parts.append("### 🔮 长期概率预测 (混合模型)\n\n");
+                    content_parts.append(forecast_text + "\n\n");
+                    logger.info("✅ Completed: Long-term probability forecast (mixed model) generated");
+            except Exception as e:
+                logger.error(f"Failed to generate mixed forecast: {e}");
+        else:
+            # 使用MVP LLM-only版本
+            from src.research.forecast import GoldPriceForecaster
+            
+            forecaster = GoldPriceForecaster(
+                config.llm.api_key,
+                config.llm.model,
+                config.llm.base_url
+            );
+            
+            # 构建预测输入
+            from src.research.forecast import ForecastInput
+            forecast_input = ForecastInput(
+                current_gold_price=gold_price.price,
+                current_silver_price=silver_price.price if silver_price else 0,
+                current_crude_price=crude_oil_price.price,
+                gold_silver_ratio=gold_silver_ratio if gold_silver_ratio else 0,
+                gold_oil_ratio=gold_oil_ratio if gold_oil_ratio else 0,
+                geo_risk_score=geo_risk_score if 'geo_risk_score' in locals() else len([n for n in news if any(kw.lower() in n.title.lower() for kw in ['中东','以色列','哈马斯','伊朗','也门','胡塞','海湾','原油','油价','石油','中东局势','巴以','伊核','霍尔木兹'])]) * 2,
+                middle_east_news=[n for n in news if any(kw.lower() in n.title.lower() for kw in ['中东','以色列','哈马斯','伊朗','也门','胡塞','海湾','原油','油价','石油','中东局势','巴以','伊核','霍尔木兹'])],
+            );
+            
+            try:
+                forecast_text = forecaster.generate_forecast(forecast_input);
+                if forecast_text:
+                    content_parts.append("\n---\n\n");
+                    content_parts.append("### 🔮 长期概率预测 (MVP)\n\n");
+                    content_parts.append(forecast_text + "\n\n");
+                    logger.info("✅ Completed: Long-term probability forecast (MVP) generated");
+            except Exception as e:
+                logger.error(f"Failed to generate forecast: {e}");
     
     # ===========================================
     # Step 8: 多情景逻辑推演（参考MiroFish思想）
