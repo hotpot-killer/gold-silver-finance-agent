@@ -414,7 +414,12 @@ def run_once(config: Config) -> bool:
     # 添加今日行情概览 - 主动提供市场概况，即使没有预警
     crude_oil_price = None
     if len(prices) > 0:
-        content_parts.append("### 📈 今日行情概览\n\n")
+        content_parts.append("### 📈 今日行情概览\n\n");
+        # 找到黄金、白银和原油最新价格
+        from datetime import datetime
+        current_dt = datetime.now().strftime("%Y-%m-%d %H:%M GMT+8")
+        content_parts.append(f"🕒 **更新时间**: {current_dt}\n\n");
+        
         # 找到黄金、白银和原油最新价格
         for p in prices:
             if p.symbol in ['XAUUSD', 'gold']:
@@ -424,83 +429,87 @@ def run_once(config: Config) -> bool:
             if p.symbol in ['CL', 'CO', 'crude_oil']:
                 crude_oil_price = p
         
+        # 绿表示上涨，红表示下跌（国内习惯：绿涨红跌）
+        def get_change_emoji(change):
+            return '🟢↑' if change >= 0 else '🔴↓'
+        
         if gold_price:
-            change_emoji = '↑' if gold_price.change >= 0 else '↓'
+            change_emoji = get_change_emoji(gold_price.change)
             if abs(gold_price.change) < 0.01:
-                # 绝对变化接近0，只显示百分比
-                content_parts.append(f"**伦敦现货黄金**: {gold_price.price:.2f}  {change_emoji} ({gold_price.change_pct:.2f}%)\n\n")
+                # 绝对变化接近0，只显示百分比（日涨幅 vs 前收盘）
+                content_parts.append(f"**伦敦现货黄金 (LBMA)**: {gold_price.price:.2f}  {change_emoji} *日涨幅* {gold_price.change_pct:.2f}%\n\n")
             else:
-                content_parts.append(f"**伦敦现货黄金**: {gold_price.price:.2f}  {change_emoji} {abs(gold_price.change):.2f} ({gold_price.change_pct:.2f}%)\n\n")
+                content_parts.append(f"**伦敦现货黄金 (LBMA)**: {gold_price.price:.2f}  {change_emoji} {abs(gold_price.change):.2f} *日涨幅* {gold_price.change_pct:.2f}%\n\n")
         
         if silver_price:
-            change_emoji = '↑' if silver_price.change >= 0 else '↓'
+            change_emoji = get_change_emoji(silver_price.change)
             if abs(silver_price.change) < 0.01:
-                content_parts.append(f"**伦敦现货白银**: {silver_price.price:.2f}  {change_emoji} ({silver_price.change_pct:.2f}%)\n\n")
+                content_parts.append(f"**伦敦现货白银 (LBMA)**: {silver_price.price:.2f}  {change_emoji} *日涨幅* {silver_price.change_pct:.2f}%\n\n")
             else:
-                content_parts.append(f"**伦敦现货白银**: {silver_price.price:.2f}  {change_emoji} {abs(silver_price.change):.2f} ({silver_price.change_pct:.2f}%)\n\n")
+                content_parts.append(f"**伦敦现货白银 (LBMA)**: {silver_price.price:.2f}  {change_emoji} {abs(silver_price.change):.2f} *日涨幅* {silver_price.change_pct:.2f}%\n\n")
         
         if crude_oil_price:
-            change_emoji = '↑' if crude_oil_price.change >= 0 else '↓'
+            change_emoji = get_change_emoji(crude_oil_price.change)
             if abs(crude_oil_price.change) < 0.01:
-                content_parts.append(f"**WTI原油期货**: {crude_oil_price.price:.2f}  {change_emoji} ({crude_oil_price.change_pct:.2f}%)\n\n")
+                content_parts.append(f"**WTI原油期货 (NYMEX)**: {crude_oil_price.price:.2f}  {change_emoji} *日涨幅* {crude_oil_price.change_pct:.2f}%\n\n")
             else:
-                content_parts.append(f"**WTI原油期货**: {crude_oil_price.price:.2f}  {change_emoji} {abs(crude_oil_price.change):.2f} ({crude_oil_price.change_pct:.2f}%)\n\n")
+                content_parts.append(f"**WTI原油期货 (NYMEX)**: {crude_oil_price.price:.2f}  {change_emoji} {abs(crude_oil_price.change):.2f} *日涨幅* {crude_oil_price.change_pct:.2f}%\n\n")
         
-        # 如果黄金白银都有数据，显示金银比
+        # 关键数据速览表格
+        content_parts.append("### 📊 关键比率速览\n\n");
+        content_parts.append("| 指标     | 当前值 | 位置解读          | 主流正常区间 |\n");
+        content_parts.append("|----------|--------|-------------------|--------------|\n");
+        
+        # 金银比
         if gold_price is not None and silver_price is not None and silver_price.price > 0:
-            ratio = gold_price.price / silver_price.price
-            if ratio > 80:
-                content_parts.append(f"**金银比**: {ratio:.1f} 🔺 接近极端高估区间\n\n")
-            elif ratio < 55:
-                content_parts.append(f"**金银比**: {ratio:.1f} 🔻 接近极端低估区间\n\n")
-            elif 55 <= ratio <= 85:
-                content_parts.append(f"**金银比**: {ratio:.1f} ✅ 在正常区间(55-85)内\n\n")
+            gs_ratio = gold_price.price / silver_price.price
+            if gs_ratio > 85:
+                interpretation = "🔺 白银极端低估区间"
+            elif gs_ratio < 55:
+                interpretation = "🔻 黄金极端低估区间"
+            else:
+                interpretation = "✅ 正常区间"
+            content_parts.append(f"| **金银比** | {gs_ratio:.1f} | {interpretation} | 55–85       |\n");
+        else:
+            content_parts.append("| **金银比** | -      | 数据缺失         | 55–85       |\n");
         
-        # 如果黄金和原油都有数据，显示金油比（盎司黄金 ÷ 桶原油）
+        # 金油比
         if gold_price is not None and crude_oil_price is not None and crude_oil_price.price > 0:
-            gold_oil_ratio = gold_price.price / crude_oil_price.price
-            if gold_oil_ratio > 50:
-                content_parts.append(f"**金油比**: {gold_oil_ratio:.1f} 🟡 仍显著高于历史常态(>50) → 黄金相对原油偏贵，原油更有相对机会\n\n")
-            elif gold_oil_ratio > 40:
-                content_parts.append(f"**金油比**: {gold_oil_ratio:.1f} 🟡 高于历史常态(40-50) → 黄金相对原油仍偏贵\n\n")
-            elif gold_oil_ratio >= 20:
-                content_parts.append(f"**金油比**: {gold_oil_ratio:.1f} ⚪ 处于正常区间(20-40)\n\n")
-            elif gold_oil_ratio >= 15:
-                content_parts.append(f"**金油比**: {gold_oil_ratio:.1f} 🟢 低于常态 → 原油相对黄金偏贵，黄金更有相对机会\n\n")
-            else: # < 15
-                content_parts.append(f"**金油比**: {gold_oil_ratio:.1f} 🔵 极端低位 → 原油极端强势/黄金极端便宜\n\n")
+            go_ratio = gold_price.price / crude_oil_price.price
+            if go_ratio > 50:
+                interpretation = "🟡 黄金仍偏贵，原油更有机会"
+            elif go_ratio > 40:
+                interpretation = "🟡 高于历史常态"
+            elif go_ratio >= 20:
+                interpretation = "⚪ 正常区间"
+            elif go_ratio >= 15:
+                interpretation = "🟢 黄金更有相对机会"
+            else:
+                interpretation = "🔵 极端低位"
+            content_parts.append(f"| **金油比** | {go_ratio:.1f} | {interpretation} | 15–40       |\n");
+        else:
+            content_parts.append("| **金油比** | -      | 数据缺失         | 15–40       |\n");
         
-        # 添加技术指标概览
-        if gold_df is not None and len(gold_df) >= 14:
-            from src.alert.indicator import IndicatorCalculator
-            rsi = IndicatorCalculator.rsi(gold_df, 14)
-            current_rsi = rsi.iloc[-1]
-            content_parts.append(f"黄金 RSI(14): {current_rsi:.1f}\n")
-        
-        if silver_df is not None and len(silver_df) >= 14:
-            from src.alert.indicator import IndicatorCalculator
-            rsi = IndicatorCalculator.rsi(silver_df, 14)
-            current_rsi = rsi.iloc[-1]
-            content_parts.append(f"白银 RSI(14): {current_rsi:.1f}\n")
-        
-        content_parts.append("---\n\n")
+        content_parts.append("\n");
+        content_parts.append("📝 **数据来源**: LBMA伦敦现货金银 / NYMEX WTI原油\n\n");
+        content_parts.append("---\n\n");
+    
+    # 触发预警列表 - 放前面，用户先看警报
+    if len(all_alerts) > 0:
+        content_parts.append("### ⚠️ 触发预警\n\n");
+        content_parts.append(format_alerts(all_alerts));
+        content_parts.append("\n");
+    else:
+        content_parts.append("✅ 当前没有触发预警规则，市场平稳运行。\n\n");
     
     # 最新研报/新闻总结
     if len(summaries) > 0:
-        content_parts.append("### 📑 最新研报/新闻总结\n\n")
+        content_parts.append("### 📑 最新研报/新闻总结\n\n");
         for s in summaries:
-            content_parts.append(f"**[{s['title']}]({s['url']})**\n\n")
+            content_parts.append(f"**[{s['title']}]({s['url']})**\n\n");
             for i, point in enumerate(s['summary'], 1):
-                content_parts.append(f"{i}. {point}\n")
-            content_parts.append("\n---\n\n")
-    
-    # 触发预警列表
-    if len(all_alerts) > 0:
-        content_parts.append("### ⚠️ 触发预警\n\n")
-        content_parts.append(format_alerts(all_alerts))
-        content_parts.append("\n")
-    else:
-        content_parts.append("✅ 当前没有触发预警规则，市场平稳运行。\n\n")
+                content_parts.append(f"{i}. {point}\n");
+            content_parts.append("\n---\n\n");
     
     # 4. ETF-COMEX 关联分析（预留框架）
     etf_comex_analysis = None
@@ -564,8 +573,13 @@ def run_once(config: Config) -> bool:
         except Exception as e:
             logger.error(f"Failed to generate LLM analysis: {e}")
     
+    # 免责声明 + 版本更新提示
+    content_parts.append("\n---\n\n");
+    content_parts.append("⚠️ **免责声明**: 本报告仅供研究参考，不构成任何投资建议。投资有风险，入市需谨慎，交易请严格设置止损。\n\n");
+    content_parts.append("🔧 **本次更新**: 新增金油比宏观地缘分析框架 + 修正金银比阈值至市场主流标准 (55/85) + 修复价格展示bug + 优化数据透明度\n\n");
+    
     # 页脚统计信息
-    content_parts.append(f"📊 本次监控完成: {len(prices)} 价格, {len(news)} 新闻, {len(summaries)} 总结, {len(all_alerts)} 预警")
+    content_parts.append(f"📊 本次监控完成: {len(prices)} 价格, {len(news)} 新闻, {len(summaries)} 总结, {len(all_alerts)} 预警");
     
     # ===========================================
     # 发送通知
