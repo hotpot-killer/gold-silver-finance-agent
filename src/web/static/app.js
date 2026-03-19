@@ -25,8 +25,10 @@ createApp({
     const guruViews = ref([])
     const guruLoading = ref(false)
     const priceData = ref({
-      gold: { symbol: 'AU9999', data: [], latest: null },
-      silver: { symbol: 'AG9999', data: [], latest: null },
+      gold: { symbol: 'XAUUSD', data: [], latest: null },
+      silver: { symbol: 'XAGUSD', data: [], latest: null },
+      crude_oil: { symbol: 'CL', data: [], latest: null },
+      brent_crude: { symbol: 'CO', data: [], latest: null },
     })
     let chartInstance = null
     let candlestickSeries = null
@@ -71,7 +73,13 @@ createApp({
     }
     
     const fetchPrice = async (asset) => {
-      const symbol = asset === 'gold' ? 'XAUUSD' : 'XAGUSD'
+      const symbolMap = {
+        gold: 'XAUUSD',
+        silver: 'XAGUSD',
+        crude_oil: 'CL',
+        brent_crude: 'CO'
+      }
+      const symbol = symbolMap[asset]
       priceLoading.value = true
       try {
         const res = await fetch(`/api/price/${symbol}`)
@@ -324,10 +332,12 @@ createApp({
         <div class="subtitle">📊 AI 赋能黄金白银主动监控 - 市场仪表盘</div>
         <div class="forward-markets">
           <h3>🔮 前瞻预测市场（点击查看最新市场概率）</h3>
+          <div class="hint">AI 综合分析会参考这些平台反映的市场一致预期</div>
           <div class="market-links">
             <a href="https://polymarket.com/predictions/gold" target="_blank" class="market-link">Polymarket (长周期预测)</a>
             <a href="https://kalshi.com/markets" target="_blank" class="market-link">Kalshi (短期/周月级)</a>
             <a href="https://www.cmegroup.com/markets/metals/precious.html" target="_blank" class="market-link">CME 贵金属</a>
+            <a href="https://www.cmegroup.com/markets/energy/crude-oil/crude-oil-wti-light-sweet.html" target="_blank" class="market-link">CME WTI原油</a>
             <a href="https://www.ishares.com/us/products/239751/gld-spdr-gold-trust" target="_blank" class="market-link">GLD 持仓</a>
             <a href="https://www.ishares.com/us/products/239728/slv-isharess-silver-trust" target="_blank" class="market-link">SLV 持仓</a>
           </div>
@@ -352,7 +362,11 @@ createApp({
           <div class="stat-card">
             <div v-if="currentPrice" class="stat-number">{{ formatPrice(currentPrice) }}</div>
             <div v-else class="stat-number">-</div>
-            <div class="stat-label">当前 {{ selectedAsset === 'gold' ? '黄金' : '白银' }} 价格</div>
+            <div class="stat-label">当前 {{ 
+              selectedAsset === 'gold' ? '黄金' : 
+              selectedAsset === 'silver' ? '白银' : 
+              selectedAsset === 'crude_oil' ? 'WTI原油' : 
+              '布伦特原油' }} 价格</div>
           </div>
         </div>
 
@@ -401,14 +415,28 @@ createApp({
             :class="{ active: selectedAsset === 'gold' }"
             @click="switchAsset('gold')"
           >
-            黄金 (AU9999)
+            黄金 (XAUUSD)
           </div>
           <div 
             class="price-tab" 
             :class="{ active: selectedAsset === 'silver' }"
             @click="switchAsset('silver')"
           >
-            白银 (AG9999)
+            白银 (XAGUSD)
+          </div>
+          <div 
+            class="price-tab" 
+            :class="{ active: selectedAsset === 'crude_oil' }"
+            @click="switchAsset('crude_oil')"
+          >
+            WTI原油 (CL)
+          </div>
+          <div 
+            class="price-tab" 
+            :class="{ active: selectedAsset === 'brent_crude' }"
+            @click="switchAsset('brent_crude')"
+          >
+            布伦特原油 (CO)
           </div>
         </div>
         

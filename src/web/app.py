@@ -112,15 +112,15 @@ async def api_stats():
 @app.get("/api/price/{symbol}")
 async def api_price(symbol: str):
     """API - 获取价格历史数据用于K线图
-    - 对于 XAUUSD/XAGUSD 从本地CSV读取（国际黄金/白银），如果没有则实时获取
+    - 对于 XAUUSD/XAGUSD/CL 从本地CSV读取（国际黄金/白银/原油），如果没有则实时获取
     - 对于其他symbol从tushare读取
     """
     from pathlib import Path
     import pandas as pd
     from datetime import datetime
     
-    # 国际黄金/白银
-    if symbol in ['XAUUSD', 'XAGUSD']:
+    # 国际黄金/白银/原油
+    if symbol in ['XAUUSD', 'XAGUSD', 'CL']:
         data_dir = Path('./data')
         csv_path = data_dir / f"{symbol}_prices.csv"
         candles = []
@@ -164,23 +164,27 @@ async def api_price(symbol: str):
             if resp.status_code == 200:
                 data = resp.json()
                 price = None
-                prev_close = None
                 change = 0
-                if data.get("code") == 0 and "data" in data and "preciousMetal" in data["data"]:
-                    metals = data["data"]["preciousMetal"]
-                    if symbol == 'XAUUSD':
-                        for metal in metals:
-                            if metal["code"] == "GC":
-                                price = float(metal["zxj"])
-                                if "zd" in metal:
-                                    change = float(metal["zd"])
-                                break
-                    else: # XAGUSD
-                        for metal in metals:
-                            if metal["code"] == "SI":
-                                price = float(metal["zxj"])
-                                if "zd" in metal:
-                                    change = float(metal["zd"])
+                target_code = {
+                    'XAUUSD': 'GC',
+                    'XAGUSD': 'SI', 
+                    'CL': 'CL',
+                }.get(symbol)
+                
+                if data.get("code") == 0 and "data" in data and target_code:
+                    # Select correct list based on asset type
+                    items = None
+                    if symbol in ['XAUUSD', 'XAGUSD'] and "preciousMetal" in data["data"]:
+                        items = data["data"]["preciousMetal"]
+                    elif symbol == 'CL' and "energy" in data["data"]:
+                        items = data["data"]["energy"]
+                    
+                    if items:
+                        for item in items:
+                            if item["code"] == target_code:
+                                price = float(item["zxj"])
+                                if "zd" in item:
+                                    change = float(item["zd"])
                                 break
                 
                 # 如果成功获取到价格，更新到本地CSV

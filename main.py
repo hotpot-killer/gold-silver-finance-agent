@@ -10,6 +10,7 @@ from typing import List, Optional
 
 from src.monitor import PriceMonitor, NewsMonitor, NewsItem, PriceData
 from src.research import ReportSummarizer
+from src.research.report_summarizer import MIDDLE_EAST_KEYWORDS
 from src.alert import AlertTrigger, Alert
 from src.notifier import (
     DingTalkNotifier, 
@@ -43,6 +44,7 @@ class MonitorConfig:
     stocks: List[str] = field(default_factory=list)
     gold: dict = field(default_factory=dict)
     silver: dict = field(default_factory=dict)
+    crude_oil: dict = field(default_factory=dict)
     etf_monitor: dict = field(default_factory=dict)
     cot: dict = field(default_factory=dict)
     economic_calendar: dict = field(default_factory=dict)
@@ -135,6 +137,7 @@ def load_config(config_path: str = "config/config.yaml") -> Config:
         config.monitor.stocks = data['monitor'].get('stocks', [])
         config.monitor.gold = data['monitor'].get('gold', {})
         config.monitor.silver = data['monitor'].get('silver', {})
+        config.monitor.crude_oil = data['monitor'].get('crude_oil', {})
         config.monitor.etf_monitor = data['monitor'].get('etf_monitor', {})
         config.monitor.cot = data['monitor'].get('cot', {})
         config.monitor.economic_calendar = data['monitor'].get('economic_calendar', {})
@@ -234,12 +237,13 @@ def run_once(config: Config) -> bool:
     # ===========================================
     logger.info("▶️ Step 1: Fetching latest data...")
     
-    # 价格监控 - 专注黄金白银
+    # 价格监控 - 专注黄金白银，附带原油价格监控
     price_monitor = PriceMonitor(
         config.tushare.token,
         config.monitor.stocks,
         config.monitor.gold.get('enabled', True),
         config.monitor.silver.get('enabled', True),
+        config.monitor.crude_oil.get('enabled', True),
         config.monitor.etf_monitor.get('enabled', True),
         data_dir=config.data_dir
     )
@@ -408,32 +412,63 @@ def run_once(config: Config) -> bool:
             content_parts.append(calendar.format_events_for_notification(events))
     
     # 添加今日行情概览 - 主动提供市场概况，即使没有预警
+    crude_oil_price = None
     if len(prices) > 0:
         content_parts.append("### 📈 今日行情概览\n\n")
-        # 找到黄金和白银最新价格
+        # 找到黄金、白银和原油最新价格
         for p in prices:
             if p.symbol in ['XAUUSD', 'gold']:
                 gold_price = p
             if p.symbol in ['XAGUSD', 'silver']:
                 silver_price = p
+            if p.symbol in ['CL', 'CO', 'crude_oil']:
+                crude_oil_price = p
         
         if gold_price:
             change_emoji = '↑' if gold_price.change >= 0 else '↓'
-            content_parts.append(f"**COMEX黄金**: {gold_price.price:.2f}  {change_emoji} {abs(gold_price.change):.2f} ({gold_price.change_pct:.2f}%)\n\n")
+            if abs(gold_price.change) < 0.01:
+                # 绝对变化接近0，只显示百分比
+                content_parts.append(f"**伦敦现货黄金**: {gold_price.price:.2f}  {change_emoji} ({gold_price.change_pct:.2f}%)\n\n")
+            else:
+                content_parts.append(f"**伦敦现货黄金**: {gold_price.price:.2f}  {change_emoji} {abs(gold_price.change):.2f} ({gold_price.change_pct:.2f}%)\n\n")
         
         if silver_price:
             change_emoji = '↑' if silver_price.change >= 0 else '↓'
-            content_parts.append(f"**COMEX白银**: {silver_price.price:.2f}  {change_emoji} {abs(silver_price.change):.2f} ({silver_price.change_pct:.2f}%)\n\n")
+            if abs(silver_price.change) < 0.01:
+                content_parts.append(f"**伦敦现货白银**: {silver_price.price:.2f}  {change_emoji} ({silver_price.change_pct:.2f}%)\n\n")
+            else:
+                content_parts.append(f"**伦敦现货白银**: {silver_price.price:.2f}  {change_emoji} {abs(silver_price.change):.2f} ({silver_price.change_pct:.2f}%)\n\n")
+        
+        if crude_oil_price:
+            change_emoji = '↑' if crude_oil_price.change >= 0 else '↓'
+            if abs(crude_oil_price.change) < 0.01:
+                content_parts.append(f"**WTI原油期货**: {crude_oil_price.price:.2f}  {change_emoji} ({crude_oil_price.change_pct:.2f}%)\n\n")
+            else:
+                content_parts.append(f"**WTI原油期货**: {crude_oil_price.price:.2f}  {change_emoji} {abs(crude_oil_price.change):.2f} ({crude_oil_price.change_pct:.2f}%)\n\n")
         
         # 如果黄金白银都有数据，显示金银比
         if gold_price is not None and silver_price is not None and silver_price.price > 0:
             ratio = gold_price.price / silver_price.price
             if ratio > 80:
                 content_parts.append(f"**金银比**: {ratio:.1f} 🔺 接近极端高估区间\n\n")
-            elif ratio < 60:
+            elif ratio < 55:
                 content_parts.append(f"**金银比**: {ratio:.1f} 🔻 接近极端低估区间\n\n")
-            else:
-                content_parts.append(f"**金银比**: {ratio:.1f} ✅ 在正常区间(60-80)内\n\n")
+            elif 55 <= ratio <= 85:
+                content_parts.append(f"**金银比**: {ratio:.1f} ✅ 在正常区间(55-85)内\n\n")
+        
+        # 如果黄金和原油都有数据，显示金油比（盎司黄金 ÷ 桶原油）
+        if gold_price is not None and crude_oil_price is not None and crude_oil_price.price > 0:
+            gold_oil_ratio = gold_price.price / crude_oil_price.price
+            if gold_oil_ratio > 50:
+                content_parts.append(f"**金油比**: {gold_oil_ratio:.1f} 🟡 仍显著高于历史常态(>50) → 黄金相对原油偏贵，原油更有相对机会\n\n")
+            elif gold_oil_ratio > 40:
+                content_parts.append(f"**金油比**: {gold_oil_ratio:.1f} 🟡 高于历史常态(40-50) → 黄金相对原油仍偏贵\n\n")
+            elif gold_oil_ratio >= 20:
+                content_parts.append(f"**金油比**: {gold_oil_ratio:.1f} ⚪ 处于正常区间(20-40)\n\n")
+            elif gold_oil_ratio >= 15:
+                content_parts.append(f"**金油比**: {gold_oil_ratio:.1f} 🟢 低于常态 → 原油相对黄金偏贵，黄金更有相对机会\n\n")
+            else: # < 15
+                content_parts.append(f"**金油比**: {gold_oil_ratio:.1f} 🔵 极端低位 → 原油极端强势/黄金极端便宜\n\n")
         
         # 添加技术指标概览
         if gold_df is not None and len(gold_df) >= 14:
@@ -481,55 +516,51 @@ def run_once(config: Config) -> bool:
             content_parts.append("\n---\n\n")
     
     # ===========================================
-    # Step 6: LLM综合分析 - 结合所有信号给出最终判断
+    # Step 6: LLM综合分析 - 结合所有信号给出最终判断，包括中东局势分析
     # ===========================================
     if config.llm.api_key and gold_price and silver_price:
         logger.info("▶️ Step 6: Generating LLM comprehensive analysis...")
+        summarizer = ReportSummarizer(
+            config.llm.api_key,
+            config.llm.model,
+            config.llm.base_url
+        )
         
-        # 准备prompt
-        analysis_prompt = f"""你是黄金白银市场专业分析师，请结合以下所有信息，给出今日综合分析和操作建议：
-
-# 当前行情
-- 黄金最新价格: {gold_price.price if gold_price else 'N/A'}
-- 白银最新价格: {silver_price.price if silver_price else 'N/A'}
-- 金银比: {f"{(gold_price.price / silver_price.price):.1f}" if gold_price and silver_price else 'N/A'}
-
-# 触发的预警信号
-{chr(10).join([f"- {a.message} → {a.suggestion}" for a in all_alerts]) if all_alerts else "无"}
-
-# 最新宏观大佬观点
-我们跟踪了5位顶级宏观大佬最新观点，请参考他们立场：
-"""
-        # 加入大佬观点
-        for guru in guru_views:
-            analysis_prompt += f"- **{guru['name']}** ({guru['title']}): {guru['latest_view']} → 基调: {guru['tone']}\n"
+        # 准备市场数据
+        market_data = {
+            "gold_price": gold_price.price if gold_price else None,
+            "silver_price": silver_price.price if silver_price else None,
+            "crude_oil_price": crude_oil_price.price if crude_oil_price else None,
+            "gold_change_pct": gold_price.change_pct if gold_price else None,
+            "silver_change_pct": silver_price.change_pct if silver_price else None,
+            "crude_oil_change_pct": crude_oil_price.change_pct if crude_oil_price else None,
+            "gold_silver_ratio": (gold_price.price / silver_price.price) if gold_price and silver_price else None,
+            "gold_oil_ratio": (gold_price.price / crude_oil_price.price) if gold_price and crude_oil_price else None
+        }
         
-        analysis_prompt += """
-# 要求
-1. 综合以上所有信息，给出今日黄金/白银市场的多空判断
-2. 结合技术信号、宏观观点、市场情绪，给出明确操作建议（多头/空头/观望）
-3. 说明主要逻辑和风险点
-4. 控制在300字以内，简洁明了
-
-请开始分析：
-"""
+        # 整理信号列表
+        signal_list = [f"{a.message} → {a.suggestion}" for a in all_alerts]
+        
+        # 分离中东局势相关新闻
+        middle_east_news = []
+        for news_item in news:
+            title_lower = news_item.title.lower()
+            if any(kw.lower() in title_lower for kw in MIDDLE_EAST_KEYWORDS):
+                middle_east_news.append(news_item)
+        
+        # 使用优化后的generate_trading_advice生成分析，包含中东局势逻辑
         try:
-            from openai import OpenAI
-            client = OpenAI(
-                api_key=config.llm.api_key,
-                base_url=config.llm.base_url or None
+            analysis = summarizer.generate_trading_advice(
+                market_data, 
+                signal_list, 
+                strategy_cycle="medium",
+                middle_east_news=middle_east_news
             )
-            response = client.chat.completions.create(
-                model=config.llm.model,
-                messages=[{"role": "user", "content": analysis_prompt}],
-                temperature=0.7,
-                max_tokens=600
-            )
-            analysis = response.choices[0].message.content.strip()
-            content_parts.append("\n---\n\n")
-            content_parts.append("### 🧠 AI 综合分析\n\n")
-            content_parts.append(analysis + "\n\n")
-            logger.info("✅ Completed: LLM comprehensive analysis")
+            if analysis:
+                content_parts.append("\n---\n\n")
+                content_parts.append("### 🧠 AI 综合分析\n\n")
+                content_parts.append(analysis + "\n\n")
+                logger.info("✅ Completed: LLM comprehensive analysis with Middle East局势 integration")
         except Exception as e:
             logger.error(f"Failed to generate LLM analysis: {e}")
     

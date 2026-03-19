@@ -33,20 +33,22 @@ class COMEXInventory:
     change_pct: float  # 变化百分比
 
 class PriceMonitor(BaseMonitor):
-    """价格行情监控 - 国际黄金(COMEX)/白银 + Tushare国内 + 金银ETF/COMEX库存
-    专注监控黄金白银市场
+    """价格行情监控 - 国际黄金(COMEX)/白银 + 原油 + Tushare国内 + 金银ETF/COMEX库存
+    专注监控黄金白银市场，关联原油价格
     """
     
     def __init__(self, token: str, 
                  stocks: List[str] = None, 
                  gold_enabled: bool = True, 
                  silver_enabled: bool = True, 
+                 crude_oil_enabled: bool = True,
                  etf_monitor: bool = True,
                  data_dir: str = "./data"):
         self.token = token
         self.stocks = stocks or []  # 黄金白银相关股票
         self.gold_enabled = gold_enabled
         self.silver_enabled = silver_enabled
+        self.crude_oil_enabled = crude_oil_enabled
         self.etf_monitor = etf_monitor
         self.data_dir = Path(data_dir)
         self.data_dir.mkdir(exist_ok=True)
@@ -157,83 +159,58 @@ class PriceMonitor(BaseMonitor):
             resp.raise_for_status()
             data = resp.json()
             
-            if data.get("code") == 0 and "data" in data and "preciousMetal" in data["data"]:
-                metals = data["data"]["preciousMetal"]
-                # 伦敦现货黄金
-                for metal in metals:
-                    if metal["code"] == "XAU":
-                        price = float(metal["zxj"])
-                        change = float(metal.get("zd", 0))
-                        change_pct = float(metal.get("zde", 0))
-                        current_time = datetime.now()
-                        results.append(PriceData(
-                            symbol="XAUUSD",
-                            name="伦敦现货黄金",
-                            price=price,
-                            change=change,
-                            change_pct=change_pct,
-                            timestamp=current_time,
-                            volume=None
-                        ))
-                        logger.info(f"Fetched London Spot Gold price: {price:.2f}")
-                        break
+            def parse_and_append_item(item: dict, symbol: str, name: str, save_to_local: bool = False):
+                """Parse price item from API response and append to results"""
+                price = float(item["zxj"])
+                change = float(item.get("zd", 0))
+                change_pct = float(item.get("zde", 0))
+                current_time = datetime.now()
+                price_data = PriceData(
+                    symbol=symbol,
+                    name=name,
+                    price=price,
+                    change=change,
+                    change_pct=change_pct,
+                    timestamp=current_time,
+                    volume=None
+                )
+                results.append(price_data)
+                if save_to_local:
+                    self.save_price_to_local(symbol, price_data)
+                logger.info(f"Fetched {name} price: {price:.2f}")
+            
+            if data.get("code") == 0 and "data" in data:
+                # 贵金属
+                if "preciousMetal" in data["data"]:
+                    metals = data["data"]["preciousMetal"]
+                    for metal in metals:
+                        if metal["code"] == "XAU":
+                            parse_and_append_item(metal, "XAUUSD", "伦敦现货黄金")
+                            break
+                    for metal in metals:
+                        if metal["code"] == "GC":
+                            parse_and_append_item(metal, "GC", "COMEX黄金期货")
+                            break
+                    for metal in metals:
+                        if metal["code"] == "XAG":
+                            parse_and_append_item(metal, "XAGUSD", "伦敦现货白银")
+                            break
+                    for metal in metals:
+                        if metal["code"] == "SI":
+                            parse_and_append_item(metal, "SI", "COMEX白银期货")
+                            break
                 
-                # COMEX黄金期货
-                for metal in metals:
-                    if metal["code"] == "GC":
-                        price = float(metal["zxj"])
-                        change = float(metal.get("zd", 0))
-                        change_pct = float(metal.get("zde", 0))
-                        current_time = datetime.now()
-                        results.append(PriceData(
-                            symbol="GC",
-                            name="COMEX黄金期货",
-                            price=price,
-                            change=change,
-                            change_pct=change_pct,
-                            timestamp=current_time,
-                            volume=None
-                        ))
-                        logger.info(f"Fetched COMEX Gold Futures price: {price:.2f}")
-                        break
-                
-                # 伦敦现货白银
-                for metal in metals:
-                    if metal["code"] == "XAG":
-                        price = float(metal["zxj"])
-                        change = float(metal.get("zd", 0))
-                        change_pct = float(metal.get("zde", 0))
-                        current_time = datetime.now()
-                        results.append(PriceData(
-                            symbol="XAGUSD",
-                            name="伦敦现货白银",
-                            price=price,
-                            change=change,
-                            change_pct=change_pct,
-                            timestamp=current_time,
-                            volume=None
-                        ))
-                        logger.info(f"Fetched London Spot Silver price: {price:.2f}")
-                        break
-                
-                # COMEX白银期货
-                for metal in metals:
-                    if metal["code"] == "SI":
-                        price = float(metal["zxj"])
-                        change = float(metal.get("zd", 0))
-                        change_pct = float(metal.get("zde", 0))
-                        current_time = datetime.now()
-                        results.append(PriceData(
-                            symbol="SI",
-                            name="COMEX白银期货",
-                            price=price,
-                            change=change,
-                            change_pct=change_pct,
-                            timestamp=current_time,
-                            volume=None
-                        ))
-                        logger.info(f"Fetched COMEX Silver Futures price: {price:.2f}")
-                        break
+                # 能源 - 原油
+                if self.crude_oil_enabled and "energy" in data["data"]:
+                    energies = data["data"]["energy"]
+                    for energy in energies:
+                        if energy["code"] == "CL":
+                            parse_and_append_item(energy, "CL", "WTI原油期货", save_to_local=True)
+                            break
+                    for energy in energies:
+                        if energy["code"] == "CO":
+                            parse_and_append_item(energy, "CO", "布伦特原油期货", save_to_local=True)
+                            break
                 
             logger.info(f"Fetched {len(results)} international prices total")
             return results
@@ -284,7 +261,7 @@ class PriceMonitor(BaseMonitor):
         try:
             # 从ishares官网获取最新持仓
             url = "https://www.ishares.com/us/products/239751/gld-spdr-gold-trust"
-            page = self.fetcher.get(url)
+            page = self.fetcher.get(url, timeout=10)
             
             # 解析持仓数据
             # ishare网站会有 JSON-LD 格式的持仓数据
@@ -336,7 +313,7 @@ class PriceMonitor(BaseMonitor):
         """
         try:
             url = "https://www.ishares.com/us/products/239728/slv-isharess-silver-trust"
-            page = self.fetcher.get(url)
+            page = self.fetcher.get(url, timeout=10)
             
             today = datetime.now().strftime("%Y-%m-%d")
             
@@ -380,7 +357,7 @@ class PriceMonitor(BaseMonitor):
                 return None
                 
             url = url_map[commodity]
-            page = self.fetcher.get(url)
+            page = self.fetcher.get(url, timeout=10)
             
             today = datetime.now().strftime("%Y-%m-%d")
             from parsel import Selector
@@ -404,12 +381,22 @@ class PriceMonitor(BaseMonitor):
         
     def get_history(self, symbol: str, start_date: str, end_date: str = None) -> pd.DataFrame:
         """获取历史数据用于指标计算
-        对于国际黄金(XAUUSD)和白银(XAGUSD)，从本地CSV读取
+        对于国际黄金(XAUUSD)、白银(XAGUSD)、原油(CL)，从本地CSV读取
         对于股票，从tushare读取
         """
-        # 如果是国际黄金/白银，从本地读取
-        if symbol in ['XAUUSD', 'XAGUSD', 'gold', 'silver']:
-            actual_symbol = 'XAUUSD' if symbol in ['gold', 'XAUUSD'] else 'XAGUSD'
+        # 如果是国际黄金/白银/原油，从本地读取
+        if symbol in ['XAUUSD', 'XAGUSD', 'CL', 'CO', 'gold', 'silver', 'crude_oil']:
+            if symbol in ['gold', 'XAUUSD']:
+                actual_symbol = 'XAUUSD'
+            elif symbol in ['silver', 'XAGUSD']:
+                actual_symbol = 'XAGUSD'
+            elif symbol in ['CL', 'crude_oil']:
+                actual_symbol = 'CL'
+            elif symbol == 'CO':
+                actual_symbol = 'CO'
+            else:
+                actual_symbol = symbol
+            
             csv_path = self.data_dir / f"{actual_symbol}_prices.csv"
             if not csv_path.exists():
                 logger.warning(f"No local history found for {symbol}")

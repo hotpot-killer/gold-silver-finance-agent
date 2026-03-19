@@ -238,11 +238,15 @@ class AlertTrigger:
         return None
     
     def check_gold_silver_ratio(self, gold_df: pd.DataFrame, silver_df: pd.DataFrame, config: dict) -> Optional[Alert]:
-        """检查金银比极端值
-        正常区间 60-80，超过80或低于60都是极端
+        """检查金银比极端值 - 市场主流 80/50 法则
+        - > 80-85 → 白银相对低估 → 买入白银/换白银
+        - 70-80 → 正常偏高 → 黄金相对占优
+        - 55-70 → 正常区间中枢
+        - < 50-55 → 白银相对强势/高估 → 做多黄金/做空白银
+        - < 40 → 极端低位（2011年最低≈32-35，之后白银见顶）
         """
-        high_threshold = config.get('params', {}).get('high', 80)
-        low_threshold = config.get('params', {}).get('low', 60)
+        high_threshold = config.get('params', {}).get('high', 85)
+        low_threshold = config.get('params', {}).get('low', 55)
         
         ratio = IndicatorCalculator.ratio(gold_df, silver_df)
         if ratio <= 0:
