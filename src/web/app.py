@@ -435,26 +435,9 @@ _middle_east_cache = {
     'last_updated': 0
 }
 
-@app.get("/api/middle-east-scenarios")
-async def api_middle_east_scenarios():
-    """API - 获取中东局势推演沙盘（每10分钟更新）"""
-    import time
-    from datetime import datetime
-    
-    current_time = time.time()
-    cache_ttl = 600  # 10分钟缓存
-    
-    # 如果缓存存在且未过期，直接返回
-    if _middle_east_cache['data'] and (current_time - _middle_east_cache['last_updated'] < cache_ttl):
-        return {
-            'success': True,
-            'data': _middle_east_cache['data'],
-            'cached': True,
-            'last_updated': _middle_east_cache['last_updated']
-        }
-    
-    # 返回默认的伊朗局势焦点的情景（不依赖 LLM，确保快速响应）
-    scenarios = [
+def get_default_middle_east_scenarios():
+    """获取默认的伊朗局势焦点情景"""
+    return [
         {
             'name': '维持现状 (Status Quo)',
             'type': 'status-quo',
@@ -516,6 +499,101 @@ async def api_middle_east_scenarios():
             ]
         }
     ]
+
+@app.get("/api/middle-east-scenarios")
+async def api_middle_east_scenarios():
+    """API - 获取中东局势推演沙盘（每10分钟更新）"""
+    import time
+    from datetime import datetime
+    
+    current_time = time.time()
+    cache_ttl = 600  # 10分钟缓存
+    
+    # 如果缓存存在且未过期，直接返回
+    if _middle_east_cache['data'] and (current_time - _middle_east_cache['last_updated'] < cache_ttl):
+        return {
+            'success': True,
+            'data': _middle_east_cache['data'],
+            'cached': True,
+            'last_updated': _middle_east_cache['last_updated']
+        }
+    
+    # 读取配置，尝试使用 LLM 生成真实数据
+    config_path = Path('config/config.yaml')
+    if not config_path.exists():
+        config_path = Path('config/config.example.yaml')
+    
+    llm_api_key = ''
+    llm_base_url = ''
+    llm_model = 'gpt-4o-mini'
+    
+    try:
+        import yaml
+        with open(config_path, 'r', encoding='utf-8') as f:
+            config = yaml.safe_load(f)
+        if 'llm' in config:
+            llm_api_key = config['llm'].get('api_key', '')
+            llm_base_url = config['llm'].get('base_url', '')
+            llm_model = config['llm'].get('model', 'gpt-4o-mini')
+    except:
+        pass
+    
+    scenarios = get_default_middle_east_scenarios()
+    
+    # 如果配置了 LLM，尝试生成真实数据
+    if llm_api_key:
+        try:
+            from openai import OpenAI
+            
+            client = OpenAI(
+                api_key=llm_api_key,
+                base_url=llm_base_url if llm_base_url else None
+            )
+            
+            system_prompt = """你是一位专业的地缘政治与大宗商品分析师。
+
+请基于当前中东局势（重点关注伊朗），返回4种情景的JSON数据，格式如下：
+[
+  {
+    "name": "情景名称",
+    "type": "status-quo|de-escalation|escalation|major-crisis",
+    "probability": 0.0-1.0,
+    "gold_price_range": "4800-5100",
+    "silver_price_range": "74-78",
+    "crude_price_range": "95-105",
+    "suggested_action": "buy|sell|wait",
+    "action_text": "操作建议文本",
+    "trigger_signals": ["信号1", "信号2", "信号3"]
+  }
+]
+
+注意：
+- 4种情景概率总和应为 1
+- type 必须是这4个值之一
+- 重点关注伊朗局势
+"""
+            
+            response = client.chat.completions.create(
+                model=llm_model,
+                messages=[
+                    {"role": "system", "content": system_prompt},
+                    {"role": "user", "content": "请生成当前中东局势（重点伊朗）的4种推演情景"}
+                ],
+                response_format={"type": "json_object"},
+                temperature=0.7,
+                max_tokens=2000
+            )
+            
+            import json
+            result = json.loads(response.choices[0].message.content)
+            if isinstance(result, list) and len(result) == 4:
+                scenarios = result
+            elif 'scenarios' in result and isinstance(result['scenarios'], list):
+                scenarios = result['scenarios']
+            
+        except Exception as e:
+            logger.error(f"Failed to generate Middle East scenarios with LLM: {e}")
+            # LLM 失败时使用默认数据
     
     # 更新缓存
     _middle_east_cache['data'] = scenarios
@@ -525,7 +603,8 @@ async def api_middle_east_scenarios():
         'success': True,
         'data': scenarios,
         'cached': False,
-        'last_updated': current_time
+        'last_updated': current_time,
+        'llm_used': bool(llm_api_key)
     }
 
 if __name__ == '__main__':
