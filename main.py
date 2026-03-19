@@ -279,7 +279,7 @@ def run_once(config: Config) -> bool:
     prices = price_monitor.fetch_latest()
     
     # 新闻监控
-    news_monitor = NewsMonitor(config.monitor.news_sources)
+    news_monitor = NewsMonitor(sources=config.monitor.news_sources, regions=['global', 'middle_east', 'us', 'cn'])
     news = news_monitor.fetch_latest(hours=config.monitor.interval)
     
     logger.info(f"✅ Completed: Fetched {len(prices)} prices, {len(news)} news")

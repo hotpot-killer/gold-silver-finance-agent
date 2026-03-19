@@ -14,6 +14,7 @@ class NewsItem:
     source: str
     publish_time: datetime
     related_assets: List[str] = None
+    region: str = "global"  # 新增：新闻地区（global/middle_east/us/cn）
 
 @dataclass
 class PriceData:
