@@ -14,10 +14,10 @@
         </div>
       </header>
 
-      <!-- 当前 Tab 内容区 -->
+      <!-- 内容区 -->
       <div class="content-area">
-        <!-- 仪表盘 Tab -->
-        <div v-if="activeTab === 'dashboard'" class="tab-content">
+        <!-- 仪表盘区域 -->
+        <div class="dashboard-section-main">
           <!-- Hero 区域 -->
           <section class="hero-section">
             <div class="hero-content">
@@ -174,52 +174,6 @@
             </div>
           </div>
         </div>
-
-        <!-- 聊天 Tab -->
-        <div v-if="activeTab === 'chat'" class="tab-content">
-          <div class="chat-page">
-            <div class="chat-container">
-              <div class="chat-header">
-                <div class="chat-title">
-                  <span>🤖</span>
-                  <span>AI 助手</span>
-                </div>
-              </div>
-              
-              <div class="chat-messages-container" ref="chatMessagesRef">
-                <div v-if="chatMessages.length === 0" class="chat-empty-state">
-                  <p>👋 你好！我是你的 AI 助手。</p>
-                  <p style="margin-top: 8px;">你可以问我任何关于中东局势、大佬观点、市场预警的问题！</p>
-                </div>
-                <div 
-                  v-for="(msg, i) in chatMessages" 
-                  :key="i" 
-                  :class="['chat-message', msg.role]"
-                >
-                  {{ msg.content }}
-                </div>
-              </div>
-              
-              <div class="chat-input-area">
-                <input 
-                  type="text" 
-                  class="chat-input" 
-                  v-model="chatInput" 
-                  placeholder="输入你的问题..."
-                  @keyup.enter="sendChatMessage"
-                  :disabled="chatLoading"
-                />
-                <button 
-                  class="chat-send-btn" 
-                  @click="sendChatMessage"
-                  :disabled="chatLoading"
-                >
-                  {{ chatLoading ? '...' : '发送' }}
-                </button>
-              </div>
-            </div>
-          </div>
-        </div>
       </div>
 
       <!-- 页脚 -->
@@ -236,20 +190,55 @@
       </div>
 
       <nav class="sidebar-nav">
-        <button 
-          :class="['sidebar-item', { active: activeTab === 'dashboard' }]"
-          @click="activeTab = 'dashboard'"
-        >
-          <span class="sidebar-icon">📊</span>
-          <span class="sidebar-label">仪表盘</span>
-        </button>
-        <button 
-          :class="['sidebar-item', { active: activeTab === 'chat' }]"
-          @click="activeTab = 'chat'"
-        >
-          <span class="sidebar-icon">💬</span>
-          <span class="sidebar-label">AI 助手</span>
-        </button>
+        <div class="sidebar-section">
+          <div class="sidebar-section-title">核心功能</div>
+          <div class="sidebar-item active">
+            <span class="sidebar-icon">📊</span>
+            <span class="sidebar-label">市场分析</span>
+          </div>
+        </div>
+        
+        <div class="sidebar-section" style="margin-top: 24px;">
+          <div class="sidebar-section-title">AI 助手</div>
+          
+          <!-- 聊天窗口 -->
+          <div class="chat-widget">
+            <div class="chat-widget-header">
+              <span class="chat-widget-title">🤖 快速对话</span>
+            </div>
+            
+            <div class="chat-widget-messages" ref="chatMessagesRef">
+              <div v-if="chatMessages.length === 0" class="chat-widget-empty">
+                问我任何问题...
+              </div>
+              <div 
+                v-for="(msg, i) in chatMessages" 
+                :key="i" 
+                :class="['chat-widget-message', msg.role]"
+              >
+                {{ msg.content }}
+              </div>
+            </div>
+            
+            <div class="chat-widget-input-area">
+              <input 
+                type="text" 
+                class="chat-widget-input" 
+                v-model="chatInput" 
+                placeholder="输入问题..."
+                @keyup.enter="sendChatMessage"
+                :disabled="chatLoading"
+              />
+              <button 
+                class="chat-widget-send-btn" 
+                @click="sendChatMessage"
+                :disabled="chatLoading"
+              >
+                {{ chatLoading ? '...' : '→' }}
+              </button>
+            </div>
+          </div>
+        </div>
       </nav>
 
       <div class="sidebar-footer">
@@ -274,7 +263,6 @@ const stats = ref({
 const loading = ref(true)
 const refreshing = ref(false)
 
-const activeTab = ref('dashboard')
 const filterAsset = ref('')
 const filterType = ref('')
 const pageSize = ref(20)
@@ -490,59 +478,6 @@ const last7dAlertsCount = computed(() => {
   })
   return count
 })
-
-const assetOptions = computed(() => {
-  return Object.keys(stats.value.by_asset || {})
-})
-
-const typeOptions = computed(() => {
-  return Object.keys(stats.value.by_signal_type || {})
-})
-
-const filteredAlerts = computed(() => {
-  let result = [...allAlerts.value]
-  
-  if (filterAsset.value) {
-    result = result.filter(a => a.asset === filterAsset.value)
-  }
-  
-  if (filterType.value) {
-    result = result.filter(a => a.type === filterType.value)
-  }
-  
-  return result
-})
-
-const paginatedAlerts = computed(() => {
-  const start = 0
-  const end = currentPage.value * pageSize.value
-  return filteredAlerts.value.slice(start, end)
-})
-
-const hasMore = computed(() => {
-  return paginatedAlerts.value.length < filteredAlerts.value.length
-})
-
-const loadMore = () => {
-  currentPage.value++
-}
-
-const refresh = async () => {
-  currentPage.value = 1
-  await fetchData()
-  await fetchPrice(selectedAsset.value)
-  initChart()
-}
-
-const setFilterAsset = (asset) => {
-  filterAsset.value = filterAsset.value === asset ? '' : asset
-  currentPage.value = 1
-}
-
-const setFilterType = (type) => {
-  filterType.value = filterType.value === type ? '' : type
-  currentPage.value = 1
-}
 
 const sendChatMessage = async () => {
   if (!chatInput.value.trim() || chatLoading.value) return
