@@ -57,6 +57,7 @@ class MixedGoldForecaster:
             # 这里已经有宏观数据了，实际使用的时候从macro agent获取完整特征
             # 为了适配现有流程，这里使用已经计算好的比值
             # quant_prediction 已经提前算好，或者这里留空给LLM
+            pass
             
         # 3. Scenario Agent 合成情景概率
         scenario_text = self.scenario_agent.synthesize(
