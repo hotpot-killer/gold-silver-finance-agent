@@ -321,13 +321,16 @@ async def api_chat(request: Request):
         
         # 解析请求
         json_body = await request.json()
-        user_message = json_body.get('message', '').lower().strip()
+        user_message = json_body.get('message', '')
         context = json_body.get('context', {})
         
-        # 读取配置，获取 LLM API key
+        # 读取配置，获取 LLM API key（必须配置）
         config_path = Path('config/config.yaml')
         if not config_path.exists():
-            config_path = Path('config/config.example.yaml')
+            return {
+                'success': False,
+                'message': '请在 config/config.yaml 中配置 LLM'
+            }
         
         llm_api_key = ''
         llm_base_url = ''
@@ -342,12 +345,19 @@ async def api_chat(request: Request):
                 llm_base_url = config['llm'].get('base_url', '')
                 llm_model = config['llm'].get('model', 'gpt-4o-mini')
         except:
-            pass
+            return {
+                'success': False,
+                'message': '请在 config/config.yaml 中正确配置 LLM'
+            }
         
-        # 如果有 LLM 配置，使用 LLM
-        if llm_api_key:
-            # 构建系统提示
-            system_prompt = """你是一位专业的黄金白银市场分析师助手。
+        if not llm_api_key:
+            return {
+                'success': False,
+                'message': '请在 config/config.yaml 中配置 llm.api_key'
+            }
+        
+        # 构建系统提示
+        system_prompt = """你是一位专业的黄金白银市场分析师助手。
 
 你可以回答用户关于以下方面的问题：
 1. 中东局势对黄金白银原油价格的影响
@@ -359,89 +369,57 @@ async def api_chat(request: Request):
 
 请基于当前提供的上下文信息，给出专业、简洁、有帮助的回答。
 """
-            
-            # 构建上下文信息
-            context_text = "当前市场信息：\n"
-            
-            # 中东局势情景
-            if 'middleEastScenarios' in context:
-                scenarios = context['middleEastScenarios']
-                context_text += "\n中东局势情景：\n"
-                for s in scenarios:
-                    context_text += f"- {s['name']} (概率 {s['probability']*100:.0f}%): 黄金 {s['gold_price_range']}, 白银 {s['silver_price_range']}, 原油 {s['crude_price_range']}\n"
-            
-            # 大佬观点
-            if 'guruViews' in context:
-                gurus = context['guruViews']
-                context_text += "\n大佬观点：\n"
-                for g in gurus[:3]:
-                    context_text += f"- {g['name']}: {g['latest_view']} ({g['tone']})\n"
-            
-            # 最近预警
-            if 'recentAlerts' in context:
-                alerts = context['recentAlerts']
-                context_text += "\n最近预警：\n"
-                for a in alerts:
-                    context_text += f"- {a['name']}: {a['message']}\n"
-            
-            # 当前价格
-            if 'currentPrice' in context:
-                context_text += f"\n当前价格: {context['currentPrice']}\n"
-            
-            from openai import OpenAI
-            client = OpenAI(
-                api_key=llm_api_key,
-                base_url=llm_base_url if llm_base_url else None
-            )
-            
-            response = client.chat.completions.create(
-                model=llm_model,
-                messages=[
-                    {"role": "system", "content": system_prompt},
-                    {"role": "user", "content": f"{context_text}\n\n用户问题: {user_message}"}
-                ],
-                temperature=0.7,
-                max_tokens=800
-            )
-            
-            assistant_message = response.choices[0].message.content
-            
-            return {
-                'success': True,
-                'message': assistant_message
-            }
         
-        # 没有 LLM 配置时，使用默认回复（规则引擎）
-        else:
-            default_responses = {
-                '你好': '你好！我是你的黄金白银 AI 助手！有什么可以帮你的吗？',
-                '您好': '你好！我是你的黄金白银 AI 助手！有什么可以帮你的吗？',
-                'hi': '你好！我是你的黄金白银 AI 助手！有什么可以帮你的吗？',
-                'hello': '你好！我是你的黄金白银 AI 助手！有什么可以帮你的吗？',
-                '帮助': '我可以帮你分析：\n1. 中东局势对价格的影响\n2. 查看大佬观点\n3. 市场预警\n4. 价格走势',
-                'help': '我可以帮你分析：\n1. 中东局势对价格的影响\n2. 查看大佬观点\n3. 市场预警\n4. 价格走势',
-                '中东': '中东局势是影响黄金价格的最关键因素！目前重点关注伊朗局势的发展。',
-                '伊朗': '伊朗局势对油价和金价影响重大！请关注最新新闻。',
-                '黄金': '黄金是重要的避险资产！中东紧张时金价通常上涨。',
-                '白银': '白银兼具商品和金融属性！通常跟随黄金走势，但波动更大。',
-                '原油': '原油价格受中东局势影响很大！霍尔木兹海峡是关键。',
-                '价格': '当前价格请查看仪表盘页面！支持黄金、白银、WTI 原油、布伦特原油。',
-                '预警': '预警会在市场出现重要信号时触发！请查看预警列表。',
-                '大佬': '知名宏观大佬的最新观点可以在仪表盘页面查看！',
-            }
-            
-            # 查找匹配的关键词
-            response_msg = '抱歉，我暂时无法回答这个问题。\n\n你可以试试问：\n- 中东局势\n- 伊朗\n- 黄金\n- 白银\n- 原油\n- 价格\n- 预警\n- 大佬\n- 帮助'
-            
-            for keyword, reply in default_responses.items():
-                if keyword in user_message:
-                    response_msg = reply
-                    break
-            
-            return {
-                'success': True,
-                'message': response_msg
-            }
+        # 构建上下文信息
+        context_text = "当前市场信息：\n"
+        
+        # 中东局势情景
+        if 'middleEastScenarios' in context:
+            scenarios = context['middleEastScenarios']
+            context_text += "\n中东局势情景：\n"
+            for s in scenarios:
+                context_text += f"- {s['name']} (概率 {s['probability']*100:.0f}%): 黄金 {s['gold_price_range']}, 白银 {s['silver_price_range']}, 原油 {s['crude_price_range']}\n"
+        
+        # 大佬观点
+        if 'guruViews' in context:
+            gurus = context['guruViews']
+            context_text += "\n大佬观点：\n"
+            for g in gurus[:3]:
+                context_text += f"- {g['name']}: {g['latest_view']} ({g['tone']})\n"
+        
+        # 最近预警
+        if 'recentAlerts' in context:
+            alerts = context['recentAlerts']
+            context_text += "\n最近预警：\n"
+            for a in alerts:
+                context_text += f"- {a['name']}: {a['message']}\n"
+        
+        # 当前价格
+        if 'currentPrice' in context:
+            context_text += f"\n当前价格: {context['currentPrice']}\n"
+        
+        from openai import OpenAI
+        client = OpenAI(
+            api_key=llm_api_key,
+            base_url=llm_base_url if llm_base_url else None
+        )
+        
+        response = client.chat.completions.create(
+            model=llm_model,
+            messages=[
+                {"role": "system", "content": system_prompt},
+                {"role": "user", "content": f"{context_text}\n\n用户问题: {user_message}"}
+            ],
+            temperature=0.7,
+            max_tokens=800
+        )
+        
+        assistant_message = response.choices[0].message.content
+        
+        return {
+            'success': True,
+            'message': assistant_message
+        }
         
     except Exception as e:
         logger.error(f"Chat API failed: {e}")
