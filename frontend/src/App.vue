@@ -1,329 +1,264 @@
 <template>
-  <div class="container">
-    <!-- 顶部导航栏 - MiroFish 风格 -->
-    <nav class="navbar">
-      <div class="nav-brand">gold-silver-finance-agent</div>
-      <div class="nav-links">
-        <a href="https://github.com/hotpot-killer/gold-silver-finance-agent" target="_blank" class="github-link">
-          访问项目主页 <span class="arrow">↗</span>
-        </a>
-      </div>
-    </nav>
-
-    <!-- Tab 导航 -->
-    <div class="tab-nav">
-      <button 
-        :class="['tab-btn', { active: activeTab === 'dashboard' }]"
-        @click="activeTab = 'dashboard'"
-      >
-        📊 仪表盘
-      </button>
-      <button 
-        :class="['tab-btn', { active: activeTab === 'chat' }]"
-        @click="activeTab = 'chat'"
-      >
-        💬 AI 助手
-      </button>
-    </div>
-
-    <!-- 仪表盘页面 -->
-    <div v-if="activeTab === 'dashboard'">
-      <!-- Hero 区域 - MiroFish 风格 -->
-      <section class="hero-section">
-        <div class="hero-left">
-          <div class="decoration-square"></div>
-          <div class="tag-row">
-            <span class="orange-tag">黄金白银专用金融分析引擎</span>
-            <span class="version-text">/ v1.0</span>
-          </div>
-          
-          <h1 class="main-title">
-            实时市场数据分析<br>
-            <span class="gradient-text">智能推演未来</span>
-          </h1>
-          
-          <div class="hero-desc">
-            <p>
-              基于最新新闻和价格信号，<span class="gradient-text">gold-silver-finance-agent</span> 自动生成多智能体推演。通过中东局势沙盘、大佬观点和市场预警，在复杂环境中寻找<span class="gradient-text">“最优决策”</span>
-            </p>
-            <p class="slogan-text">
-              让未来在数字沙盘中预演，让决策在百战模拟后胜出<span class="blinking-cursor">_</span>
-            </p>
-          </div>
+  <div class="app-container">
+    <!-- 左侧主内容区 -->
+    <main class="main-content">
+      <!-- 顶部导航栏 -->
+      <header class="top-header">
+        <div class="header-left">
+          <h1 class="app-title">gold-silver-finance-agent</h1>
         </div>
-        
-        <div class="hero-right">
-          <div class="logo-container">
-            <div class="hero-logo">🤖</div>
-          </div>
-          
-          <button class="scroll-down-btn" @click="scrollToBottom" style="margin-top:24px; background:transparent; border:none; color:var(--text-muted); cursor:pointer; font-size:1.5rem;">
-            ↓
-          </button>
+        <div class="header-right">
+          <a href="https://github.com/hotpot-killer/gold-silver-finance-agent" target="_blank" class="github-link">
+            访问项目主页
+          </a>
         </div>
-      </section>
+      </header>
 
-      <!-- 中东局势推演沙盘 -->
-      <div class="sandbox-section">
-        <div class="sandbox-title">
-          🌍 中东局势推演沙盘
-          <span style="font-size: 0.9rem; font-weight: 400; opacity: 0.8; margin-left: auto;">黄金价格最关键影响因素</span>
-        </div>
-        <div class="sandbox-grid">
-          <div 
-            v-for="s in middleEastScenarios" 
-            :key="s.name"
-            :class="getScenarioCardClass(s.type)"
-          >
-            <div class="sandbox-card-header">
-              <div class="sandbox-card-name">{{ s.name }}</div>
-              <div :class="getProbClass(s.probability)">{{ (s.probability * 100).toFixed(0) }}%</div>
+      <!-- 当前 Tab 内容区 -->
+      <div class="content-area">
+        <!-- 仪表盘 Tab -->
+        <div v-if="activeTab === 'dashboard'" class="tab-content">
+          <!-- Hero 区域 -->
+          <section class="hero-section">
+            <div class="hero-content">
+              <div class="hero-tag-row">
+                <span class="hero-tag">黄金白银专用金融分析引擎</span>
+                <span class="version-text">/ v1.0</span>
+              </div>
+              
+              <h2 class="hero-title">
+                实时市场数据分析<br>
+                <span class="gradient-text">智能推演未来</span>
+              </h2>
+              
+              <p class="hero-desc">
+                基于最新新闻和价格信号，gold-silver-finance-agent 自动生成多智能体推演。
+                通过中东局势沙盘、大佬观点和市场预警，在复杂环境中寻找<span class="gradient-text">“最优决策”</span>
+              </p>
             </div>
-            <div class="sandbox-card-price">黄金: {{ s.gold_price_range }}</div>
-            <div style="font-size: 0.9rem; color: var(--text-secondary); margin-bottom: 4px;">白银: {{ s.silver_price_range }}</div>
-            <div style="font-size: 0.9rem; color: var(--text-secondary); margin-bottom: 12px;">原油: {{ s.crude_price_range }}</div>
-            <div :class="['sandbox-card-action', s.suggested_action]">
-              {{ s.action_text }}
+          </section>
+
+          <!-- 中东局势沙盘 -->
+          <div class="sandbox-section">
+            <div class="sandbox-title">
+              🌍 中东局势推演沙盘
             </div>
-            <div class="sandbox-triggers">
-              <div v-for="t in s.trigger_signals" :key="t" class="sandbox-trigger">
-                {{ t }}
+            <div class="sandbox-grid">
+              <div 
+                v-for="s in middleEastScenarios" 
+                :key="s.name"
+                :class="getScenarioCardClass(s.type)"
+              >
+                <div class="sandbox-card-header">
+                  <div class="sandbox-card-name">{{ s.name }}</div>
+                  <div :class="getProbClass(s.probability)">{{ (s.probability * 100).toFixed(0) }}%</div>
+                </div>
+                <div class="sandbox-card-price">黄金: {{ s.gold_price_range }}</div>
+                <div style="font-size: 0.9rem; color: var(--text-secondary); margin-bottom: 4px;">白银: {{ s.silver_price_range }}</div>
+                <div style="font-size: 0.9rem; color: var(--text-secondary); margin-bottom: 12px;">原油: {{ s.crude_price_range }}</div>
+                <div :class="['sandbox-card-action', s.suggested_action]">
+                  {{ s.action_text }}
+                </div>
+                <div class="sandbox-triggers">
+                  <div v-for="t in s.trigger_signals" :key="t" class="sandbox-trigger">
+                    {{ t }}
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- 仪表盘统计 -->
+          <div class="dashboard-section">
+            <div class="dashboard-stats">
+              <div class="stat-card">
+                <div class="stat-number">{{ stats.total }}</div>
+                <div class="stat-label">历史总预警</div>
+              </div>
+              <div class="stat-card">
+                <div class="stat-number">{{ last24hAlertsCount }}</div>
+                <div class="stat-label">24小时预警</div>
+              </div>
+              <div class="stat-card">
+                <div class="stat-number">{{ last7dAlertsCount }}</div>
+                <div class="stat-label">近7天预警</div>
+              </div>
+              <div class="stat-card">
+                <div v-if="currentPrice" class="stat-number">{{ formatPrice(currentPrice) }}</div>
+                <div v-else class="stat-number">-</div>
+                <div class="stat-label">当前 {{ 
+                  selectedAsset === 'gold' ? '黄金' : 
+                  selectedAsset === 'silver' ? '白银' : 
+                  selectedAsset === 'crude_oil' ? 'WTI原油' : 
+                  '布伦特原油' }} 价格</div>
+              </div>
+            </div>
+
+            <!-- 大佬观点 -->
+            <div class="recent-alerts-card" style="margin-bottom: 32px;">
+              <div class="card-title">🤔 知名宏观大佬最新黄金观点</div>
+              <div v-if="guruLoading" style="text-align:center; padding:20px; color:var(--text-muted);">加载中...</div>
+              <div v-else style="display:grid; grid-template-columns: repeat(auto-fit, minmax(360px, 1fr)); gap:20px;">
+                <div v-for="guru in guruViews" :key="guru.name" style="border:1px solid var(--border); border-radius:12px; padding:20px; background: linear-gradient(135deg, rgba(30,41,59,0.95) 0%, rgba(15,23,42,0.95) 100%);">
+                  <div style="font-size:1.1rem; font-weight:700; color:var(--primary);">{{ guru.name }}</div>
+                  <div style="font-size:0.85rem; color:var(--text-muted); margin-bottom:10px;">{{ guru.title }}</div>
+                  <div style="font-size:0.95rem; line-height:1.6; color:var(--text-secondary);">📝 最新 ({{ guru.updated_at }}): {{ guru.latest_view }}</div>
+                  <span :style="guru.tone === 'bullish' ? 'background:rgba(16,185,129,0.2); color:#34d399; border:1px solid rgba(16,185,129,0.3);' : guru.tone === 'bearish' ? 'background:rgba(239,68,68,0.2); color:#f87171; border:1px solid rgba(239,68,68,0.3);' : 'background:rgba(245,158,11,0.2); color:#fbbf24; border:1px solid rgba(245,158,11,0.3);'" style="display:inline-block; font-size:0.78rem; padding:4px 12px; border-radius:20px; font-weight:600; margin-top:10px;">
+                    {{ guru.tone === 'bullish' ? '看多' : guru.tone === 'bearish' ? '看空' : '中性' }}
+                  </span>
+                </div>
+              </div>
+            </div>
+
+            <div class="recent-alerts-card">
+              <div class="card-title">⏱️ 最近触发的预警</div>
+              <div v-if="hasRecentAlerts">
+                <div class="recent-alert-item" v-for="alert in recentAlerts" :key="alert.timestamp + alert.name">
+                  <div class="recent-alert-header">
+                    <span class="recent-alert-name">{{ alert.name }}</span>
+                    <span :class="getTypeBadgeClass(alert.type)" style="display:inline-block">{{ alert.type }}</span>
+                    <span class="badge badge-asset">{{ alert.asset }}</span>
+                  </div>
+                  <div class="recent-alert-message">{{ alert.message }}</div>
+                  <div class="recent-alert-time">{{ alert.timestamp }}</div>
+                </div>
+              </div>
+              <div v-else class="empty-recent">暂无预警记录</div>
+            </div>
+          </div>
+
+          <!-- 价格和K线图 -->
+          <div class="price-section">
+            <div class="price-tabs">
+              <div 
+                class="price-tab" 
+                :class="{ active: selectedAsset === 'gold' }"
+                @click="switchAsset('gold')"
+              >
+                黄金 (XAUUSD)
+              </div>
+              <div 
+                class="price-tab" 
+                :class="{ active: selectedAsset === 'silver' }"
+                @click="switchAsset('silver')"
+              >
+                白银 (XAGUSD)
+              </div>
+              <div 
+                class="price-tab" 
+                :class="{ active: selectedAsset === 'crude_oil' }"
+                @click="switchAsset('crude_oil')"
+              >
+                WTI原油 (CL)
+              </div>
+              <div 
+                class="price-tab" 
+                :class="{ active: selectedAsset === 'brent_crude' }"
+                @click="switchAsset('brent_crude')"
+              >
+                布伦特原油 (CO)
+              </div>
+            </div>
+            
+            <div v-if="priceLoading" class="price-loading">加载价格数据中...</div>
+            <div v-else>
+              <div class="current-price-card">
+                <div class="current-price">{{ formatPrice(currentPrice) }}</div>
+                <div v-if="priceChange" :class="['price-change', priceChange.direction]">
+                  {{ priceChange.direction === 'up' ? '↑' : '↓' }} 
+                  {{ formatPrice(Math.abs(priceChange.value)) }} 
+                  ({{ formatPrice(Math.abs(priceChange.pct)) }}%)
+                </div>
+              </div>
+              <div id="kline-chart" class="kline-container"></div>
+            </div>
+          </div>
+        </div>
+
+        <!-- 聊天 Tab -->
+        <div v-if="activeTab === 'chat'" class="tab-content">
+          <div class="chat-page">
+            <div class="chat-container">
+              <div class="chat-header">
+                <div class="chat-title">
+                  <span>🤖</span>
+                  <span>AI 助手</span>
+                </div>
+              </div>
+              
+              <div class="chat-messages-container" ref="chatMessagesRef">
+                <div v-if="chatMessages.length === 0" class="chat-empty-state">
+                  <p>👋 你好！我是你的 AI 助手。</p>
+                  <p style="margin-top: 8px;">你可以问我任何关于中东局势、大佬观点、市场预警的问题！</p>
+                </div>
+                <div 
+                  v-for="(msg, i) in chatMessages" 
+                  :key="i" 
+                  :class="['chat-message', msg.role]"
+                >
+                  {{ msg.content }}
+                </div>
+              </div>
+              
+              <div class="chat-input-area">
+                <input 
+                  type="text" 
+                  class="chat-input" 
+                  v-model="chatInput" 
+                  placeholder="输入你的问题..."
+                  @keyup.enter="sendChatMessage"
+                  :disabled="chatLoading"
+                />
+                <button 
+                  class="chat-send-btn" 
+                  @click="sendChatMessage"
+                  :disabled="chatLoading"
+                >
+                  {{ chatLoading ? '...' : '发送' }}
+                </button>
               </div>
             </div>
           </div>
         </div>
       </div>
 
-      <!-- 仪表盘概览 -->
-      <div class="dashboard-section">
-        <div class="dashboard-stats">
-          <div class="stat-card">
-            <div class="stat-number">{{ stats.total }}</div>
-            <div class="stat-label">历史总预警</div>
-          </div>
-          <div class="stat-card">
-            <div class="stat-number">{{ last24hAlertsCount }}</div>
-            <div class="stat-label">24小时预警</div>
-          </div>
-          <div class="stat-card">
-            <div class="stat-number">{{ last7dAlertsCount }}</div>
-            <div class="stat-label">近7天预警</div>
-          </div>
-          <div class="stat-card">
-            <div v-if="currentPrice" class="stat-number">{{ formatPrice(currentPrice) }}</div>
-            <div v-else class="stat-number">-</div>
-            <div class="stat-label">当前 {{ 
-              selectedAsset === 'gold' ? '黄金' : 
-              selectedAsset === 'silver' ? '白银' : 
-              selectedAsset === 'crude_oil' ? 'WTI原油' : 
-              '布伦特原油' }} 价格</div>
-          </div>
-        </div>
+      <!-- 页脚 -->
+      <footer class="app-footer">
+        <p>gold-silver-finance-agent | 黄金白银 AI 智能监控 · 专业金融分析平台</p>
+      </footer>
+    </main>
 
-        <div class="recent-alerts-card" style="margin-bottom: 32px;">
-          <div class="card-title">🤔 知名宏观大佬最新黄金观点</div>
-          <div v-if="guruLoading" style="text-align:center; padding:20px; color:var(--text-muted);">加载中...</div>
-          <div v-else style="display:grid; grid-template-columns: repeat(auto-fit, minmax(360px, 1fr)); gap:20px;">
-            <div v-for="guru in guruViews" :key="guru.name" style="border:1px solid var(--border); border-radius:12px; padding:20px; background: linear-gradient(135deg, rgba(30,41,59,0.95) 0%, rgba(15,23,42,0.95) 100%);">
-              <div style="font-size:1.1rem; font-weight:700; color:var(--primary);">{{ guru.name }}</div>
-              <div style="font-size:0.85rem; color:var(--text-muted); margin-bottom:10px;">{{ guru.title }}</div>
-              <div style="font-size:0.95rem; line-height:1.6; color:var(--text-secondary);">📝 最新 ({{ guru.updated_at }}): {{ guru.latest_view }}</div>
-              <span :style="guru.tone === 'bullish' ? 'background:rgba(16,185,129,0.2); color:#34d399; border:1px solid rgba(16,185,129,0.3);' : guru.tone === 'bearish' ? 'background:rgba(239,68,68,0.2); color:#f87171; border:1px solid rgba(239,68,68,0.3);' : 'background:rgba(245,158,11,0.2); color:#fbbf24; border:1px solid rgba(245,158,11,0.3);'" style="display:inline-block; font-size:0.78rem; padding:4px 12px; border-radius:20px; font-weight:600; margin-top:10px;">
-                {{ guru.tone === 'bullish' ? '看多' : guru.tone === 'bearish' ? '看空' : '中性' }}
-              </span>
-            </div>
-          </div>
-        </div>
-
-        <div class="recent-alerts-card">
-          <div class="card-title">⏱️ 最近触发的预警</div>
-          <div v-if="hasRecentAlerts">
-            <div class="recent-alert-item" v-for="alert in recentAlerts" :key="alert.timestamp + alert.name">
-              <div class="recent-alert-header">
-                <span class="recent-alert-name">{{ alert.name }}</span>
-                <span :class="getTypeBadgeClass(alert.type)" style="display:inline-block">{{ alert.type }}</span>
-                <span class="badge badge-asset">{{ alert.asset }}</span>
-              </div>
-              <div class="recent-alert-message">{{ alert.message }}</div>
-              <div class="recent-alert-time">{{ alert.timestamp }}</div>
-            </div>
-          </div>
-          <div v-else class="empty-recent">暂无预警记录</div>
-        </div>
+    <!-- 右侧导航栏 -->
+    <aside class="sidebar">
+      <div class="sidebar-brand">
+        <div class="brand-icon">💰</div>
+        <span class="brand-text">金融分析</span>
       </div>
 
-      <!-- 价格和K线图区域 -->
-      <div class="price-section">
-        <div class="price-tabs">
-          <div 
-            class="price-tab" 
-            :class="{ active: selectedAsset === 'gold' }"
-            @click="switchAsset('gold')"
-          >
-            黄金 (XAUUSD)
-          </div>
-          <div 
-            class="price-tab" 
-            :class="{ active: selectedAsset === 'silver' }"
-            @click="switchAsset('silver')"
-          >
-            白银 (XAGUSD)
-          </div>
-          <div 
-            class="price-tab" 
-            :class="{ active: selectedAsset === 'crude_oil' }"
-            @click="switchAsset('crude_oil')"
-          >
-            WTI原油 (CL)
-          </div>
-          <div 
-            class="price-tab" 
-            :class="{ active: selectedAsset === 'brent_crude' }"
-            @click="switchAsset('brent_crude')"
-          >
-            布伦特原油 (CO)
-          </div>
-        </div>
-        
-        <div v-if="priceLoading" class="price-loading">加载价格数据中...</div>
-        <div v-else>
-          <div class="current-price-card">
-            <div class="current-price">{{ formatPrice(currentPrice) }}</div>
-            <div v-if="priceChange" :class="['price-change', priceChange.direction]">
-              {{ priceChange.direction === 'up' ? '↑' : '↓' }} 
-              {{ formatPrice(Math.abs(priceChange.value)) }} 
-              ({{ formatPrice(Math.abs(priceChange.pct)) }}%)
-            </div>
-          </div>
-          <div id="kline-chart" class="kline-container"></div>
+      <nav class="sidebar-nav">
+        <button 
+          :class="['sidebar-item', { active: activeTab === 'dashboard' }]"
+          @click="activeTab = 'dashboard'"
+        >
+          <span class="sidebar-icon">📊</span>
+          <span class="sidebar-label">仪表盘</span>
+        </button>
+        <button 
+          :class="['sidebar-item', { active: activeTab === 'chat' }]"
+          @click="activeTab = 'chat'"
+        >
+          <span class="sidebar-icon">💬</span>
+          <span class="sidebar-label">AI 助手</span>
+        </button>
+      </nav>
+
+      <div class="sidebar-footer">
+        <div class="status-indicator">
+          <div class="status-dot"></div>
+          <span class="status-text">系统在线</span>
         </div>
       </div>
-
-      <!-- 筛选区 -->
-      <div class="filters-section">
-        <div class="filters-title">预警筛选</div>
-        <div class="filters">
-          <div class="filter-group" v-if="assetOptions.length > 0">
-            <div class="filter-label">按资产</div>
-            <div class="filter-buttons">
-              <button 
-                v-for="asset in assetOptions" 
-                :key="asset"
-                :class="['filter-btn', { active: filterAsset === asset }]"
-                @click="setFilterAsset(asset)"
-              >
-                {{ asset }} ({{ stats.by_asset[asset] }})
-              </button>
-            </div>
-          </div>
-          
-          <div class="filter-group" v-if="typeOptions.length > 0">
-            <div class="filter-label">按预警类型</div>
-            <div class="filter-buttons">
-              <button 
-                v-for="type in typeOptions" 
-                :key="type"
-                :class="['filter-btn', { active: filterType === type }]"
-                @click="setFilterType(type)"
-              >
-                {{ type }} ({{ stats.by_signal_type[type] }})
-              </button>
-            </div>
-          </div>
-          
-          <button class="refresh-btn" @click="refresh" :disabled="refreshing">
-            {{ refreshing ? '刷新中...' : '刷新数据' }}
-          </button>
-        </div>
-      </div>
-
-      <!-- 预警列表 -->
-      <div class="alert-list">
-        <div v-if="loading" class="loading">加载中...</div>
-        <div v-else-if="filteredAlerts.length === 0" class="empty-state">
-          <div class="empty-state-icon">📭</div>
-          <p>暂无符合条件的预警记录</p>
-          <p style="margin-top: 8px; font-size: 0.9rem;">等待第一次信号触发...</p>
-        </div>
-        <div v-else>
-          <div v-for="alert in paginatedAlerts" :key="alert.timestamp + alert.name" class="alert-item">
-            <div class="alert-header">
-              <span class="alert-title">{{ alert.name }}</span>
-              <span :class="getTypeBadgeClass(alert.type)">{{ alert.type }}</span>
-              <span class="badge badge-asset">{{ alert.asset }}</span>
-              <span class="alert-time">{{ alert.timestamp }}</span>
-            </div>
-            <div class="alert-content">
-              {{ alert.message }}
-            </div>
-            <div v-if="alert.suggestion" class="alert-suggestion">
-              💡 {{ alert.suggestion }}
-            </div>
-          </div>
-          
-          <div class="load-more">
-            <button 
-              v-if="hasMore" 
-              class="load-more-btn" 
-              @click="loadMore"
-            >
-              加载更多
-            </button>
-            <div v-else-if="filteredAlerts.length > 0" class="no-more">
-              已加载全部 {{ filteredAlerts.length }} 条预警
-            </div>
-          </div>
-        </div>
-      </div>
-    </div>
-
-    <!-- AI 助手页面 -->
-    <div v-if="activeTab === 'chat'" class="chat-page">
-      <div class="chat-container">
-        <div class="chat-header">
-          <div class="chat-title">
-            <span>🤖</span>
-            <span>AI 助手</span>
-          </div>
-        </div>
-        
-        <div class="chat-messages-container" ref="chatMessagesRef">
-          <div v-if="chatMessages.length === 0" class="chat-empty-state">
-            <p>👋 你好！我是你的 AI 助手。</p>
-            <p style="margin-top: 8px;">你可以问我任何关于中东局势、大佬观点、市场预警的问题！</p>
-          </div>
-          <div 
-            v-for="(msg, i) in chatMessages" 
-            :key="i" 
-            :class="['chat-message', msg.role]"
-          >
-            {{ msg.content }}
-          </div>
-        </div>
-        
-        <div class="chat-input-area">
-          <input 
-            type="text" 
-            class="chat-input" 
-            v-model="chatInput" 
-            placeholder="输入你的问题..."
-            @keyup.enter="sendChatMessage"
-            :disabled="chatLoading"
-          />
-          <button 
-            class="chat-send-btn" 
-            @click="sendChatMessage"
-            :disabled="chatLoading"
-          >
-            {{ chatLoading ? '...' : '发送' }}
-          </button>
-        </div>
-      </div>
-    </div>
-
-    <footer>
-      <p>gold-silver-finance-agent | 黄金白银 AI 智能监控 · 专业金融分析平台</p>
-    </footer>
+    </aside>
   </div>
 </template>
 
@@ -339,18 +274,11 @@ const stats = ref({
 const loading = ref(true)
 const refreshing = ref(false)
 
-// 当前页面 tab
 const activeTab = ref('dashboard')
-
-// 筛选条件
 const filterAsset = ref('')
 const filterType = ref('')
-
-// 分页
 const pageSize = ref(20)
 const currentPage = ref(1)
-
-// K线图相关
 const selectedAsset = ref('gold')
 const priceLoading = ref(false)
 const guruViews = ref([])
@@ -364,16 +292,12 @@ const priceData = ref({
 let chartInstance = null
 let candlestickSeries = null
 
-// 聊天功能相关
 const chatInput = ref('')
 const chatMessages = ref([])
 const chatLoading = ref(false)
 const chatMessagesRef = ref(null)
-
-// 中东局势沙盘数据（从 API 动态获取）
 const middleEastScenarios = ref([])
 
-// 获取中东局势沙盘
 const fetchMiddleEastScenarios = async () => {
   try {
     const res = await fetch('/api/middle-east-scenarios')
@@ -693,10 +617,6 @@ const getProbClass = (prob) => {
     return 'sandbox-card-prob'
   }
   return 'sandbox-card-prob high'
-}
-
-const scrollToBottom = () => {
-  window.scrollTo({ top: document.body.scrollHeight, behavior: 'smooth' })
 }
 
 onMounted(async () => {
