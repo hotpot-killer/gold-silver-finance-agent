@@ -444,11 +444,12 @@ def run_once(config: Config) -> bool:
     # 添加今日行情概览 - 主动提供市场概况，即使没有预警
     crude_oil_price = None
     if len(prices) > 0:
-        content_parts.append("### 📈 今日行情概览\n\n");
+        content_parts.append("---\n\n");
+        content_parts.append("# 📈 今日行情概览\n\n");
         # 找到黄金、白银和原油最新价格
         from datetime import datetime
         current_dt = datetime.now().strftime("%Y-%m-%d %H:%M GMT+8")
-        content_parts.append(f"🕒 **更新时间**: {current_dt}\n\n");
+        content_parts.append(f"**🕒 更新时间**: {current_dt}\n\n");
         
         # 找到黄金、白银和原油最新价格
         for p in prices:
@@ -463,30 +464,30 @@ def run_once(config: Config) -> bool:
         def get_change_emoji(change):
             return '🟢↑' if change >= 0 else '🔴↓'
         
+        # 价格表格形式展示
+        content_parts.append("## 核心价格\n\n");
+        content_parts.append("| 品种 | 价格 | 涨跌 | 日涨幅 | 数据来源 |\n");
+        content_parts.append("|------|------|------|--------|----------|\n");
+        
         if gold_price:
             change_emoji = get_change_emoji(gold_price.change)
-            if abs(gold_price.change) < 0.01:
-                # 绝对变化接近0，只显示百分比（日涨幅 vs 前收盘）
-                content_parts.append(f"**伦敦现货黄金 (LBMA)**: {gold_price.price:.2f}  {change_emoji} *日涨幅* {gold_price.change_pct:.2f}%\n\n")
-            else:
-                content_parts.append(f"**伦敦现货黄金 (LBMA)**: {gold_price.price:.2f}  {change_emoji} {abs(gold_price.change):.2f} *日涨幅* {gold_price.change_pct:.2f}%\n\n")
+            change_str = f"{abs(gold_price.change):.2f}" if abs(gold_price.change) >= 0.01 else ""
+            content_parts.append(f"| **伦敦现货黄金 (LBMA)** | **{gold_price.price:.2f}** | {change_emoji} {change_str} | {gold_price.change_pct:.2f}% | LBMA |\n");
         
         if silver_price:
             change_emoji = get_change_emoji(silver_price.change)
-            if abs(silver_price.change) < 0.01:
-                content_parts.append(f"**伦敦现货白银 (LBMA)**: {silver_price.price:.2f}  {change_emoji} *日涨幅* {silver_price.change_pct:.2f}%\n\n")
-            else:
-                content_parts.append(f"**伦敦现货白银 (LBMA)**: {silver_price.price:.2f}  {change_emoji} {abs(silver_price.change):.2f} *日涨幅* {silver_price.change_pct:.2f}%\n\n")
+            change_str = f"{abs(silver_price.change):.2f}" if abs(silver_price.change) >= 0.01 else ""
+            content_parts.append(f"| **伦敦现货白银 (LBMA)** | **{silver_price.price:.2f}** | {change_emoji} {change_str} | {silver_price.change_pct:.2f}% | LBMA |\n");
         
         if crude_oil_price:
             change_emoji = get_change_emoji(crude_oil_price.change)
-            if abs(crude_oil_price.change) < 0.01:
-                content_parts.append(f"**WTI原油期货 (NYMEX)**: {crude_oil_price.price:.2f}  {change_emoji} *日涨幅* {crude_oil_price.change_pct:.2f}%\n\n")
-            else:
-                content_parts.append(f"**WTI原油期货 (NYMEX)**: {crude_oil_price.price:.2f}  {change_emoji} {abs(crude_oil_price.change):.2f} *日涨幅* {crude_oil_price.change_pct:.2f}%\n\n")
+            change_str = f"{abs(crude_oil_price.change):.2f}" if abs(crude_oil_price.change) >= 0.01 else ""
+            content_parts.append(f"| **WTI原油期货 (NYMEX)** | **{crude_oil_price.price:.2f}** | {change_emoji} {change_str} | {crude_oil_price.change_pct:.2f}% | NYMEX |\n");
+        
+        content_parts.append("\n");
         
         # 关键数据速览表格
-        content_parts.append("### 📊 关键比率速览\n\n");
+        content_parts.append("## 📊 关键宏观比率\n\n");
         content_parts.append("| 指标     | 当前值 | 位置解读          | 主流正常区间 |\n");
         content_parts.append("|----------|--------|-------------------|--------------|\n");
         
@@ -525,20 +526,20 @@ def run_once(config: Config) -> bool:
             content_parts.append("| **金油比** | -      | 数据缺失         | 15–40       |\n");
         
         content_parts.append("\n");
-        content_parts.append("📝 **数据来源**: LBMA伦敦现货金银 / NYMEX WTI原油\n\n");
         content_parts.append("---\n\n");
     
     # 触发预警列表 - 放前面，用户先看警报
     if len(all_alerts) > 0:
-        content_parts.append("### ⚠️ 触发预警\n\n");
+        content_parts.append("## ⚠️ 触发预警\n\n");
         content_parts.append(format_alerts(all_alerts));
-        content_parts.append("\n");
+        content_parts.append("\n---\n\n");
     else:
-        content_parts.append("✅ 当前没有触发预警规则，市场平稳运行。\n\n");
+        content_parts.append("## ✅ 当前无预警\n\n");
+        content_parts.append("当前没有触发预警规则，市场平稳运行。\n\n---\n\n");
     
     # 最新研报/新闻总结
     if len(summaries) > 0:
-        content_parts.append("### 📑 最新研报/新闻总结\n\n");
+        content_parts.append("## 📑 最新研报/新闻总结\n\n");
         for s in summaries:
             content_parts.append(f"**[{s['title']}]({s['url']})**\n\n");
             for i, point in enumerate(s['summary'], 1):
@@ -601,7 +602,7 @@ def run_once(config: Config) -> bool:
             )
             if analysis:
                 content_parts.append("\n---\n\n")
-                content_parts.append("### 🧠 AI 综合分析\n\n")
+                content_parts.append("## 🧠 AI 综合分析\n\n")
                 content_parts.append(analysis + "\n\n")
                 logger.info("✅ Completed: LLM comprehensive analysis with Middle East局势 integration")
         except Exception as e:
@@ -635,7 +636,7 @@ def run_once(config: Config) -> bool:
                 );
                 if forecast_text:
                     content_parts.append("\n---\n\n");
-                    content_parts.append("### 🔮 长期概率预测 (混合模型)\n\n");
+                    content_parts.append("## 🔮 长期概率预测 (混合模型)\n\n");
                     content_parts.append(forecast_text + "\n\n");
                     logger.info("✅ Completed: Long-term probability forecast (mixed model) generated");
             except Exception as e:
@@ -666,7 +667,7 @@ def run_once(config: Config) -> bool:
                 forecast_text = forecaster.generate_forecast(forecast_input);
                 if forecast_text:
                     content_parts.append("\n---\n\n");
-                    content_parts.append("### 🔮 长期概率预测 (MVP)\n\n");
+                    content_parts.append("## 🔮 长期概率预测 (MVP)\n\n");
                     content_parts.append(forecast_text + "\n\n");
                     logger.info("✅ Completed: Long-term probability forecast (MVP) generated");
             except Exception as e:
@@ -712,7 +713,7 @@ def run_once(config: Config) -> bool:
             );
             if len(branches) > 0:
                 content_parts.append("\n---\n\n");
-                content_parts.append("### 🎯 多情景逻辑推演（参考MiroFish思想）\n\n");
+                content_parts.append("## 🎯 多情景逻辑推演（参考MiroFish思想）\n\n");
                 content_parts.append(simulator.format_for_report(branches) + "\n\n");
                 logger.info("✅ Completed: Multi-scenario simulation");
         except Exception as e:
@@ -720,17 +721,26 @@ def run_once(config: Config) -> bool:
     
     # 免责声明 + 版本更新提示
     content_parts.append("\n---\n\n");
-    content_parts.append("⚠️ **免责声明**: 本报告仅供研究参考，不构成任何投资建议。投资有风险，入市需谨慎，交易请严格设置止损。\n\n");
-    content_parts.append("🔧 **本次更新**: 新增金油比宏观地缘分析框架 + 修正金银比阈值至市场主流标准 (55/85) + 修复价格展示bug + 优化数据透明度\n\n");
+    content_parts.append("## ⚠️ 免责声明\n\n");
+    content_parts.append("本报告仅供研究参考，不构成任何投资建议。投资有风险，入市需谨慎，交易请严格设置止损。\n\n");
     
-    # 页脚统计信息
-    content_parts.append(f"📊 本次监控完成: {len(prices)} 价格, {len(news)} 新闻, {len(summaries)} 总结, {len(all_alerts)} 预警");
+    content_parts.append("## 📊 本次监控概览\n\n");
+    content_parts.append("| 项目 | 数量 |\n");
+    content_parts.append("|------|------|\n");
+    content_parts.append(f"| 价格数据 | {len(prices)} |\n");
+    content_parts.append(f"| 新闻资讯 | {len(news)} |\n");
+    content_parts.append(f"| 总结内容 | {len(summaries)} |\n");
+    content_parts.append(f"| 触发预警 | {len(all_alerts)} |\n");
+    content_parts.append("\n");
+    content_parts.append("---\n\n");
+    content_parts.append("**gold-silver-finance-agent** | AI 赋能黄金白银智能监控\n");
+    content_parts.append(f"生成时间: {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}\n");
     
     # ===========================================
     # 发送通知
     # ===========================================
     full_content = ''.join(content_parts)
-    title = f"🤖 Active Finance Agent 监控报告 - {datetime.now().strftime('%Y-%m-%d %H:%M')}"
+    title = f"🤖 黄金白银监控报告 - {datetime.now().strftime('%Y-%m-%d %H:%M')}"
     
     logger.info("📤 Sending notification...")
     notified = send_notification(config, title, full_content)
