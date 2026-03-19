@@ -253,20 +253,22 @@ class AlertTrigger:
             return None
         
         if ratio >= high_threshold:
+            # 根据市场主流80/50法则：>= high_threshold (85) → 白银极端低估
             return Alert(
                 asset='gold-silver',
                 alert_type='ratio',
-                message=f"金银比 = {ratio:.1f} >= 极端上限 {high_threshold}",
+                message=f"金银比 = {ratio:.1f} >= 极端上限 {high_threshold} → 白银极端低估",
                 current_value=ratio,
                 threshold=high_threshold,
                 suggestion="金银比极端高估，黄金相对于白银太贵，关注做空黄金/做多白银机会"
             )
         
         if ratio <= low_threshold:
+            # 根据市场主流80/50法则：<= low_threshold (55) → 黄金极端低估
             return Alert(
                 asset='gold-silver',
                 alert_type='ratio',
-                message=f"金银比 = {ratio:.1f} <= 极端下限 {low_threshold}",
+                message=f"金银比 = {ratio:.1f} <= 极端下限 {low_threshold} → 黄金极端低估",
                 current_value=ratio,
                 threshold=low_threshold,
                 suggestion="金银比极端低估，黄金相对于白银太便宜，关注做多黄金/做空白银机会"
