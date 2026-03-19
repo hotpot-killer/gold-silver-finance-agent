@@ -664,11 +664,11 @@ def run_once(config: Config) -> bool:
             );
             
             try:
-                forecast_text = forecaster.generate_forecast(forecast_input);
-                if forecast_text:
+                forecast_result = forecaster.generate_forecast(forecast_input);
+                if forecast_result:
                     content_parts.append("\n---\n\n");
                     content_parts.append("## 🔮 长期概率预测 (MVP)\n\n");
-                    content_parts.append(forecast_text + "\n\n");
+                    content_parts.append(forecaster.format_result_to_text(forecast_result) + "\n\n");
                     logger.info("✅ Completed: Long-term probability forecast (MVP) generated");
             except Exception as e:
                 logger.error(f"Failed to generate forecast: {e}");
