@@ -38,13 +38,13 @@
           </div>
           
           <h1 class="main-title">
-            上传任意市场数据<br>
-            <span class="gradient-text">即刻推演未来</span>
+            实时市场数据分析<br>
+            <span class="gradient-text">智能推演未来</span>
           </h1>
           
           <div class="hero-desc">
             <p>
-              即使只有一段新闻或价格信号，<span class="gradient-text">gold-silver-finance-agent</span> 也能基于其中的现实种子，自动生成对应的多智能体推演。通过上帝视角注入变量，在复杂的市场环境中寻找<span class="gradient-text">“最优决策”</span>
+              基于最新新闻和价格信号，<span class="gradient-text">gold-silver-finance-agent</span> 自动生成多智能体推演。通过中东局势沙盘、大佬观点和市场预警，在复杂环境中寻找<span class="gradient-text">“最优决策”</span>
             </p>
             <p class="slogan-text">
               让未来在数字沙盘中预演，让决策在百战模拟后胜出<span class="blinking-cursor">_</span>
