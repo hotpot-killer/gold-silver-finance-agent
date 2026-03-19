@@ -262,3 +262,8 @@ forecast:
   use_mixed_model: false   # True=使用混合模型(XGBoost + LLM)，False=使用MVP LLM-only版本
   xgb_model_path: "./models/gold_xgb.joblib"  # 预训练XGBoost模型路径
 
+# 多情景逻辑推演（参考 MiroFish 思想）
+# 根据新闻（消息面）和 K 线（技术面）进行多情景模拟和预测
+scenario:
+  enabled: false            # 是否启用多情景推演
+

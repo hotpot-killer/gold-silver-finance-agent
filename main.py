@@ -59,6 +59,13 @@ class ResearchConfig:
 @dataclass
 class ForecastConfig:
     enabled: bool = False
+    use_mixed_model: bool = False
+    xgb_model_path: str = ""
+
+@dataclass
+class ScenarioConfig:
+    enabled: bool = False
+
 
 @dataclass
 class AlertConfig:
@@ -114,6 +121,7 @@ class Config:
     monitor: MonitorConfig = field(default_factory=MonitorConfig)
     research: ResearchConfig = field(default_factory=ResearchConfig)
     forecast: ForecastConfig = field(default_factory=ForecastConfig)
+    scenario: ScenarioConfig = field(default_factory=ScenarioConfig)
     alerts: AlertConfig = field(default_factory=AlertConfig)
     notify: NotifyConfig = field(default_factory=NotifyConfig)
     schedule: ScheduleConfig = field(default_factory=ScheduleConfig)
@@ -155,6 +163,11 @@ def load_config(config_path: str = "config/config.yaml") -> Config:
     
     if 'forecast' in data:
         config.forecast.enabled = data['forecast'].get('enabled', False)
+        config.forecast.use_mixed_model = data['forecast'].get('use_mixed_model', False)
+        config.forecast.xgb_model_path = data['forecast'].get('xgb_model_path', '')
+    
+    if 'scenario' in data:
+        config.scenario.enabled = data['scenario'].get('enabled', False)
     
     if 'alerts' in data:
         config.alerts.alerts = data['alerts']
@@ -580,7 +593,53 @@ def run_once(config: Config) -> bool:
                 content_parts.append(analysis + "\n\n")
                 logger.info("✅ Completed: LLM comprehensive analysis with Middle East局势 integration")
         except Exception as e:
-            logger.error(f"Failed to generate LLM analysis: {e}")
+            logger.error(f"Failed to generate LLM analysis: {e}");
+    
+    # ===========================================
+    # Step 8: 多情景逻辑推演（参考MiroFish思想）
+    # 基于新闻（消息面）和K线（技术面）进行多情景模拟
+    # ===========================================
+    if config.scenario.enabled and config.llm.api_key and gold_price and silver_price:
+        logger.info("▶️ Step 8: Running multi-scenario simulation...");
+        from src.research.scenario_simulation import ScenarioSimulator
+        
+        simulator = ScenarioSimulator(
+            config.llm.api_key,
+            config.llm.model,
+            config.llm.base_url
+        );
+        
+        # 准备技术指标
+        technical_indicators = {}
+        if gold_df is not None and len(gold_df) > 0:
+            # 从gold_df中提取简单技术指标
+            last_row = gold_df.iloc[-1]
+            technical_indicators['close'] = last_row['close']
+            if 'sma_20' in last_row:
+                technical_indicators['sma_20'] = last_row['sma_20']
+            if 'sma_50' in last_row:
+                technical_indicators['sma_50'] = last_row['sma_50']
+        
+        # 准备新闻列表（仅标题）
+        news_titles = [n.title for n in news[:10]]
+        
+        try:
+            branches = simulator.simulate(
+                current_gold_price=gold_price.price if gold_price else 0,
+                current_silver_price=silver_price.price if silver_price else 0,
+                crude_oil_price=crude_oil_price.price if crude_oil_price else 0,
+                gold_silver_ratio=gold_silver_ratio if gold_silver_ratio else 0,
+                gold_oil_ratio=gold_oil_ratio if gold_oil_ratio else 0,
+                recent_news=news_titles,
+                technical_indicators=technical_indicators,
+            );
+            if len(branches) > 0:
+                content_parts.append("\n---\n\n");
+                content_parts.append("### 🎯 多情景逻辑推演（参考MiroFish思想）\n\n");
+                content_parts.append(simulator.format_for_report(branches) + "\n\n");
+                logger.info("✅ Completed: Multi-scenario simulation");
+        except Exception as e:
+            logger.error(f"Failed to run scenario simulation: {e}");
     
     # 免责声明 + 版本更新提示
     content_parts.append("\n---\n\n");
