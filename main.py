@@ -366,6 +366,7 @@ def run_once(config: Config) -> bool:
     # 记录预警到日志文件供Web界面查看
     import json
     from pathlib import Path
+    from datetime import datetime
     alert_log_path = Path(config.data_dir) / 'alerts.log'
     alert_log_path.parent.mkdir(exist_ok=True)
     
