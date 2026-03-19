@@ -373,6 +373,11 @@ createApp({
       return 'sandbox-card-prob high'
     }
     
+    // 滚动到底部（可选）
+    const scrollToBottom = () => {
+      window.scrollTo({ top: document.body.scrollHeight, behavior: 'smooth' })
+    }
+    
     return {
       allAlerts,
       stats,
@@ -404,17 +409,59 @@ createApp({
       formatPrice,
       middleEastScenarios,
       getScenarioCardClass,
-      getProbClass
+      getProbClass,
+      scrollToBottom
     }
   },
   template: `
     <div class="container">
-      <header>
-        <h1><span class="emoji">🤖</span> gold-silver-finance-agent</h1>
-        <div class="subtitle">📊 AI 赋能黄金白银主动监控 - 专业市场分析平台</div>
-      </header>
+      <!-- 顶部导航栏 - MiroFish 风格 -->
+      <nav class="navbar">
+        <div class="nav-brand">gold-silver-finance-agent</div>
+        <div class="nav-links">
+          <a href="https://github.com/your-github-repo" target="_blank" class="github-link">
+            访问项目主页 <span class="arrow">↗</span>
+          </a>
+        </div>
+      </nav>
 
-      <!-- 中东局势推演沙盘 - 核心重点 -->
+      <!-- Hero 区域 - MiroFish 风格 -->
+      <section class="hero-section">
+        <div class="hero-left">
+          <div class="decoration-square"></div>
+          <div class="tag-row">
+            <span class="orange-tag">黄金白银专用金融分析引擎</span>
+            <span class="version-text">/ v1.0</span>
+          </div>
+          
+          <h1 class="main-title">
+            上传任意市场数据<br>
+            <span class="gradient-text">即刻推演未来</span>
+          </h1>
+          
+          <div class="hero-desc">
+            <p>
+              即使只有一段新闻或价格信号，<span class="gradient-text">gold-silver-finance-agent</span> 也能基于其中的现实种子，自动生成对应的多智能体推演。通过上帝视角注入变量，在复杂的市场环境中寻找<span class="gradient-text">“最优决策”</span>
+            </p>
+            <p class="slogan-text">
+              让未来在数字沙盘中预演，让决策在百战模拟后胜出<span class="blinking-cursor">_</span>
+            </p>
+          </div>
+        </div>
+        
+        <div class="hero-right">
+          <!-- Logo/Emoji 区域 -->
+          <div class="logo-container">
+            <div class="hero-logo">🤖</div>
+          </div>
+          
+          <button class="scroll-down-btn" @click="scrollToBottom" style="margin-top:24px; background:transparent; border:none; color:var(--text-muted); cursor:pointer; font-size:1.5rem;">
+            ↓
+          </button>
+        </div>
+      </section>
+
+      <!-- 中东局势推演沙盘 - 核心重点，MiroFish 风格 -->
       <div class="sandbox-section">
         <div class="sandbox-title">
           🌍 中东局势推演沙盘

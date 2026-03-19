@@ -37,7 +37,7 @@
             --glow-warning: 0 0 25px rgba(245, 158, 11, 0.25);
         }
         body {
-            font-family: -apple-system, BlinkMacSystemFont, 'SF Pro Display', 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+            font-family: 'SF Pro Display', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
             background: linear-gradient(135deg, var(--bg) 0%, #020617 50%, var(--bg-secondary) 100%);
             color: var(--text-primary);
             line-height: 1.6;
@@ -52,9 +52,9 @@
             width: 100%;
             height: 100%;
             background-image: 
-                radial-gradient(circle at 20% 20%, rgba(99, 102, 241, 0.12) 0%, transparent 50%),
-                radial-gradient(circle at 80% 80%, rgba(6, 182, 212, 0.08) 0%, transparent 50%),
-                radial-gradient(circle at 50% 10%, rgba(239, 68, 68, 0.06) 0%, transparent 40%);
+                radial-gradient(circle at 20% 20%, rgba(99, 102, 241, 0.15) 0%, transparent 50%),
+                radial-gradient(circle at 80% 80%, rgba(6, 182, 212, 0.1) 0%, transparent 50%),
+                radial-gradient(circle at 50% 10%, rgba(239, 68, 68, 0.08) 0%, transparent 40%);
             pointer-events: none;
             z-index: 0;
         }
@@ -65,60 +65,146 @@
             position: relative;
             z-index: 1;
         }
-        header {
-            background: linear-gradient(135deg, rgba(99, 102, 241, 0.18) 0%, rgba(139, 92, 246, 0.12) 50%, rgba(6, 182, 212, 0.08) 100%);
+        
+        /* 顶部导航栏 - MiroFish 风格 */
+        .navbar {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 20px 32px;
+            background: linear-gradient(135deg, rgba(99, 102, 241, 0.15) 0%, rgba(139, 92, 246, 0.1) 50%, rgba(6, 182, 212, 0.08) 100%);
             backdrop-filter: blur(20px);
             border: 1px solid rgba(255,255,255,0.1);
-            color: white;
-            padding: 40px 32px;
-            border-radius: 24px;
+            border-radius: 20px;
             margin-bottom: 32px;
-            box-shadow: var(--shadow-lg), var(--glow-primary);
-            position: relative;
-            overflow: hidden;
         }
-        header::before {
-            content: '';
-            position: absolute;
-            top: -50%;
-            right: -20%;
-            width: 60%;
-            height: 200%;
-            background: linear-gradient(90deg, transparent, rgba(255,255,255,0.1), transparent);
-            transform: rotate(25deg);
-            animation: shimmer 10s infinite;
-        }
-        @keyframes shimmer {
-            0% { transform: translateX(-100%) rotate(25deg); }
-            100% { transform: translateX(100%) rotate(25deg); }
-        }
-        h1 {
-            font-size: 2.6rem;
-            margin-bottom: 12px;
+        .nav-brand {
+            font-size: 1.5rem;
             font-weight: 800;
-            letter-spacing: -0.8px;
+            letter-spacing: -0.5px;
+            background: linear-gradient(135deg, var(--primary) 0%, var(--accent) 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+        .nav-links {
             display: flex;
+            gap: 16px;
             align-items: center;
+        }
+        .github-link {
+            background: rgba(255,255,255,0.08);
+            color: white;
+            padding: 10px 20px;
+            border-radius: 12px;
+            text-decoration: none;
+            transition: all 0.3s;
+            border: 1px solid rgba(255,255,255,0.12);
+            font-weight: 500;
+        }
+        .github-link:hover {
+            background: rgba(99, 102, 241, 0.25);
+            transform: translateY(-2px);
+            border-color: rgba(99, 102, 241, 0.4);
+        }
+
+        /* Hero 区域 - MiroFish 风格 */
+        .hero-section {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 40px;
+            margin-bottom: 40px;
+            align-items: center;
+        }
+        .hero-left {
+            position: relative;
+        }
+        .tag-row {
+            display: flex;
             gap: 12px;
+            align-items: center;
+            margin-bottom: 24px;
         }
-        h1 .emoji {
-            font-size: 3rem;
-            filter: drop-shadow(0 4px 12px rgba(99, 102, 241, 0.5));
+        .orange-tag {
+            background: linear-gradient(135deg, rgba(245, 158, 11, 0.2) 0%, rgba(245, 158, 11, 0.1) 100%);
+            color: #fbbf24;
+            padding: 6px 16px;
+            border-radius: 20px;
+            font-weight: 600;
+            font-size: 0.9rem;
+            border: 1px solid rgba(245, 158, 11, 0.3);
         }
-        .subtitle {
-            opacity: 0.95;
-            font-size: 1.2rem;
-            font-weight: 300;
-            letter-spacing: 0.3px;
+        .version-text {
+            color: var(--text-muted);
+            font-size: 0.9rem;
         }
-        /* 中东局势沙盘 - 核心重点 */
+        .main-title {
+            font-size: 2.8rem;
+            font-weight: 800;
+            line-height: 1.1;
+            letter-spacing: -1px;
+            margin-bottom: 20px;
+        }
+        .gradient-text {
+            background: linear-gradient(135deg, var(--primary) 0%, var(--accent) 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+        .hero-desc {
+            color: var(--text-secondary);
+            font-size: 1.05rem;
+            line-height: 1.7;
+        }
+        .slogan-text {
+            margin-top: 20px;
+            font-size: 1.15rem;
+            font-weight: 600;
+            color: var(--text-primary);
+        }
+        .blinking-cursor {
+            animation: blink 1s step-end infinite;
+        }
+        @keyframes blink {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0; }
+        }
+        .hero-right {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+        }
+        .logo-container {
+            background: linear-gradient(135deg, rgba(99, 102, 241, 0.2) 0%, rgba(139, 92, 246, 0.15) 100%);
+            border-radius: 24px;
+            padding: 40px;
+            border: 1px solid rgba(255,255,255,0.1);
+            box-shadow: var(--shadow-lg), var(--glow-primary);
+        }
+        .hero-logo {
+            font-size: 6rem;
+            text-align: center;
+        }
+        .decoration-square {
+            position: absolute;
+            width: 100px;
+            height: 100px;
+            border: 2px solid rgba(99, 102, 241, 0.2);
+            border-radius: 20px;
+            top: -20px;
+            right: -20px;
+            z-index: -1;
+        }
+        
+        /* 中东局势推演沙盘 - 核心重点，MiroFish 风格 */
         .sandbox-section {
-            background: linear-gradient(135deg, rgba(239, 68, 68, 0.1) 0%, rgba(245, 158, 11, 0.08) 50%, rgba(99, 102, 241, 0.06) 100%);
+            background: linear-gradient(135deg, rgba(239, 68, 68, 0.12) 0%, rgba(245, 158, 11, 0.1) 50%, rgba(99, 102, 241, 0.08) 100%);
             backdrop-filter: blur(12px);
             border-radius: 24px;
-            padding: 32px;
+            padding: 36px;
             margin-bottom: 32px;
-            border: 1px solid rgba(239, 68, 68, 0.2);
+            border: 1px solid rgba(239, 68, 68, 0.25);
             box-shadow: var(--shadow-lg), var(--glow-danger);
             position: relative;
             overflow: hidden;
@@ -133,9 +219,9 @@
             background: linear-gradient(90deg, var(--danger), var(--warning), var(--primary));
         }
         .sandbox-title {
-            font-size: 1.6rem;
+            font-size: 1.5rem;
             font-weight: 800;
-            margin-bottom: 24px;
+            margin-bottom: 28px;
             display: flex;
             align-items: center;
             gap: 12px;
@@ -143,33 +229,47 @@
         }
         .sandbox-grid {
             display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
-            gap: 20px;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 24px;
         }
         .sandbox-card {
             background: linear-gradient(135deg, rgba(30, 41, 59, 0.95) 0%, rgba(15, 23, 42, 0.95) 100%);
             border: 1px solid var(--border);
             border-radius: 16px;
             padding: 24px;
-            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            transition: all 0.35s cubic-bezier(0.4, 0, 0.2, 1);
             position: relative;
+            overflow: hidden;
         }
-        .sandbox-card:hover {
-            transform: translateY(-4px);
-            box-shadow: 0 12px 40px rgba(239, 68, 68, 0.15);
-            border-color: rgba(245, 158, 11, 0.4);
+        .sandbox-card::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 4px;
+            height: 100%;
+            background: linear-gradient(180deg, var(--primary), var(--accent));
         }
         .sandbox-card.danger {
             border-color: rgba(239, 68, 68, 0.4);
         }
+        .sandbox-card.danger::before {
+            background: linear-gradient(180deg, var(--danger), var(--warning));
+        }
+        .sandbox-card:hover {
+            transform: translateY(-6px);
+            box-shadow: 0 16px 48px rgba(0,0,0,0.35);
+            border-color: rgba(99, 102, 241, 0.4);
+        }
         .sandbox-card.danger:hover {
-            box-shadow: 0 12px 40px rgba(239, 68, 68, 0.25);
+            box-shadow: 0 16px 48px rgba(239, 68, 68, 0.2);
+            border-color: rgba(239, 68, 68, 0.5);
         }
         .sandbox-card-header {
             display: flex;
             justify-content: space-between;
             align-items: flex-start;
-            margin-bottom: 16px;
+            margin-bottom: 18px;
         }
         .sandbox-card-name {
             font-size: 1.15rem;
@@ -177,9 +277,9 @@
             color: var(--text-primary);
         }
         .sandbox-card-prob {
-            font-size: 1.3rem;
+            font-size: 1.4rem;
             font-weight: 800;
-            padding: 4px 14px;
+            padding: 6px 16px;
             border-radius: 20px;
             background: linear-gradient(135deg, var(--primary) 0%, var(--secondary) 100%);
         }
@@ -187,7 +287,7 @@
             background: linear-gradient(135deg, var(--danger) 0%, var(--warning) 100%);
         }
         .sandbox-card-price {
-            font-size: 1.5rem;
+            font-size: 1.7rem;
             font-weight: 800;
             background: linear-gradient(135deg, var(--text-primary) 0%, var(--text-secondary) 100%);
             -webkit-background-clip: text;
@@ -197,10 +297,10 @@
         }
         .sandbox-card-action {
             display: inline-block;
-            padding: 8px 18px;
+            padding: 9px 20px;
             border-radius: 12px;
             font-weight: 600;
-            margin-top: 12px;
+            margin-top: 14px;
         }
         .sandbox-card-action.buy {
             background: linear-gradient(135deg, var(--success) 0%, #059669 100%);
@@ -212,14 +312,14 @@
             background: linear-gradient(135deg, var(--warning) 0%, #d97706 100%);
         }
         .sandbox-triggers {
-            margin-top: 16px;
-            padding-top: 16px;
+            margin-top: 18px;
+            padding-top: 18px;
             border-top: 1px solid var(--border);
         }
         .sandbox-trigger {
-            font-size: 0.85rem;
+            font-size: 0.88rem;
             color: var(--text-secondary);
-            margin-bottom: 6px;
+            margin-bottom: 8px;
             display: flex;
             align-items: center;
             gap: 8px;
@@ -228,8 +328,10 @@
             content: '•';
             color: var(--warning);
             font-weight: bold;
+            font-size: 1.2rem;
         }
-        /* 仪表盘样式 */
+        
+        /* 仪表盘样式 - MiroFish 风格 */
         .dashboard-section {
             margin-bottom: 32px;
         }
@@ -323,7 +425,104 @@
             color: var(--text-primary);
             font-size: 1.02rem;
         }
-        /* 价格卡片样式 */
+        .recent-alert-time {
+            font-size: 0.82rem;
+            color: var(--text-muted);
+        }
+        .recent-alert-message {
+            font-size: 0.9rem;
+            color: var(--text-secondary);
+            line-height: 1.6;
+        }
+        .empty-recent {
+            text-align: center;
+            color: var(--text-muted);
+            padding: 32px 20px;
+            font-size: 0.95rem;
+        }
+        .filters-section {
+            background: linear-gradient(135deg, var(--bg-card) 0%, rgba(30, 41, 59, 0.85) 100%);
+            backdrop-filter: blur(10px);
+            padding: 28px;
+            border-radius: 20px;
+            box-shadow: var(--shadow);
+            margin-bottom: 32px;
+            border: 1px solid var(--border);
+        }
+        .filters-title {
+            font-weight: 700;
+            margin-bottom: 20px;
+            color: var(--text-primary);
+            font-size: 1.15rem;
+        }
+        .filters {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 16px;
+            align-items: center;
+        }
+        .filter-group {
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+        }
+        .filter-label {
+            font-size: 0.85rem;
+            color: var(--text-secondary);
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+        .filter-buttons {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 10px;
+        }
+        .filter-btn {
+            padding: 8px 18px;
+            border: 1px solid var(--border);
+            background: linear-gradient(135deg, rgba(30, 41, 59, 0.8) 0%, rgba(15, 23, 42, 0.8) 100%);
+            border-radius: 24px;
+            cursor: pointer;
+            font-size: 0.9rem;
+            font-weight: 500;
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            color: var(--text-secondary);
+        }
+        .filter-btn:hover {
+            border-color: var(--primary);
+            color: var(--primary);
+            transform: translateY(-1px);
+        }
+        .filter-btn.active {
+            background: linear-gradient(135deg, var(--primary) 0%, var(--secondary) 100%);
+            border-color: transparent;
+            color: white;
+            box-shadow: 0 4px 20px rgba(99, 102, 241, 0.3);
+        }
+        .refresh-btn {
+            background: linear-gradient(135deg, var(--success) 0%, #059669 100%);
+            color: white;
+            border: none;
+            padding: 10px 24px;
+            border-radius: 12px;
+            cursor: pointer;
+            font-size: 0.95rem;
+            font-weight: 600;
+            margin-left: auto;
+            transition: all 0.3s;
+            box-shadow: 0 4px 16px rgba(16, 185, 129, 0.3);
+        }
+        .refresh-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 24px rgba(16, 185, 129, 0.4);
+        }
+        .refresh-btn:disabled {
+            background: var(--text-muted);
+            cursor: not-allowed;
+            box-shadow: none;
+            transform: none;
+        }
         .price-section {
             background: linear-gradient(135deg, var(--bg-card) 0%, rgba(30, 41, 59, 0.85) 100%);
             backdrop-filter: blur(10px);
@@ -497,6 +696,37 @@
             color: var(--text-muted);
             font-size: 1.1rem;
         }
+        .load-more {
+            text-align: center;
+            padding: 28px;
+        }
+        .load-more-btn {
+            background: transparent;
+            border: 1px solid var(--primary);
+            color: var(--primary);
+            padding: 12px 36px;
+            border-radius: 12px;
+            cursor: pointer;
+            font-size: 0.95rem;
+            font-weight: 600;
+            transition: all 0.3s;
+        }
+        .load-more-btn:hover {
+            background: linear-gradient(135deg, var(--primary) 0%, var(--secondary) 100%);
+            color: white;
+            transform: translateY(-2px);
+            box-shadow: 0 8px 24px rgba(99, 102, 241, 0.35);
+        }
+        .load-more-btn:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+            transform: none;
+            box-shadow: none;
+        }
+        .no-more {
+            color: var(--text-muted);
+            font-size: 0.9rem;
+        }
         footer {
             text-align: center;
             margin-top: 40px;
@@ -508,11 +738,16 @@
             .container {
                 padding: 16px;
             }
-            h1 {
+            h1, .main-title {
                 font-size: 1.8rem;
             }
-            header {
-                padding: 28px 20px;
+            .navbar {
+                flex-direction: column;
+                gap: 16px;
+                padding: 20px;
+            }
+            .hero-section {
+                grid-template-columns: 1fr;
             }
             .dashboard-stats {
                 grid-template-columns: repeat(2, 1fr);
