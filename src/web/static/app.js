@@ -419,7 +419,7 @@ createApp({
       <nav class="navbar">
         <div class="nav-brand">gold-silver-finance-agent</div>
         <div class="nav-links">
-          <a href="https://github.com/your-github-repo" target="_blank" class="github-link">
+          <a href="https://github.com/hotpot-killer/gold-silver-finance-agent" target="_blank" class="github-link">
             访问项目主页 <span class="arrow">↗</span>
           </a>
         </div>
