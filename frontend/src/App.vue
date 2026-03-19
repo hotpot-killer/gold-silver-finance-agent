@@ -54,6 +54,27 @@
               </div>
             </div>
             
+            <!-- 交互式地图 -->
+            <div class="map-section">
+              <div id="middle-east-map" class="map-container"></div>
+              <div class="map-legend">
+                <div class="legend-title">热点图例</div>
+                <div class="legend-item">
+                  <span class="legend-dot legend-high"></span>
+                  <span>高风险区域</span>
+                </div>
+                <div class="legend-item">
+                  <span class="legend-dot legend-medium"></span>
+                  <span>中风险区域</span>
+                </div>
+                <div class="legend-item">
+                  <span class="legend-dot legend-low"></span>
+                  <span>低风险区域</span>
+                </div>
+              </div>
+            </div>
+            
+            <!-- 情景卡片 -->
             <div class="sandbox-grid">
               <div 
                 v-for="(s, index) in middleEastScenarios" 
@@ -314,7 +335,9 @@
 </template>
 
 <script setup>
-import { ref, onMounted, computed, nextTick } from 'vue'
+import { ref, onMounted, computed, nextTick, onUnmounted } from 'vue'
+import L from 'leaflet'
+import 'leaflet/dist/leaflet.css'
 
 const allAlerts = ref([])
 const stats = ref({
@@ -341,6 +364,7 @@ const priceData = ref({
 })
 let chartInstance = null
 let candlestickSeries = null
+let mapInstance = null
 
 const chatInput = ref('')
 const chatMessages = ref([])
@@ -350,6 +374,26 @@ const middleEastScenarios = ref([])
 const scenariosLoading = ref(false)
 const selectedScenarioIndex = ref(null)
 const lastUpdateTime = ref('')
+
+// 中东热点位置
+const middleEastHotspots = [
+  { name: '伊朗', lat: 32.4279, lng: 53.6880, risk: 'high' },
+  { name: '以色列', lat: 31.0461, lng: 34.8516, risk: 'high' },
+  { name: '黎巴嫩', lat: 33.8547, lng: 35.8623, risk: 'high' },
+  { name: '叙利亚', lat: 34.8021, lng: 38.9968, risk: 'high' },
+  { name: '伊拉克', lat: 33.2232, lng: 43.6793, risk: 'medium' },
+  { name: '沙特阿拉伯', lat: 23.8859, lng: 45.0792, risk: 'medium' },
+  { name: '阿联酋', lat: 23.4241, lng: 53.8478, risk: 'low' },
+  { name: '卡塔尔', lat: 25.3548, lng: 51.1839, risk: 'low' },
+  { name: '科威特', lat: 29.3117, lng: 47.4818, risk: 'medium' },
+  { name: '巴林', lat: 26.0667, lng: 50.5577, risk: 'low' },
+  { name: '阿曼', lat: 21.5126, lng: 55.9233, risk: 'low' },
+  { name: '也门', lat: 15.5527, lng: 48.5164, risk: 'medium' },
+  { name: '约旦', lat: 30.5852, lng: 36.2384, risk: 'medium' },
+  { name: '埃及', lat: 26.8206, lng: 30.8025, risk: 'low' },
+  { name: '土耳其', lat: 38.9637, lng: 35.2433, risk: 'low' },
+  { name: '霍尔木兹海峡', lat: 26.5600, lng: 56.5000, risk: 'high' },
+]
 
 const refreshScenarios = async () => {
   scenariosLoading.value = true
@@ -376,6 +420,41 @@ const fetchMiddleEastScenarios = async () => {
   } catch (e) {
     console.error('Failed to fetch Middle East scenarios:', e)
   }
+}
+
+const initMap = () => {
+  const container = document.getElementById('middle-east-map')
+  if (!container) return
+  
+  if (mapInstance) {
+    mapInstance.remove()
+  }
+  
+  // 初始化地图，中心在中东
+  mapInstance = L.map('middle-east-map').setView([29.0, 45.0], 5)
+  
+  // 添加 OpenStreetMap 瓦片层
+  L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+    attribution: '&copy; OpenStreetMap contributors',
+    maxZoom: 18
+  }).addTo(mapInstance)
+  
+  // 添加热点标记
+  middleEastHotspots.forEach(hotspot => {
+    const color = hotspot.risk === 'high' ? '#ef4444' : 
+                  hotspot.risk === 'medium' ? '#f59e0b' : '#10b981'
+    
+    const circle = L.circle([hotspot.lat, hotspot.lng], {
+      color: color,
+      fillColor: color,
+      fillOpacity: 0.3,
+      radius: hotspot.risk === 'high' ? 150000 : 
+              hotspot.risk === 'medium' ? 100000 : 50000
+    }).addTo(mapInstance)
+    
+    const marker = L.marker([hotspot.lat, hotspot.lng]).addTo(mapInstance)
+    marker.bindPopup(`<b>${hotspot.name}</b><br>风险等级: ${hotspot.risk === 'high' ? '高' : hotspot.risk === 'medium' ? '中' : '低'}`)
+  })
 }
 
 const fetchGuruViews = async () => {
@@ -638,5 +717,14 @@ onMounted(async () => {
   await fetchData()
   await fetchMiddleEastScenarios()
   await switchAsset('gold')
+  await nextTick()
+  initMap()
+})
+
+onUnmounted(() => {
+  if (mapInstance) {
+    mapInstance.remove()
+    mapInstance = null
+  }
 })
 </script>
