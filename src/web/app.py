@@ -428,5 +428,105 @@ def run_web_server(host='0.0.0.0', port=5000):
     ALERT_LOG_PATH.parent.mkdir(exist_ok=True)
     uvicorn.run(app, host=host, port=port)
 
+
+# 中东局势沙盘缓存（每10分钟更新一次）
+_middle_east_cache = {
+    'data': None,
+    'last_updated': 0
+}
+
+@app.get("/api/middle-east-scenarios")
+async def api_middle_east_scenarios():
+    """API - 获取中东局势推演沙盘（每10分钟更新）"""
+    import time
+    from datetime import datetime
+    
+    current_time = time.time()
+    cache_ttl = 600  # 10分钟缓存
+    
+    # 如果缓存存在且未过期，直接返回
+    if _middle_east_cache['data'] and (current_time - _middle_east_cache['last_updated'] < cache_ttl):
+        return {
+            'success': True,
+            'data': _middle_east_cache['data'],
+            'cached': True,
+            'last_updated': _middle_east_cache['last_updated']
+        }
+    
+    # 返回默认的伊朗局势焦点的情景（不依赖 LLM，确保快速响应）
+    scenarios = [
+        {
+            'name': '维持现状 (Status Quo)',
+            'type': 'status-quo',
+            'probability': 0.55,
+            'gold_price_range': '4800-5100',
+            'silver_price_range': '74-78',
+            'crude_price_range': '95-105',
+            'suggested_action': 'wait',
+            'action_text': '观望持有',
+            'trigger_signals': [
+                '伊朗局势保持稳定，无新的军事行动',
+                '霍尔木兹海峡航运正常',
+                '以色列与伊朗未发生直接冲突'
+            ]
+        },
+        {
+            'name': '局势缓和 (De-escalation)',
+            'type': 'de-escalation',
+            'probability': 0.2,
+            'gold_price_range': '4600-4900',
+            'silver_price_range': '71-75',
+            'crude_price_range': '88-98',
+            'suggested_action': 'sell',
+            'action_text': '减持黄金',
+            'trigger_signals': [
+                '美国与伊朗达成新的协议',
+                '伊朗石油出口恢复正常',
+                '地缘紧张局势缓解'
+            ]
+        },
+        {
+            'name': '局势升级 (Escalation)',
+            'type': 'escalation',
+            'probability': 0.2,
+            'gold_price_range': '5100-5400',
+            'silver_price_range': '78-83',
+            'crude_price_range': '105-115',
+            'suggested_action': 'buy',
+            'action_text': '增持黄金',
+            'trigger_signals': [
+                '伊朗革命卫队发动军事行动',
+                '霍尔木兹海峡航运受阻',
+                '伊朗核设施受到打击'
+            ]
+        },
+        {
+            'name': '重大危机 (Major Crisis)',
+            'type': 'major-crisis',
+            'probability': 0.05,
+            'gold_price_range': '5400-5900',
+            'silver_price_range': '83-92',
+            'crude_price_range': '115-130',
+            'suggested_action': 'buy',
+            'action_text': '重仓做多',
+            'trigger_signals': [
+                '伊朗与美国/以色列爆发全面冲突',
+                '霍尔木兹海峡完全封锁',
+                '中东地区爆发大规模战争'
+            ]
+        }
+    ]
+    
+    # 更新缓存
+    _middle_east_cache['data'] = scenarios
+    _middle_east_cache['last_updated'] = current_time
+    
+    return {
+        'success': True,
+        'data': scenarios,
+        'cached': False,
+        'last_updated': current_time
+    }
+
 if __name__ == '__main__':
     run_web_server()
