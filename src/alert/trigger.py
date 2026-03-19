@@ -211,8 +211,22 @@ class AlertTrigger:
         mild_threshold = config.get('params', {}).get('mild_threshold', 1.5)
         strong_threshold = config.get('params', {}).get('strong_threshold', 2.0)
         
+        # 计算当前波动率（最近 window 天）
         vol = IndicatorCalculator.volatility(df, window)
-        historical_vol = IndicatorCalculator.volatility(df.iloc[:-1], window)
+        
+        # 计算历史均值波动率（过去更长一段时间的平均，比如 window*2 天）
+        # 如果数据足够，取过去 window*2 天的数据，去掉最后 window 天，计算历史均值
+        if len(df) >= window * 2:
+            historical_df = df.iloc[:-window]  # 去掉最近 window 天
+            historical_vol = IndicatorCalculator.volatility(historical_df, window)
+        else:
+            # 数据不足时，用前半部分作为历史
+            mid_point = len(df) // 2
+            if mid_point < window:
+                return None  # 数据太少，无法比较
+            historical_df = df.iloc[:mid_point]
+            historical_vol = IndicatorCalculator.volatility(historical_df, window)
+        
         if historical_vol == 0:
             return None
         

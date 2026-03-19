@@ -72,11 +72,11 @@ class IndicatorCalculator:
     def rsi_slope(df: pd.DataFrame, period: int = 14, slope_period: int = 3) -> float:
         """计算RSI最近斜率 → 判断加速上涨/下跌"""
         rsi = IndicatorCalculator.rsi(df, period)
-        if len(rsi) < slope_period:
+        if len(rsi) < slope_period + 1:
             return 0
         # 简单斜率计算：(当前 - N天前)/N
         current = rsi.iloc[-1]
-        prev = rsi.iloc[-slope_period - 1]
+        prev = rsi.iloc[-slope_period - 1]  # 需要 slope_period + 1 个数据点
         slope = (current - prev) / slope_period
         return slope
     
