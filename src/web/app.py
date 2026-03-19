@@ -312,6 +312,114 @@ async def api_guru_views():
             'data': []
         }
 
+@app.post("/api/chat")
+async def api_chat(request: dict):
+    """聊天 API - 基于当前信息进行 AI 对话"""
+    try:
+        from typing import Optional, Dict, Any
+        
+        # 解析请求
+        user_message = request.get('message', '')
+        context = request.get('context', {})
+        
+        # 读取配置，获取 LLM API key
+        config_path = Path('config/config.yaml')
+        if not config_path.exists():
+            config_path = Path('config/config.example.yaml')
+        
+        llm_api_key = ''
+        llm_base_url = ''
+        llm_model = 'gpt-4o-mini'
+        
+        try:
+            import yaml
+            with open(config_path, 'r', encoding='utf-8') as f:
+                config = yaml.safe_load(f)
+            if 'llm' in config:
+                llm_api_key = config['llm'].get('api_key', '')
+                llm_base_url = config['llm'].get('base_url', '')
+                llm_model = config['llm'].get('model', 'gpt-4o-mini')
+        except:
+            pass
+        
+        if not llm_api_key:
+            return {
+                'success': False,
+                'message': '请先配置 LLM API Key 才能使用聊天功能！'
+            }
+        
+        # 构建系统提示
+        system_prompt = """你是一位专业的黄金白银市场分析师助手。
+
+你可以回答用户关于以下方面的问题：
+1. 中东局势对黄金白银原油价格的影响
+2. 知名宏观大佬的最新观点
+3. 最近触发的预警和市场信号
+4. 黄金白银原油的当前价格和走势
+5. 金银比、金油比等关键指标解读
+6. 多情景推演和操作建议
+
+请基于当前提供的上下文信息，给出专业、简洁、有帮助的回答。
+"""
+        
+        # 构建上下文信息
+        context_text = "当前市场信息：\n"
+        
+        # 中东局势情景
+        if 'middleEastScenarios' in context:
+            scenarios = context['middleEastScenarios']
+            context_text += "\n中东局势情景：\n"
+            for s in scenarios:
+                context_text += f"- {s['name']} (概率 {s['probability']*100:.0f}%): 黄金 {s['gold_price_range']}, 白银 {s['silver_price_range']}, 原油 {s['crude_price_range']}\n"
+        
+        # 大佬观点
+        if 'guruViews' in context:
+            gurus = context['guruViews']
+            context_text += "\n大佬观点：\n"
+            for g in gurus[:3]:
+                context_text += f"- {g['name']}: {g['latest_view']} ({g['tone']})\n"
+        
+        # 最近预警
+        if 'recentAlerts' in context:
+            alerts = context['recentAlerts']
+            context_text += "\n最近预警：\n"
+            for a in alerts:
+                context_text += f"- {a['name']}: {a['message']}\n"
+        
+        # 当前价格
+        if 'currentPrice' in context:
+            context_text += f"\n当前价格: {context['currentPrice']}\n"
+        
+        from openai import OpenAI
+        client = OpenAI(
+            api_key=llm_api_key,
+            base_url=llm_base_url if llm_base_url else None
+        )
+        
+        response = client.chat.completions.create(
+            model=llm_model,
+            messages=[
+                {"role": "system", "content": system_prompt},
+                {"role": "user", "content": f"{context_text}\n\n用户问题: {user_message}"}
+            ],
+            temperature=0.7,
+            max_tokens=800
+        )
+        
+        assistant_message = response.choices[0].message.content
+        
+        return {
+            'success': True,
+            'message': assistant_message
+        }
+        
+    except Exception as e:
+        logger.error(f"Chat API failed: {e}")
+        return {
+            'success': False,
+            'message': f'发生错误：{str(e)}'
+        }
+
 def run_web_server(host='0.0.0.0', port=5000):
     """启动Web服务器"""
     # 确保data目录存在

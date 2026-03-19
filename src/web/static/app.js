@@ -33,6 +33,12 @@ createApp({
     let chartInstance = null
     let candlestickSeries = null
     
+    // 聊天功能相关
+    const chatOpen = ref(false)
+    const chatInput = ref('')
+    const chatMessages = ref([])
+    const chatLoading = ref(false)
+    
     // 中东局势沙盘数据
     const middleEastScenarios = ref([
       {
@@ -286,6 +292,68 @@ createApp({
       return count
     })
     
+    // 聊天功能
+    const sendChatMessage = async () => {
+      if (!chatInput.value.trim() || chatLoading.value) return
+      
+      // 添加用户消息
+      chatMessages.value.push({
+        role: 'user',
+        content: chatInput.value
+      })
+      
+      const userMessage = chatInput.value
+      chatInput.value = ''
+      chatLoading.value = true
+      
+      try {
+        // 调用聊天API
+        const res = await fetch('/api/chat', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json'
+          },
+          body: JSON.stringify({
+            message: userMessage,
+            context: {
+              middleEastScenarios: middleEastScenarios.value,
+              guruViews: guruViews.value,
+              recentAlerts: recentAlerts.value,
+              currentPrice: currentPrice.value
+            }
+          })
+        })
+        
+        const data = await res.json()
+        
+        if (data.success) {
+          chatMessages.value.push({
+            role: 'assistant',
+            content: data.message
+          })
+        } else {
+          chatMessages.value.push({
+            role: 'assistant',
+            content: '抱歉，发生了错误，请稍后再试。'
+          })
+        }
+      } catch (e) {
+        console.error('Chat failed:', e)
+        chatMessages.value.push({
+          role: 'assistant',
+          content: '抱歉，发生了错误，请稍后再试。'
+        })
+      } finally {
+        chatLoading.value = false
+        // 滚动到底部
+        await nextTick()
+        const msgContainer = document.querySelector('.chat-messages')
+        if (msgContainer) {
+          msgContainer.scrollTop = msgContainer.scrollHeight
+        }
+      }
+    }
+    
     onMounted(async () => {
       await fetchData()
       await switchAsset('gold')
@@ -410,7 +478,13 @@ createApp({
       middleEastScenarios,
       getScenarioCardClass,
       getProbClass,
-      scrollToBottom
+      scrollToBottom,
+      // 聊天功能
+      chatOpen,
+      chatInput,
+      chatMessages,
+      chatLoading,
+      sendChatMessage
     }
   },
   template: `
@@ -678,6 +752,52 @@ createApp({
       <footer>
         <p>gold-silver-finance-agent | 黄金白银 AI 智能监控 · 专业金融分析平台</p>
       </footer>
+
+      <!-- 聊天按钮 -->
+      <button class="chat-toggle-btn" @click="chatOpen = !chatOpen">
+        {{ chatOpen ? '✕' : '💬' }}
+      </button>
+
+      <!-- 聊天窗口 -->
+      <div class="chat-window" v-if="chatOpen">
+        <div class="chat-header">
+          <div class="chat-title">
+            <span>🤖</span>
+            <span>AI 助手</span>
+          </div>
+          <button class="chat-close-btn" @click="chatOpen = false">✕</button>
+        </div>
+        <div class="chat-messages">
+          <div v-if="chatMessages.length === 0" style="text-align: center; padding: 40px 20px; color: var(--text-muted);">
+            <p>👋 你好！我是你的 AI 助手。</p>
+            <p style="margin-top: 8px;">你可以问我任何关于中东局势、大佬观点、市场预警的问题！</p>
+          </div>
+          <div 
+            v-for="(msg, i) in chatMessages" 
+            :key="i" 
+            :class="['chat-message', msg.role]"
+          >
+            {{ msg.content }}
+          </div>
+        </div>
+        <div class="chat-input-area">
+          <input 
+            type="text" 
+            class="chat-input" 
+            v-model="chatInput" 
+            placeholder="输入你的问题..."
+            @keyup.enter="sendChatMessage"
+            :disabled="chatLoading"
+          />
+          <button 
+            class="chat-send-btn" 
+            @click="sendChatMessage"
+            :disabled="chatLoading"
+          >
+            {{ chatLoading ? '...' : '发送' }}
+          </button>
+        </div>
+      </div>
     </div>
   `
 }).mount('#app')
