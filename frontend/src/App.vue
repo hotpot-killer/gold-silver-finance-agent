@@ -245,7 +245,7 @@
                 </button>
               </div>
             </div>
-            <div ref="chartContainerRef" id="kline-chart" class="h-80 rounded-xl overflow-hidden"></div>
+            <div ref="chartContainerRef" id="kline-chart" class="h-96 rounded-xl overflow-hidden"></div>
           </div>
         </div>
 
@@ -756,7 +756,6 @@ const initChart = () => {
   })
 
   updateChart()
-  chartInstance.timeScale().fitContent()
 
   const resizeObserver = new ResizeObserver(() => {
     chartInstance.applyAutoSize()
@@ -765,7 +764,7 @@ const initChart = () => {
 }
 
 const updateChart = () => {
-  if (!candlestickSeries) return
+  if (!candlestickSeries || !chartInstance) return
   const data = priceData.value[selectedAsset.value].data.map(item => ({
     time: item.time,
     open: item.open,
@@ -774,6 +773,7 @@ const updateChart = () => {
     close: item.close,
   }))
   candlestickSeries.setData(data)
+  chartInstance.timeScale().fitContent()
 }
 
 const switchAsset = async (asset) => {
@@ -782,7 +782,10 @@ const switchAsset = async (asset) => {
   if (priceData.value[asset].data.length === 0) {
     await fetchPrice(asset)
   }
+  await nextTick()
   initChart()
+  await nextTick()
+  updateChart()
 }
 
 const initMap = () => {
