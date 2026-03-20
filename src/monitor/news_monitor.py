@@ -1,7 +1,7 @@
 """
 多地区新闻监控 - 支持中东、美国、中国等地区新闻
 参考 MiroFish 思想：从现实世界提取种子信息
-使用 requests + parsel 从搜狐新闻抓取（更稳定）
+使用 Scrapling 从搜狐新闻抓取（patchright 已添加到依赖）
 
 Author: wzh
 Date: 2026-03-19
@@ -9,14 +9,13 @@ Date: 2026-03-19
 import logging
 from datetime import datetime, timedelta
 from typing import List, Dict
-import requests
-from parsel import Selector
+from scrapling import Fetcher, StealthyFetcher, Selector
 from .base import BaseMonitor, NewsItem
 
 logger = logging.getLogger(__name__)
 
 class NewsMonitor(BaseMonitor):
-    """多地区新闻监控 - 使用 requests + parsel 从搜狐新闻抓取（更稳定）"""
+    """多地区新闻监控 - 使用 Scrapling 从搜狐新闻抓取"""
     
     # 地区新闻源配置 - 搜狐新闻
     NEWS_SOURCES = {
@@ -105,7 +104,98 @@ class NewsMonitor(BaseMonitor):
         return unique_news
     
     def _fetch_from_sohu(self, url: str, keywords: List[str], region: str, cutoff: datetime) -> List[NewsItem]:
-        """使用 requests + parsel 从搜狐新闻抓取（更稳定）"""
+        """使用 Scrapling 从搜狐新闻抓取"""
+        results = []
+        
+        try:
+            # 使用 StealthyFetcher 进行抓取
+            fetcher = StealthyFetcher()
+            response = fetcher.get(url)
+            
+            if response.status != 200:
+                return results
+            
+            # 使用 Selector 解析 HTML
+            selector = Selector(response.text)
+            
+            # 尝试多个选择器获取链接
+            href_selectors = [
+                'a[href*="/a/"]::attr(href)',
+                'a[href*="news.sohu.com"]::attr(href)',
+                'h4 a::attr(href)',
+                '.news-item a::attr(href)',
+            ]
+            
+            hrefs = set()
+            for sel_str in href_selectors:
+                hrefs.update(selector.css(sel_str).getall())
+            
+            # 同时获取标题
+            title_selectors = [
+                'a[href*="/a/"]::text',
+                'a[href*="news.sohu.com"]::text',
+                'h4 a::text',
+                '.news-item a::text',
+                '.title::text',
+            ]
+            
+            titles = []
+            for sel_str in title_selectors:
+                titles.extend([t.strip() for t in selector.css(sel_str).getall() if t.strip()])
+            
+            # 组合标题和链接
+            for i, href in enumerate(list(hrefs)[:20]):
+                try:
+                    if i >= len(titles):
+                        continue
+                        
+                    title = titles[i].strip()
+                    if not title:
+                        continue
+                        
+                    # 如果有关键词，只保留包含关键词的新闻
+                    if keywords:
+                        title_lower = title.lower()
+                        has_keyword = any(kw.lower() in title_lower for kw in keywords)
+                        if not has_keyword and region != 'global':
+                            continue  # 非全球区域只保留相关新闻
+                    
+                    if not href.startswith('http'):
+                        if href.startswith('/'):
+                            href = 'https://news.sohu.com' + href
+                        else:
+                            href = 'https://news.sohu.com/' + href
+                    
+                    # 给 NewsItem 添加 region 字段（通过动态属性）
+                    news_item = NewsItem(
+                        title=title,
+                        content='',
+                        url=href,
+                        source='sohu_news',
+                        publish_time=datetime.now()
+                    )
+                    # 动态添加 region 属性
+                    news_item.region = region
+                    results.append(news_item)
+                    
+                except Exception as e:
+                    continue
+                        
+        except Exception as e:
+            logger.error(f"Failed to fetch from {url} with Scrapling: {e}")
+            # 如果 Scrapling 失败，使用 requests + parsel 作为 fallback
+            try:
+                results = self._fetch_from_sohu_fallback(url, keywords, region, cutoff)
+            except Exception as e2:
+                logger.error(f"Fallback also failed: {e2}")
+        
+        return results
+    
+    def _fetch_from_sohu_fallback(self, url: str, keywords: List[str], region: str, cutoff: datetime) -> List[NewsItem]:
+        """使用 requests + parsel 作为 fallback 抓取搜狐新闻"""
+        import requests
+        from parsel import Selector
+        
         results = []
         headers = {
             "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36",
@@ -173,7 +263,7 @@ class NewsMonitor(BaseMonitor):
                         title=title,
                         content='',
                         url=href,
-                        source='sohu_news',
+                        source='sohu_news_fallback',
                         publish_time=datetime.now()
                     )
                     # 动态添加 region 属性
@@ -184,7 +274,7 @@ class NewsMonitor(BaseMonitor):
                     continue
                         
         except Exception as e:
-            logger.error(f"Failed to fetch from {url} with requests: {e}")
+            logger.error(f"Failed to fetch from {url} with requests fallback: {e}")
         
         return results
     

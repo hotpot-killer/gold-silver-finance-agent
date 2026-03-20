@@ -25,6 +25,7 @@ dependencies = [
   "tushare>=1.2.58",
   "playwright>=1.40.0",
   "scrapling>=0.4",
+  "patchright>=0.1.0",
   "curl-cffi>=0.6.0",
   "browserforge>=0.1.0",
   "schedule>=1.2.0",
