@@ -56,7 +56,7 @@
             
             <!-- 交互式地图 -->
             <div class="map-section">
-              <div id="middle-east-map" class="map-container"></div>
+              <div ref="mapContainerRef" id="middle-east-map" class="map-container"></div>
               <div class="map-legend">
                 <div class="legend-title">热点图例</div>
                 <div class="legend-item">
@@ -366,6 +366,7 @@ const priceData = ref({
 let chartInstance = null
 let candlestickSeries = null
 let mapInstance = null
+const mapContainerRef = ref(null)
 
 const chatInput = ref('')
 const chatMessages = ref([])
@@ -424,7 +425,7 @@ const fetchMiddleEastScenarios = async () => {
 }
 
 const initMap = () => {
-  const container = document.getElementById('middle-east-map')
+  const container = mapContainerRef.value
   if (!container) return
   
   if (mapInstance) {
@@ -432,7 +433,7 @@ const initMap = () => {
   }
   
   // 初始化地图，中心在世界视图
-  mapInstance = L.map('middle-east-map').setView([20.0, 0.0], 2)
+  mapInstance = L.map(container).setView([20.0, 0.0], 2)
   
   // 添加 OpenStreetMap 瓦片层
   L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
@@ -719,6 +720,7 @@ onMounted(async () => {
   await fetchMiddleEastScenarios()
   await switchAsset('gold')
   await nextTick()
+  await nextTick()  // 再加一个 nextTick 确保 DOM 完全渲染
   initMap()
 })
 
