@@ -9,8 +9,7 @@ Date: 2026-03-19
 import logging
 from datetime import datetime, timedelta
 from typing import List, Dict
-from scrapling import Browser, AsyncBrowser
-from scrapling.engines import StealthyEngine
+from scrapling import Fetcher, StealthyFetcher, Selector
 from .base import BaseMonitor, NewsItem
 
 logger = logging.getLogger(__name__)
@@ -109,55 +108,78 @@ class NewsMonitor(BaseMonitor):
         results = []
         
         try:
-            # 使用 StealthyEngine 进行抓取
-            with Browser(engine=StealthyEngine(), headless=True) as browser:
-                page = browser.get(url)
-                
-                # 等待页面加载
-                page.wait(2)
-                
-                # 尝试获取新闻列表
-                # 搜狐新闻的选择器可能需要调整，这里使用通用的选择器
-                news_items = page.query_selector_all('a[href*="/a/"]')
-                
-                for item in news_items[:20]:  # 最多抓取20条
-                    try:
-                        title = item.text.strip()
-                        if not title:
-                            continue
-                        
-                        # 如果有关键词，只保留包含关键词的新闻
-                        if keywords:
-                            title_lower = title.lower()
-                            has_keyword = any(kw.lower() in title_lower for kw in keywords)
-                            if not has_keyword and region != 'global':
-                                continue  # 非全球区域只保留相关新闻
-                        
-                        href = item.get_attribute('href')
-                        if not href:
-                            continue
-                        
-                        # 构建完整 URL
-                        if not href.startswith('http'):
-                            if href.startswith('/'):
-                                href = 'https://news.sohu.com' + href
-                            else:
-                                href = 'https://news.sohu.com/' + href
-                        
-                        # 给 NewsItem 添加 region 字段（通过动态属性）
-                        news_item = NewsItem(
-                            title=title,
-                            content='',
-                            url=href,
-                            source='sohu_news',
-                            publish_time=datetime.now()
-                        )
-                        # 动态添加 region 属性
-                        news_item.region = region
-                        results.append(news_item)
-                        
-                    except Exception as e:
+            # 使用 StealthyFetcher 进行抓取
+            fetcher = StealthyFetcher()
+            response = fetcher.get(url)
+            
+            if response.status != 200:
+                return results
+            
+            # 使用 Selector 解析 HTML
+            selector = Selector(response.text)
+            
+            # 尝试多个选择器获取链接
+            href_selectors = [
+                'a[href*="/a/"]::attr(href)',
+                'a[href*="news.sohu.com"]::attr(href)',
+                'h4 a::attr(href)',
+                '.news-item a::attr(href)',
+            ]
+            
+            hrefs = set()
+            for sel_str in href_selectors:
+                hrefs.update(selector.css(sel_str).getall())
+            
+            # 同时获取标题
+            title_selectors = [
+                'a[href*="/a/"]::text',
+                'a[href*="news.sohu.com"]::text',
+                'h4 a::text',
+                '.news-item a::text',
+                '.title::text',
+            ]
+            
+            titles = []
+            for sel_str in title_selectors:
+                titles.extend([t.strip() for t in selector.css(sel_str).getall() if t.strip()])
+            
+            # 组合标题和链接
+            for i, href in enumerate(list(hrefs)[:20]):
+                try:
+                    if i >= len(titles):
                         continue
+                        
+                    title = titles[i].strip()
+                    if not title:
+                        continue
+                        
+                    # 如果有关键词，只保留包含关键词的新闻
+                    if keywords:
+                        title_lower = title.lower()
+                        has_keyword = any(kw.lower() in title_lower for kw in keywords)
+                        if not has_keyword and region != 'global':
+                            continue  # 非全球区域只保留相关新闻
+                    
+                    if not href.startswith('http'):
+                        if href.startswith('/'):
+                            href = 'https://news.sohu.com' + href
+                        else:
+                            href = 'https://news.sohu.com/' + href
+                    
+                    # 给 NewsItem 添加 region 字段（通过动态属性）
+                    news_item = NewsItem(
+                        title=title,
+                        content='',
+                        url=href,
+                        source='sohu_news',
+                        publish_time=datetime.now()
+                    )
+                    # 动态添加 region 属性
+                    news_item.region = region
+                    results.append(news_item)
+                    
+                except Exception as e:
+                    continue
                         
         except Exception as e:
             logger.error(f"Failed to fetch from {url} with Scrapling: {e}")
@@ -170,7 +192,7 @@ class NewsMonitor(BaseMonitor):
         return results
     
     def _fetch_from_sohu_fallback(self, url: str, keywords: List[str], region: str, cutoff: datetime) -> List[NewsItem]:
-        """使用 requests 作为 fallback 抓取搜狐新闻"""
+        """使用 requests + parsel 作为 fallback 抓取搜狐新闻"""
         import requests
         from parsel import Selector
         
@@ -188,8 +210,8 @@ class NewsMonitor(BaseMonitor):
             # 使用 parsel 解析 HTML
             sel = Selector(text=resp.text)
             
-            # 尝试多个选择器
-            selectors = [
+            # 尝试多个选择器获取链接
+            href_selectors = [
                 'a[href*="/a/"]::attr(href)',
                 'a[href*="news.sohu.com"]::attr(href)',
                 'h4 a::attr(href)',
@@ -197,7 +219,7 @@ class NewsMonitor(BaseMonitor):
             ]
             
             hrefs = set()
-            for sel_str in selectors:
+            for sel_str in href_selectors:
                 hrefs.update(sel.css(sel_str).getall())
             
             # 同时获取标题
