@@ -442,7 +442,10 @@
                         ? 'bg-gradient-to-br from-blue-600 to-indigo-700 text-white rounded-2xl rounded-tr-md px-5 py-3 max-w-[85%]' 
                         : 'bg-white border border-slate-200 text-slate-900 rounded-2xl rounded-tl-md px-5 py-3 max-w-[85%] shadow-sm'
                     ]">
-                      <div class="whitespace-pre-wrap leading-relaxed">{{ msg.content }}</div>
+                      <div v-if="msg.role === 'user'" class="whitespace-pre-wrap leading-relaxed">{{ msg.content }}</div>
+                      <div v-else class="prose prose-slate max-w-none">
+                        <div v-html="renderMarkdown(msg.content)"></div>
+                      </div>
                     </div>
                   </div>
                 </div>
@@ -494,6 +497,13 @@ import { ref, onMounted, computed, nextTick, onUnmounted, watch } from 'vue'
 import * as LightweightCharts from 'lightweight-charts'
 import L from 'leaflet'
 import 'leaflet/dist/leaflet.css'
+import { marked } from 'marked'
+
+// 配置 marked
+marked.setOptions({
+  breaks: true,
+  gfm: true
+})
 
 // ==========================================
 // 策略模式 (Strategy Pattern) - 导航配置
@@ -668,6 +678,11 @@ const recentAlerts = computed(() => {
 const formatPrice = (price) => {
   if (price == null) return '-'
   return price.toFixed(2)
+}
+
+const renderMarkdown = (content) => {
+  if (!content) return ''
+  return marked(content)
 }
 
 const selectScenario = (index) => {
