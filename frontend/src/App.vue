@@ -724,7 +724,10 @@ const fetchPrice = async (asset) => {
 
 const initChart = () => {
   const container = chartContainerRef.value
-  if (!container) return
+  if (!container) {
+    console.warn('Chart container not found')
+    return
+  }
 
   if (chartInstance) {
     chartInstance.remove()
@@ -790,7 +793,10 @@ const switchAsset = async (asset) => {
 
 const initMap = () => {
   const container = mapContainerRef.value
-  if (!container) return
+  if (!container) {
+    console.warn('Map container not found')
+    return
+  }
 
   if (mapInstance) {
     mapInstance.remove()
@@ -879,10 +885,14 @@ watch(activeTab, async (newTab) => {
   await nextTick()
   if (newTab === 'map') {
     await nextTick()
-    initMap()
+    if (mapContainerRef.value) {
+      initMap()
+    }
   } else if (newTab === 'dashboard') {
     await nextTick()
-    initChart()
+    if (chartContainerRef.value) {
+      initChart()
+    }
   }
 })
 
@@ -890,9 +900,9 @@ watch(activeTab, async (newTab) => {
 onMounted(async () => {
   await fetchData()
   await fetchMiddleEastScenarios()
+  await nextTick()
+  await nextTick()
   await switchAsset('gold')
-  await nextTick()
-  await nextTick()
 })
 
 onUnmounted(() => {
