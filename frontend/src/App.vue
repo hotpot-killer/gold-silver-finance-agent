@@ -76,6 +76,20 @@
           <span v-if="sidebarOpen" class="font-bold">大佬观点</span>
           <span v-if="sidebarOpen && activeTab === 'gurus'" class="ml-auto">→</span>
         </button>
+
+        <button
+          @click="activeTab = 'chat'"
+          :class="[
+            'w-full flex items-center gap-4 px-6 py-4 rounded-2xl transition-all group',
+            activeTab === 'chat'
+              ? 'bg-slate-900 text-white shadow-lg shadow-slate-200'
+              : 'text-slate-700 hover:bg-slate-50'
+          ]"
+        >
+          <span class="text-2xl" :class="activeTab === 'chat' ? 'text-white' : 'group-hover:text-brand-600'">💬</span>
+          <span v-if="sidebarOpen" class="font-bold">AI 助手</span>
+          <span v-if="sidebarOpen && activeTab === 'chat'" class="ml-auto">→</span>
+        </button>
       </nav>
 
       <div class="mt-auto px-4 w-full">
@@ -110,6 +124,7 @@
             {{ activeTab === 'dashboard' ? 'Dashboard' :
                 activeTab === 'map' ? 'Geo Map' :
                 activeTab === 'alerts' ? 'Alert History' :
+                activeTab === 'chat' ? 'AI Assistant' :
                 'Guru Views' }}
           </h2>
         </div>
@@ -303,15 +318,15 @@
                 <div class="grid grid-cols-3 gap-4 mb-4">
                   <div class="text-center">
                     <div class="text-xs text-slate-500 mb-1">🥇 黄金</div>
-                    <div class="font-bold text-slate-900">{{ s.gold_price_range }}</div>
+                    <div class="font-bold text-slate-900">{{ s.gold_price_range || s.goldPriceRange || '4800-5100' }}</div>
                   </div>
                   <div class="text-center">
                     <div class="text-xs text-slate-500 mb-1">🥈 白银</div>
-                    <div class="font-bold text-slate-900">{{ s.silver_price_range }}</div>
+                    <div class="font-bold text-slate-900">{{ s.silver_price_range || s.silverPriceRange || '74-78' }}</div>
                   </div>
                   <div class="text-center">
                     <div class="text-xs text-slate-500 mb-1">🛢️ 原油</div>
-                    <div class="font-bold text-slate-900">{{ s.crude_price_range }}</div>
+                    <div class="font-bold text-slate-900">{{ s.crude_price_range || s.crudePriceRange || '95-105' }}</div>
                   </div>
                 </div>
                 <div class="text-center">
@@ -321,7 +336,7 @@
                     s.suggested_action === 'sell' ? 'bg-red-100 text-red-700' :
                     'bg-slate-100 text-slate-700'
                   ]">
-                    {{ s.action_text }}
+                    {{ s.action_text || s.actionText || '观望持有' }}
                   </span>
                 </div>
               </div>
@@ -363,6 +378,16 @@
 
         <!-- Gurus Tab -->
         <div v-else-if="activeTab === 'gurus'" class="space-y-6">
+          <div class="flex items-center justify-between mb-4">
+            <h3 class="text-lg font-bold text-slate-900">大佬观点</h3>
+            <button
+              @click="fetchGuruViews"
+              :disabled="guruLoading"
+              class="px-4 py-2 bg-slate-900 text-white rounded-xl text-sm font-bold hover:bg-slate-800 transition-colors disabled:opacity-50"
+            >
+              {{ guruLoading ? '刷新中...' : '🔄 刷新' }}
+            </button>
+          </div>
           <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
             <div
               v-for="(guru, idx) in guruViews"
@@ -379,7 +404,7 @@
                 </div>
               </div>
               <p class="text-slate-700 leading-relaxed">
-                {{ guru.view }}
+                {{ guru.view || guru.latest_view || guru.content }}
               </p>
               <div v-if="guru.date" class="mt-4 text-xs text-slate-400">
                 {{ guru.date }}
@@ -387,44 +412,50 @@
             </div>
           </div>
         </div>
+
+        <!-- Chat Tab -->
+        <div v-else-if="activeTab === 'chat'" class="h-full flex flex-col">
+          <div class="flex-1 flex flex-col bg-white border border-slate-200 rounded-2xl overflow-hidden">
+            <div class="p-4 border-b border-slate-200 bg-slate-50">
+              <h3 class="font-bold text-slate-900">AI 助手</h3>
+              <p class="text-xs text-slate-500">基于当前市场信息，为你提供专业分析</p>
+            </div>
+            <div ref="chatMessagesRef" class="flex-1 overflow-y-auto p-4 space-y-4">
+              <div v-if="chatMessages.length === 0" class="flex flex-col items-center justify-center h-64 text-slate-400 gap-4">
+                <span class="text-5xl">💬</span>
+                <p class="text-sm">有什么问题想问我吗？</p>
+              </div>
+              <div v-for="(msg, idx) in chatMessages" :key="idx" :class="['chat-widget-message', msg.role]">
+                {{ msg.content }}
+              </div>
+            </div>
+            <div class="p-4 border-t border-slate-200">
+              <div class="flex gap-2">
+                <input
+                  v-model="chatInput"
+                  @keyup.enter="sendChatMessage"
+                  :disabled="chatLoading"
+                  placeholder="输入问题..."
+                  class="flex-1 px-4 py-2 border border-slate-200 rounded-xl text-sm focus:outline-none focus:border-brand-500"
+                />
+                <button
+                  @click="sendChatMessage"
+                  :disabled="chatLoading"
+                  class="px-4 py-2 bg-slate-900 text-white rounded-xl text-sm font-bold hover:bg-slate-800 transition-colors disabled:opacity-50"
+                >
+                  {{ chatLoading ? '...' : '→' }}
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
       </div>
     </main>
-
-    <!-- --- Right Chat Sidebar --- -->
-    <aside class="w-80 border-l border-slate-200 bg-white flex flex-col h-screen">
-      <div class="p-4 border-b border-slate-200">
-        <h3 class="font-bold text-slate-900">AI 助手</h3>
-        <p class="text-xs text-slate-500">随时为你解答</p>
-      </div>
-      <div ref="chatMessagesRef" class="flex-1 overflow-y-auto p-4 space-y-4">
-        <div v-for="(msg, idx) in chatMessages" :key="idx" :class="['chat-widget-message', msg.role]">
-          {{ msg.content }}
-        </div>
-      </div>
-      <div class="p-4 border-t border-slate-200">
-        <div class="flex gap-2">
-          <input
-            v-model="chatInput"
-            @keyup.enter="sendChatMessage"
-            :disabled="chatLoading"
-            placeholder="输入问题..."
-            class="flex-1 px-4 py-2 border border-slate-200 rounded-xl text-sm focus:outline-none focus:border-brand-500"
-          />
-          <button
-            @click="sendChatMessage"
-            :disabled="chatLoading"
-            class="px-4 py-2 bg-slate-900 text-white rounded-xl text-sm font-bold hover:bg-slate-800 transition-colors disabled:opacity-50"
-          >
-            {{ chatLoading ? '...' : '→' }}
-          </button>
-        </div>
-      </div>
-    </aside>
   </div>
 </template>
 
 <script setup>
-import { ref, onMounted, computed, nextTick, onUnmounted } from 'vue'
+import { ref, onMounted, computed, nextTick, onUnmounted, watch } from 'vue'
 import * as LightweightCharts from 'lightweight-charts'
 import L from 'leaflet'
 import 'leaflet/dist/leaflet.css'
@@ -840,6 +871,18 @@ const sendChatMessage = async () => {
   }
 }
 
+// Watch activeTab and re-initialize map/chart
+watch(activeTab, async (newTab) => {
+  await nextTick()
+  if (newTab === 'map') {
+    await nextTick()
+    initMap()
+  } else if (newTab === 'dashboard') {
+    await nextTick()
+    initChart()
+  }
+})
+
 // Lifecycle
 onMounted(async () => {
   await fetchData()
@@ -847,7 +890,6 @@ onMounted(async () => {
   await switchAsset('gold')
   await nextTick()
   await nextTick()
-  initMap()
 })
 
 onUnmounted(() => {
