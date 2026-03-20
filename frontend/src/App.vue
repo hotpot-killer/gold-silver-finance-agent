@@ -22,73 +22,23 @@
 
       <nav class="flex-1 w-full px-4 space-y-1">
         <button
-          @click="activeTab = 'dashboard'"
+          v-for="tab in navigationTabs"
+          :key="tab.id"
+          @click="activeTab = tab.id"
           :class="[
             'w-full flex items-center gap-4 px-6 py-4 rounded-2xl transition-all group',
-            activeTab === 'dashboard'
+            activeTab === tab.id
               ? 'bg-slate-900 text-white shadow-lg shadow-slate-200'
               : 'text-slate-700 hover:bg-slate-50'
           ]"
         >
-          <span class="text-2xl" :class="activeTab === 'dashboard' ? 'text-white' : 'group-hover:text-brand-600'">📊</span>
-          <span v-if="sidebarOpen" class="font-bold">仪表盘</span>
-          <span v-if="sidebarOpen && activeTab === 'dashboard'" class="ml-auto">→</span>
-        </button>
-
-        <button
-          @click="activeTab = 'map'"
-          :class="[
-            'w-full flex items-center gap-4 px-6 py-4 rounded-2xl transition-all group',
-            activeTab === 'map'
-              ? 'bg-slate-900 text-white shadow-lg shadow-slate-200'
-              : 'text-slate-700 hover:bg-slate-50'
-          ]"
-        >
-          <span class="text-2xl" :class="activeTab === 'map' ? 'text-white' : 'group-hover:text-brand-600'">🌍</span>
-          <span v-if="sidebarOpen" class="font-bold">地缘地图</span>
-          <span v-if="sidebarOpen && activeTab === 'map'" class="ml-auto">→</span>
-        </button>
-
-        <button
-          @click="activeTab = 'alerts'"
-          :class="[
-            'w-full flex items-center gap-4 px-6 py-4 rounded-2xl transition-all group',
-            activeTab === 'alerts'
-              ? 'bg-slate-900 text-white shadow-lg shadow-slate-200'
-              : 'text-slate-700 hover:bg-slate-50'
-          ]"
-        >
-          <span class="text-2xl" :class="activeTab === 'alerts' ? 'text-white' : 'group-hover:text-brand-600'">⚠️</span>
-          <span v-if="sidebarOpen" class="font-bold">预警历史</span>
-          <span v-if="sidebarOpen && activeTab === 'alerts'" class="ml-auto">→</span>
-        </button>
-
-        <button
-          @click="activeTab = 'gurus'"
-          :class="[
-            'w-full flex items-center gap-4 px-6 py-4 rounded-2xl transition-all group',
-            activeTab === 'gurus'
-              ? 'bg-slate-900 text-white shadow-lg shadow-slate-200'
-              : 'text-slate-700 hover:bg-slate-50'
-          ]"
-        >
-          <span class="text-2xl" :class="activeTab === 'gurus' ? 'text-white' : 'group-hover:text-brand-600'">🧠</span>
-          <span v-if="sidebarOpen" class="font-bold">大佬观点</span>
-          <span v-if="sidebarOpen && activeTab === 'gurus'" class="ml-auto">→</span>
-        </button>
-
-        <button
-          @click="activeTab = 'chat'"
-          :class="[
-            'w-full flex items-center gap-4 px-6 py-4 rounded-2xl transition-all group',
-            activeTab === 'chat'
-              ? 'bg-slate-900 text-white shadow-lg shadow-slate-200'
-              : 'text-slate-700 hover:bg-slate-50'
-          ]"
-        >
-          <span class="text-2xl" :class="activeTab === 'chat' ? 'text-white' : 'group-hover:text-brand-600'">💬</span>
-          <span v-if="sidebarOpen" class="font-bold">AI 助手</span>
-          <span v-if="sidebarOpen && activeTab === 'chat'" class="ml-auto">→</span>
+          <span class="text-2xl" :class="activeTab === tab.id ? 'text-white' : 'group-hover:text-brand-600'">
+            {{ tab.icon }}
+          </span>
+          <span v-if="sidebarOpen" class="font-bold">
+            {{ tab.label }}
+          </span>
+          <span v-if="sidebarOpen && activeTab === tab.id" class="ml-auto">→</span>
         </button>
       </nav>
 
@@ -121,11 +71,7 @@
           </button>
           <div class="h-4 w-px bg-slate-200 mx-1" />
           <h2 class="text-xs font-black text-slate-900 uppercase tracking-[0.2em]">
-            {{ activeTab === 'dashboard' ? 'Dashboard' :
-                activeTab === 'map' ? 'Geo Map' :
-                activeTab === 'alerts' ? 'Alert History' :
-                activeTab === 'chat' ? 'AI Assistant' :
-                'Guru Views' }}
+            {{ currentTabLabel }}
           </h2>
         </div>
         <div class="flex items-center gap-3">
@@ -460,7 +406,69 @@ import * as LightweightCharts from 'lightweight-charts'
 import L from 'leaflet'
 import 'leaflet/dist/leaflet.css'
 
-// State
+// ==========================================
+// 策略模式 (Strategy Pattern) - 导航配置
+// ==========================================
+const navigationTabs = [
+  { id: 'dashboard', label: '仪表盘', icon: '📊' },
+  { id: 'map', label: '地缘地图', icon: '🌍' },
+  { id: 'alerts', label: '预警历史', icon: '⚠️' },
+  { id: 'gurus', label: '大佬观点', icon: '🧠' },
+  { id: 'chat', label: 'AI 助手', icon: '💬' },
+]
+
+// ==========================================
+// 单例模式 (Singleton Pattern) - 图表管理器
+// ==========================================
+class ChartManager {
+  static instance = null
+  
+  static getInstance() {
+    if (!ChartManager.instance) {
+      ChartManager.instance = {
+        chartInstance: null,
+        candlestickSeries: null,
+        containerRef: null
+      }
+    }
+    return ChartManager.instance
+  }
+  
+  static reset() {
+    if (ChartManager.instance?.chartInstance) {
+      ChartManager.instance.chartInstance.remove()
+    }
+    ChartManager.instance = null
+  }
+}
+
+// ==========================================
+// 单例模式 (Singleton Pattern) - 地图管理器
+// ==========================================
+class MapManager {
+  static instance = null
+  
+  static getInstance() {
+    if (!MapManager.instance) {
+      MapManager.instance = {
+        mapInstance: null,
+        containerRef: null
+      }
+    }
+    return MapManager.instance
+  }
+  
+  static reset() {
+    if (MapManager.instance?.mapInstance) {
+      MapManager.instance.mapInstance.remove()
+    }
+    MapManager.instance = null
+  }
+}
+
+// ==========================================
+// 状态管理
+// ==========================================
 const activeTab = ref('dashboard')
 const sidebarOpen = ref(true)
 const selectedAsset = ref('gold')
@@ -479,12 +487,8 @@ const chatInput = ref('')
 const chatMessages = ref([])
 const chatLoading = ref(false)
 const chatMessagesRef = ref(null)
-const mapContainerRef = ref(null)
 const chartContainerRef = ref(null)
-
-let chartInstance = null
-let candlestickSeries = null
-let mapInstance = null
+const mapContainerRef = ref(null)
 
 const priceData = ref({
   gold: { symbol: 'XAUUSD', data: [], latest: null },
@@ -513,7 +517,14 @@ const middleEastHotspots = [
   { name: '霍尔木兹海峡', lat: 26.5600, lng: 56.5000, risk: 'high' },
 ]
 
-// Computed
+// ==========================================
+// 计算属性
+// ==========================================
+const currentTabLabel = computed(() => {
+  const tab = navigationTabs.find(t => t.id === activeTab.value)
+  return tab ? tab.label.toUpperCase() : 'DASHBOARD'
+})
+
 const priceChange = computed(() => {
   const changes = {}
   for (const asset of ['gold', 'silver', 'crude_oil']) {
@@ -543,34 +554,140 @@ const recentAlerts = computed(() => {
   return allAlerts.value.slice(0, 5)
 })
 
-// Methods
+// ==========================================
+// 工具函数
+// ==========================================
 const formatPrice = (price) => {
   if (price == null) return '-'
   return price.toFixed(2)
 }
 
 const selectScenario = (index) => {
-  if (selectedScenarioIndex.value === index) {
-    selectedScenarioIndex.value = null
-  } else {
-    selectedScenarioIndex.value = index
-  }
+  selectedScenarioIndex.value = selectedScenarioIndex.value === index ? null : index
 }
 
-const getScenarioCardClass = (type) => {
-  if (type === 'major-crisis' || type === 'escalation') {
-    return 'danger'
+// ==========================================
+// 工厂方法 (Factory Method) - 初始化图表
+// ==========================================
+const initChart = () => {
+  const container = chartContainerRef.value
+  if (!container) {
+    console.warn('Chart container not found')
+    return
   }
-  return ''
+
+  const manager = ChartManager.getInstance()
+  
+  if (manager.chartInstance) {
+    manager.chartInstance.remove()
+  }
+
+  manager.containerRef = container
+  manager.chartInstance = LightweightCharts.createChart(container, {
+    layout: {
+      background: { type: 'solid', color: '#f8fafc' },
+      textColor: '#0f172a',
+    },
+    grid: {
+      vertLines: { color: '#e2e8f0' },
+      horzLines: { color: '#e2e8f0' },
+    },
+    priceScale: {
+      borderColor: '#cbd5e1',
+    },
+    timeScale: {
+      borderColor: '#cbd5e1',
+    },
+  })
+
+  manager.candlestickSeries = manager.chartInstance.addCandlestickSeries({
+    upColor: '#10b981',
+    downColor: '#ef4444',
+    borderVisible: false,
+    wickUpColor: '#10b981',
+    wickDownColor: '#ef4444',
+  })
+
+  updateChart()
+
+  const resizeObserver = new ResizeObserver(() => {
+    manager.chartInstance.applyAutoSize()
+  })
+  resizeObserver.observe(container)
 }
 
-const getProbClass = (prob) => {
-  if (prob > 0.4) {
-    return 'sandbox-card-prob'
-  }
-  return 'sandbox-card-prob high'
+const updateChart = () => {
+  const manager = ChartManager.getInstance()
+  if (!manager.candlestickSeries || !manager.chartInstance) return
+  
+  const data = priceData.value[selectedAsset.value].data.map(item => ({
+    time: item.time,
+    open: item.open,
+    high: item.high,
+    low: item.low,
+    close: item.close,
+  }))
+  manager.candlestickSeries.setData(data)
+  manager.chartInstance.timeScale().fitContent()
 }
 
+// ==========================================
+// 工厂方法 (Factory Method) - 初始化地图
+// ==========================================
+const initMap = () => {
+  const container = mapContainerRef.value
+  if (!container) {
+    console.warn('Map container not found')
+    return
+  }
+
+  const manager = MapManager.getInstance()
+  
+  if (manager.mapInstance) {
+    manager.mapInstance.remove()
+  }
+
+  manager.containerRef = container
+  manager.mapInstance = L.map(container).setView([20.0, 0.0], 1.5)
+
+  L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+    attribution: '&copy; OpenStreetMap contributors',
+    maxZoom: 18
+  }).addTo(manager.mapInstance)
+
+  middleEastHotspots.forEach(hotspot => {
+    const color = hotspot.risk === 'high' ? '#ef4444' :
+                  hotspot.risk === 'medium' ? '#f59e0b' : '#10b981'
+
+    const circle = L.circle([hotspot.lat, hotspot.lng], {
+      color: color,
+      fillColor: color,
+      fillOpacity: 0.3,
+      radius: hotspot.risk === 'high' ? 150000 :
+              hotspot.risk === 'medium' ? 100000 : 50000
+    }).addTo(manager.mapInstance)
+
+    const marker = L.marker([hotspot.lat, hotspot.lng]).addTo(manager.mapInstance)
+    marker.bindPopup(`<b>${hotspot.name}</b><br>风险等级: ${hotspot.risk === 'high' ? '高' : hotspot.risk === 'medium' ? '中' : '低'}`)
+  })
+}
+
+// ==========================================
+// 策略模式 (Strategy Pattern) - 资产切换
+// ==========================================
+const switchAsset = async (asset) => {
+  selectedAsset.value = asset
+  await nextTick()
+  if (priceData.value[asset].data.length === 0) {
+    await fetchPrice(asset)
+  }
+  await nextTick()
+  initChart()
+}
+
+// ==========================================
+// 数据获取
+// ==========================================
 const refreshScenarios = async () => {
   scenariosLoading.value = true
   await fetchMiddleEastScenarios()
@@ -722,108 +839,6 @@ const fetchPrice = async (asset) => {
   }
 }
 
-const initChart = () => {
-  const container = chartContainerRef.value
-  if (!container) {
-    console.warn('Chart container not found')
-    return
-  }
-
-  if (chartInstance) {
-    chartInstance.remove()
-  }
-
-  chartInstance = LightweightCharts.createChart(container, {
-    layout: {
-      background: { type: 'solid', color: '#f8fafc' },
-      textColor: '#0f172a',
-    },
-    grid: {
-      vertLines: { color: '#e2e8f0' },
-      horzLines: { color: '#e2e8f0' },
-    },
-    priceScale: {
-      borderColor: '#cbd5e1',
-    },
-    timeScale: {
-      borderColor: '#cbd5e1',
-    },
-  })
-
-  candlestickSeries = chartInstance.addCandlestickSeries({
-    upColor: '#10b981',
-    downColor: '#ef4444',
-    borderVisible: false,
-    wickUpColor: '#10b981',
-    wickDownColor: '#ef4444',
-  })
-
-  updateChart()
-
-  const resizeObserver = new ResizeObserver(() => {
-    chartInstance.applyAutoSize()
-  })
-  resizeObserver.observe(container)
-}
-
-const updateChart = () => {
-  if (!candlestickSeries || !chartInstance) return
-  const data = priceData.value[selectedAsset.value].data.map(item => ({
-    time: item.time,
-    open: item.open,
-    high: item.high,
-    low: item.low,
-    close: item.close,
-  }))
-  candlestickSeries.setData(data)
-  chartInstance.timeScale().fitContent()
-}
-
-const switchAsset = async (asset) => {
-  selectedAsset.value = asset
-  await nextTick()
-  if (priceData.value[asset].data.length === 0) {
-    await fetchPrice(asset)
-  }
-  await nextTick()
-  initChart()
-}
-
-const initMap = () => {
-  const container = mapContainerRef.value
-  if (!container) {
-    console.warn('Map container not found')
-    return
-  }
-
-  if (mapInstance) {
-    mapInstance.remove()
-  }
-
-  mapInstance = L.map(container).setView([20.0, 0.0], 1.5)
-
-  L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-    attribution: '&copy; OpenStreetMap contributors',
-    maxZoom: 18
-  }).addTo(mapInstance)
-
-  middleEastHotspots.forEach(hotspot => {
-    const color = hotspot.risk === 'high' ? '#ef4444' :
-                  hotspot.risk === 'medium' ? '#f59e0b' : '#10b981'
-
-    const circle = L.circle([hotspot.lat, hotspot.lng], {
-      color: color,
-      fillColor: color,
-      fillOpacity: 0.3,
-      radius: hotspot.risk === 'high' ? 150000 :
-              hotspot.risk === 'medium' ? 100000 : 50000
-    }).addTo(mapInstance)
-
-    const marker = L.marker([hotspot.lat, hotspot.lng]).addTo(mapInstance)
-    marker.bindPopup(`<b>${hotspot.name}</b><br>风险等级: ${hotspot.risk === 'high' ? '高' : hotspot.risk === 'medium' ? '中' : '低'}`)
-  })
-}
-
 const sendChatMessage = async () => {
   if (!chatInput.value.trim()) return
 
@@ -878,9 +893,10 @@ const sendChatMessage = async () => {
   }
 }
 
-// Watch activeTab and re-initialize map/chart
+// ==========================================
+// 策略模式 (Strategy Pattern) - 标签页切换策略
+// ==========================================
 watch(activeTab, async (newTab) => {
-  // Wait for DOM to update
   await nextTick()
   await nextTick()
   
@@ -891,29 +907,20 @@ watch(activeTab, async (newTab) => {
   }
 })
 
-// Lifecycle
+// ==========================================
+// 生命周期
+// ==========================================
 onMounted(async () => {
-  // Load data first
   await fetchData()
   await fetchMiddleEastScenarios()
-  
-  // Wait for DOM to be ready
   await nextTick()
   await nextTick()
-  
-  // Initialize chart
   await switchAsset('gold')
 })
 
 onUnmounted(() => {
-  if (mapInstance) {
-    mapInstance.remove()
-    mapInstance = null
-  }
-  if (chartInstance) {
-    chartInstance.remove()
-    chartInstance = null
-  }
+  ChartManager.reset()
+  MapManager.reset()
 })
 </script>
 
