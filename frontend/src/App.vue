@@ -361,35 +361,96 @@
 
         <!-- Chat Tab -->
         <div v-else-if="activeTab === 'chat'" class="h-full flex flex-col">
-          <div class="flex-1 flex flex-col bg-white border border-slate-200 rounded-2xl overflow-hidden">
-            <div class="p-4 border-b border-slate-200 bg-slate-50">
-              <h3 class="font-bold text-slate-900">AI 助手</h3>
-              <p class="text-xs text-slate-500">基于当前市场信息，为你提供专业分析</p>
+          <!-- Hero Section for AI Assistant -->
+          <section class="bg-gradient-to-br from-brand-500/10 via-purple-500/5 to-cyan-500/5 rounded-3xl p-8 border border-slate-200 mb-6">
+            <div class="flex items-center gap-2 mb-4">
+              <span class="px-3 py-1 bg-slate-900 text-white rounded-full text-xs font-bold">
+                🧠 AI 智能分析引擎
+              </span>
+              <span class="text-slate-500 text-sm">/ 核心创新</span>
             </div>
-            <div ref="chatMessagesRef" class="flex-1 overflow-y-auto p-4 space-y-4">
-              <div v-if="chatMessages.length === 0" class="flex flex-col items-center justify-center h-64 text-slate-400 gap-4">
-                <span class="text-5xl">💬</span>
-                <p class="text-sm">有什么问题想问我吗？</p>
+            <h2 class="text-4xl font-bold text-slate-900 mb-4">
+              专业分析，智能决策<br>
+              <span class="bg-gradient-to-r from-brand-600 to-cyan-600 bg-clip-text text-transparent">
+                你的专属投资顾问
+              </span>
+            </h2>
+            <p class="text-slate-600 text-lg max-w-2xl">
+              基于实时市场数据、地缘政治风险、大佬观点和历史预警，
+              为你提供深度分析和决策建议。
+            </p>
+          </section>
+
+          <!-- Chat Interface -->
+          <div class="flex-1 flex flex-col bg-white border border-slate-200 rounded-2xl overflow-hidden">
+            <div class="p-6 border-b border-slate-200 bg-gradient-to-r from-slate-50 to-brand-50/30">
+              <div class="flex items-center gap-4">
+                <div class="w-12 h-12 bg-gradient-to-br from-brand-500 to-purple-500 rounded-2xl flex items-center justify-center shadow-lg shadow-brand-500/20">
+                  <span class="text-2xl">🤖</span>
+                </div>
+                <div>
+                  <h3 class="font-bold text-slate-900 text-lg">GoldSilver AI Assistant</h3>
+                  <p class="text-sm text-slate-500">基于当前市场信息，为你提供专业分析</p>
+                </div>
+                <div class="ml-auto">
+                  <div class="flex items-center gap-2">
+                    <div class="w-2 h-2 rounded-full bg-green-500 animate-pulse"></div>
+                    <span class="text-xs text-slate-500">在线</span>
+                  </div>
+                </div>
+              </div>
+            </div>
+            
+            <div ref="chatMessagesRef" class="flex-1 overflow-y-auto p-6 space-y-6">
+              <div v-if="chatMessages.length === 0" class="flex flex-col items-center justify-center h-64 text-slate-400 gap-6">
+                <div class="w-24 h-24 bg-gradient-to-br from-brand-500/20 to-cyan-500/20 rounded-3xl flex items-center justify-center">
+                  <span class="text-6xl">💬</span>
+                </div>
+                <div class="text-center">
+                  <p class="text-lg font-bold text-slate-700 mb-2">有什么问题想问我吗？</p>
+                  <p class="text-sm text-slate-500">试试问我关于黄金、白银或地缘政治的问题</p>
+                </div>
+                <div class="flex flex-wrap gap-2 justify-center mt-4">
+                  <button 
+                    @click="chatInput = '当前黄金价格走势如何？'"
+                    class="px-4 py-2 bg-slate-100 text-slate-700 rounded-xl text-sm hover:bg-slate-200 transition-colors"
+                  >
+                    🏆 黄金走势
+                  </button>
+                  <button 
+                    @click="chatInput = '地缘政治风险对白银有什么影响？'"
+                    class="px-4 py-2 bg-slate-100 text-slate-700 rounded-xl text-sm hover:bg-slate-200 transition-colors"
+                  >
+                    🌍 地缘风险
+                  </button>
+                  <button 
+                    @click="chatInput = '大佬们对当前市场有什么看法？'"
+                    class="px-4 py-2 bg-slate-100 text-slate-700 rounded-xl text-sm hover:bg-slate-200 transition-colors"
+                  >
+                    🧠 大佬观点
+                  </button>
+                </div>
               </div>
               <div v-for="(msg, idx) in chatMessages" :key="idx" :class="['chat-widget-message', msg.role]">
                 {{ msg.content }}
               </div>
             </div>
-            <div class="p-4 border-t border-slate-200">
-              <div class="flex gap-2">
+            
+            <div class="p-6 border-t border-slate-200 bg-slate-50">
+              <div class="flex gap-3">
                 <input
                   v-model="chatInput"
                   @keyup.enter="sendChatMessage"
                   :disabled="chatLoading"
-                  placeholder="输入问题..."
-                  class="flex-1 px-4 py-2 border border-slate-200 rounded-xl text-sm focus:outline-none focus:border-brand-500"
+                  placeholder="输入你的问题..."
+                  class="flex-1 px-5 py-4 border-2 border-slate-200 bg-white rounded-2xl text-base focus:outline-none focus:border-brand-500 focus:ring-4 focus:ring-brand-500/10 transition-all"
                 />
                 <button
                   @click="sendChatMessage"
                   :disabled="chatLoading"
-                  class="px-4 py-2 bg-slate-900 text-white rounded-xl text-sm font-bold hover:bg-slate-800 transition-colors disabled:opacity-50"
+                  class="px-6 py-4 bg-gradient-to-r from-brand-600 to-cyan-600 text-white rounded-2xl text-base font-bold hover:from-brand-700 hover:to-cyan-700 transition-all shadow-lg shadow-brand-500/20 hover:shadow-xl hover:shadow-brand-500/30 disabled:opacity-50 disabled:cursor-not-allowed"
                 >
-                  {{ chatLoading ? '...' : '→' }}
+                  {{ chatLoading ? '思考中...' : '发送 →' }}
                 </button>
               </div>
             </div>
@@ -411,10 +472,10 @@ import 'leaflet/dist/leaflet.css'
 // ==========================================
 const navigationTabs = [
   { id: 'dashboard', label: '仪表盘', icon: '📊' },
+  { id: 'chat', label: 'AI 助手', icon: '💬' },
   { id: 'map', label: '地缘地图', icon: '🌍' },
   { id: 'alerts', label: '预警历史', icon: '⚠️' },
   { id: 'gurus', label: '大佬观点', icon: '🧠' },
-  { id: 'chat', label: 'AI 助手', icon: '💬' },
 ]
 
 // ==========================================
@@ -489,6 +550,11 @@ const chatLoading = ref(false)
 const chatMessagesRef = ref(null)
 const chartContainerRef = ref(null)
 const mapContainerRef = ref(null)
+
+// 定时器引用
+let priceRefreshInterval = null
+let guruRefreshInterval = null
+let scenariosRefreshInterval = null
 
 const priceData = ref({
   gold: { symbol: 'XAUUSD', data: [], latest: null },
@@ -908,6 +974,53 @@ watch(activeTab, async (newTab) => {
 })
 
 // ==========================================
+// 实时刷新功能
+// ==========================================
+const startPriceRefresh = () => {
+  if (priceRefreshInterval) return
+  
+  // 每30秒刷新一次价格
+  priceRefreshInterval = setInterval(async () => {
+    for (const asset of ['gold', 'silver', 'crude_oil']) {
+      await fetchPrice(asset)
+    }
+  }, 30000)
+}
+
+const startGuruRefresh = () => {
+  if (guruRefreshInterval) return
+  
+  // 每4小时刷新一次大佬观点
+  guruRefreshInterval = setInterval(async () => {
+    await fetchGuruViews()
+  }, 4 * 60 * 60 * 1000)
+}
+
+const startScenariosRefresh = () => {
+  if (scenariosRefreshInterval) return
+  
+  // 每10分钟刷新一次地缘事件
+  scenariosRefreshInterval = setInterval(async () => {
+    await fetchMiddleEastScenarios()
+  }, 10 * 60 * 1000)
+}
+
+const stopAllRefresh = () => {
+  if (priceRefreshInterval) {
+    clearInterval(priceRefreshInterval)
+    priceRefreshInterval = null
+  }
+  if (guruRefreshInterval) {
+    clearInterval(guruRefreshInterval)
+    guruRefreshInterval = null
+  }
+  if (scenariosRefreshInterval) {
+    clearInterval(scenariosRefreshInterval)
+    scenariosRefreshInterval = null
+  }
+}
+
+// ==========================================
 // 生命周期
 // ==========================================
 onMounted(async () => {
@@ -916,9 +1029,15 @@ onMounted(async () => {
   await nextTick()
   await nextTick()
   await switchAsset('gold')
+  
+  // 启动实时刷新
+  startPriceRefresh()
+  startGuruRefresh()
+  startScenariosRefresh()
 })
 
 onUnmounted(() => {
+  stopAllRefresh()
   ChartManager.reset()
   MapManager.reset()
 })
