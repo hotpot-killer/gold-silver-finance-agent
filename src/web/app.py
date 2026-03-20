@@ -324,36 +324,29 @@ async def api_chat(request: Request):
         user_message = json_body.get('message', '')
         context = json_body.get('context', {})
         
-        # 读取配置，获取 LLM API key（必须配置）
+        # 读取配置，获取 LLM API key
         config_path = Path('config/config.yaml')
-        if not config_path.exists():
-            return {
-                'success': False,
-                'message': '请在 config/config.yaml 中配置 LLM'
-            }
-        
         llm_api_key = ''
         llm_base_url = ''
         llm_model = 'gpt-4o-mini'
         
         try:
-            import yaml
-            with open(config_path, 'r', encoding='utf-8') as f:
-                config = yaml.safe_load(f)
-            if 'llm' in config:
-                llm_api_key = config['llm'].get('api_key', '')
-                llm_base_url = config['llm'].get('base_url', '')
-                llm_model = config['llm'].get('model', 'gpt-4o-mini')
-        except:
-            return {
-                'success': False,
-                'message': '请在 config/config.yaml 中正确配置 LLM'
-            }
+            if config_path.exists():
+                import yaml
+                with open(config_path, 'r', encoding='utf-8') as f:
+                    config = yaml.safe_load(f)
+                if 'llm' in config:
+                    llm_api_key = config['llm'].get('api_key', '')
+                    llm_base_url = config['llm'].get('base_url', '')
+                    llm_model = config['llm'].get('model', 'gpt-4o-mini')
+        except Exception as e:
+            logger.warning(f"Failed to load LLM config: {e}")
         
-        if not llm_api_key:
+        # 如果没有配置 LLM，返回友好的默认响应
+        if not llm_api_key or llm_api_key in ['your-openai-api-key', '']:
             return {
-                'success': False,
-                'message': '请在 config/config.yaml 中配置 llm.api_key'
+                'success': True,
+                'message': '你好！我是黄金白银 AI 助手。\n\n目前我处于离线模式，但我可以帮你：\n\n1. 📊 查看实时价格走势\n2. 🌍 了解地缘政治风险地图\n3. ⚠️ 查看市场预警信号\n4. 🧠 阅读宏观大佬观点\n\n如需完整的 AI 分析功能，请在 `config/config.yaml` 中配置你的 LLM API Key。'
             }
         
         # 构建系统提示
@@ -398,14 +391,16 @@ async def api_chat(request: Request):
             gurus = context['guruViews']
             context_text += "\n大佬观点：\n"
             for g in gurus[:3]:
-                context_text += f"- {g['name']}: {g['latest_view']} ({g['tone']})\n"
+                context_text += f"- {g.get('name', 'Unknown')}: {g.get('view', g.get('latest_view', ''))}\n"
         
         # 最近预警
         if 'recentAlerts' in context:
             alerts = context['recentAlerts']
             context_text += "\n最近预警：\n"
             for a in alerts:
-                context_text += f"- {a['name']}: {a['message']}\n"
+                asset = a.get('asset', 'Unknown')
+                message = a.get('message', '')
+                context_text += f"- {asset}: {message}\n"
         
         # 当前价格
         if 'currentPrice' in context:
