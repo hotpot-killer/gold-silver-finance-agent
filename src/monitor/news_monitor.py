@@ -1,7 +1,7 @@
 """
 多地区新闻监控 - 支持中东、美国、中国等地区新闻
 参考 MiroFish 思想：从现实世界提取种子信息
-使用 Scrapling 从搜狐新闻抓取（所有依赖已添加）
+优先使用 Scrapling，如果依赖缺失则自动回退到 requests + parsel
 
 Author: wzh
 Date: 2026-03-19
@@ -9,14 +9,24 @@ Date: 2026-03-19
 import logging
 from datetime import datetime, timedelta
 from typing import List, Dict
-from scrapling.fetchers import Fetcher, StealthyFetcher
-from scrapling import Selector
 from .base import BaseMonitor, NewsItem
 
 logger = logging.getLogger(__name__)
 
+# 尝试导入 Scrapling，如果失败则使用 requests + parsel
+try:
+    from scrapling.fetchers import Fetcher, StealthyFetcher
+    from scrapling import Selector
+    SCRAPLING_AVAILABLE = True
+    logger.info("✓ Scrapling available, will use for news fetching")
+except ImportError as e:
+    SCRAPLING_AVAILABLE = False
+    logger.warning(f"⚠ Scrapling not available ({e}), will use requests + parsel fallback")
+    import requests
+    from parsel import Selector
+
 class NewsMonitor(BaseMonitor):
-    """多地区新闻监控 - 使用 Scrapling 从搜狐新闻抓取"""
+    """多地区新闻监控 - 优先使用 Scrapling，回退到 requests + parsel"""
     
     # 地区新闻源配置 - 搜狐新闻
     NEWS_SOURCES = {
@@ -105,6 +115,16 @@ class NewsMonitor(BaseMonitor):
         return unique_news
     
     def _fetch_from_sohu(self, url: str, keywords: List[str], region: str, cutoff: datetime) -> List[NewsItem]:
+        """优先使用 Scrapling，失败则回退到 requests + parsel"""
+        if SCRAPLING_AVAILABLE:
+            try:
+                return self._fetch_with_scrapling(url, keywords, region, cutoff)
+            except Exception as e:
+                logger.warning(f"Scrapling failed, falling back to requests: {e}")
+        
+        return self._fetch_with_requests(url, keywords, region, cutoff)
+    
+    def _fetch_with_scrapling(self, url: str, keywords: List[str], region: str, cutoff: datetime) -> List[NewsItem]:
         """使用 Scrapling 从搜狐新闻抓取"""
         results = []
         
@@ -171,7 +191,7 @@ class NewsMonitor(BaseMonitor):
                         title=title,
                         content='',
                         url=href,
-                        source='sohu_news',
+                        source='sohu_news_scrapling',
                         publish_time=datetime.now()
                     )
                     # 动态添加 region 属性
@@ -183,19 +203,12 @@ class NewsMonitor(BaseMonitor):
                         
         except Exception as e:
             logger.error(f"Failed to fetch from {url} with Scrapling: {e}")
-            # 如果 Scrapling 失败，使用 requests + parsel 作为 fallback
-            try:
-                results = self._fetch_from_sohu_fallback(url, keywords, region, cutoff)
-            except Exception as e2:
-                logger.error(f"Fallback also failed: {e2}")
+            raise
         
         return results
     
-    def _fetch_from_sohu_fallback(self, url: str, keywords: List[str], region: str, cutoff: datetime) -> List[NewsItem]:
-        """使用 requests + parsel 作为 fallback 抓取搜狐新闻"""
-        import requests
-        from parsel import Selector
-        
+    def _fetch_with_requests(self, url: str, keywords: List[str], region: str, cutoff: datetime) -> List[NewsItem]:
+        """使用 requests + parsel 从搜狐新闻抓取（fallback）"""
         results = []
         headers = {
             "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36",
@@ -263,7 +276,7 @@ class NewsMonitor(BaseMonitor):
                         title=title,
                         content='',
                         url=href,
-                        source='sohu_news_fallback',
+                        source='sohu_news_requests',
                         publish_time=datetime.now()
                     )
                     # 动态添加 region 属性
@@ -274,7 +287,7 @@ class NewsMonitor(BaseMonitor):
                     continue
                         
         except Exception as e:
-            logger.error(f"Failed to fetch from {url} with requests fallback: {e}")
+            logger.error(f"Failed to fetch from {url} with requests: {e}")
         
         return results
     
