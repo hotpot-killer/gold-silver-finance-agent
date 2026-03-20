@@ -419,7 +419,7 @@ async def api_chat(request: Request):
                 {"role": "user", "content": f"{context_text}\n\n用户问题: {user_message}"}
             ],
             temperature=0.7,
-            max_tokens=800
+            max_tokens=128000
         )
         
         assistant_message = response.choices[0].message.content
