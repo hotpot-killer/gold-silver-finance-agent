@@ -813,7 +813,18 @@ def main():
         # 单次运行
         run_once(config)
     elif args.schedule:
-        # 定时运行
+        # 定时运行 + 同时启动 Web 服务器
+        import threading
+        from src.web.app import run_web_server
+        
+        # 先在后台启动 Web 服务器
+        def run_web_in_background():
+            logger.info(f"Starting web server in background on {args.host}:{args.port}")
+            run_web_server(host=args.host, port=args.port)
+        
+        web_thread = threading.Thread(target=run_web_in_background, daemon=True)
+        web_thread.start()
+        
         # 判断是否在交易时段
         def job():
             # 伦敦金交易时间处理：如果结束时间早于开始时间，说明跨天
@@ -843,6 +854,7 @@ def main():
         # 按间隔运行
         interval_minutes = config.monitor.interval
         logger.info(f"Starting scheduler, interval {interval_minutes} minutes")
+        logger.info(f"Web server also running on {args.host}:{args.port}")
         
         # 立即运行一次
         job()
