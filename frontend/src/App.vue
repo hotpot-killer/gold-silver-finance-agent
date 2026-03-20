@@ -962,6 +962,23 @@ watch(activeTab, async (newTab) => {
   } else if (newTab === 'dashboard' && chartContainerRef.value) {
     initChart()
   }
+  
+  // 切换标签页时刷新对应数据
+  if (newTab === 'dashboard') {
+    await fetchData()
+    // 刷新价格
+    for (const asset of ['gold', 'silver', 'crude_oil']) {
+      await fetchPrice(asset)
+    }
+  } else if (newTab === 'chat') {
+    // AI 分析页面不需要额外刷新
+  } else if (newTab === 'map') {
+    await fetchMiddleEastScenarios()
+  } else if (newTab === 'alerts') {
+    await fetchData()
+  } else if (newTab === 'gurus') {
+    await fetchGuruViews()
+  }
 })
 
 // ==========================================
