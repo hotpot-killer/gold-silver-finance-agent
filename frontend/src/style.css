@@ -42,11 +42,11 @@ body {
 
 /* Chat Widget Message Styles */
 .chat-widget-message {
-  padding: 16px 20px;
+  padding: 20px 24px;
   border-radius: 16px;
-  font-size: 15px;
-  line-height: 1.7;
-  max-width: 85%;
+  font-size: 18px;
+  line-height: 1.8;
+  max-width: 90%;
   animation: slideIn 0.3s ease-out;
 }
 
