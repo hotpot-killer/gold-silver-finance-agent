@@ -896,17 +896,10 @@ const sendChatMessage = async () => {
 
     const data = await res.json()
 
-    if (data.success) {
-      chatMessages.value.push({
-        role: 'assistant',
-        content: data.message
-      })
-    } else {
-      chatMessages.value.push({
-        role: 'assistant',
-        content: '你好！我是黄金白银 AI 助手。我可以帮你分析市场、解读预警、或者回答任何相关问题。请问有什么可以帮你的吗？'
-      })
-    }
+    chatMessages.value.push({
+      role: 'assistant',
+      content: data.message || '抱歉，发生了错误，请稍后再试。'
+    })
   } catch (e) {
     console.error('Chat failed:', e)
     chatMessages.value.push({
