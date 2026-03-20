@@ -862,31 +862,3 @@ onUnmounted(() => {
 })
 </script>
 
-<style>
-.custom-scrollbar::-webkit-scrollbar {
-  width: 6px;
-}
-.custom-scrollbar::-webkit-scrollbar-track {
-  background: transparent;
-}
-.custom-scrollbar::-webkit-scrollbar-thumb {
-  background: rgba(0, 0, 0, 0.05);
-  border-radius: 10px;
-}
-.chat-widget-message {
-  padding: 12px 16px;
-  border-radius: 12px;
-  font-size: 14px;
-  line-height: 1.6;
-}
-.chat-widget-message.user {
-  background: linear-gradient(135deg, #6366f1 0%, #8b5cf6 100%);
-  color: white;
-  margin-left: 20%;
-}
-.chat-widget-message.assistant {
-  background: #f1f5f9;
-  color: #0f172a;
-  margin-right: 20%;
-}
-</style>
