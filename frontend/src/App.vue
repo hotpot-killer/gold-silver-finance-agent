@@ -336,6 +336,7 @@
 
 <script setup>
 import { ref, onMounted, computed, nextTick, onUnmounted } from 'vue'
+import * as LightweightCharts from 'lightweight-charts'
 import L from 'leaflet'
 import 'leaflet/dist/leaflet.css'
 
