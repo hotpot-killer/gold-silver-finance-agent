@@ -497,16 +497,17 @@ import { ref, onMounted, computed, nextTick, onUnmounted, watch } from 'vue'
 import * as LightweightCharts from 'lightweight-charts'
 import L from 'leaflet'
 import 'leaflet/dist/leaflet.css'
+import { marked } from 'marked'
 
-// 简单的 Markdown 渲染（暂时不用 marked，避免导入问题）
+// 配置 marked
+marked.setOptions({
+  breaks: true,
+  gfm: true
+})
+
 const renderMarkdown = (content) => {
   if (!content) return ''
-  // 简单的处理：换行 + 粗体（**）+ 斜体（*）
-  let result = content
-    .replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>')
-    .replace(/\*(.*?)\*/g, '<em>$1</em>')
-    .replace(/\n/g, '<br>')
-  return result
+  return marked(content)
 }
 
 // ==========================================
