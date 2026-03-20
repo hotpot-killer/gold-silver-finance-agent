@@ -315,14 +315,15 @@ async def api_guru_views():
 
 @app.post("/api/chat")
 async def api_chat(request: Request):
-    """聊天 API - 基于当前信息进行 AI 对话"""
+    """聊天 API - 独立 Agent，自己读取数据源"""
     try:
         from typing import Optional, Dict, Any
+        from pathlib import Path
+        import json
         
         # 解析请求
         json_body = await request.json()
         user_message = json_body.get('message', '')
-        context = json_body.get('context', {})
         
         # 读取配置，获取 LLM API key
         config_path = Path('config/config.yaml')
@@ -349,6 +350,78 @@ async def api_chat(request: Request):
                 'message': '你好！我是黄金白银 AI 助手。\n\n目前我处于离线模式，但我可以帮你：\n\n1. 📊 查看实时价格走势\n2. 🌍 了解地缘政治风险地图\n3. ⚠️ 查看市场预警信号\n4. 🧠 阅读宏观大佬观点\n\n如需完整的 AI 分析功能，请在 `config/config.yaml` 中配置你的 LLM API Key。'
             }
         
+        # ==========================================
+        # 独立 Agent：自己读取数据源（Skills）
+        # ==========================================
+        context_text = "我是独立的黄金白银 AI Agent，现在开始读取实时数据...\n\n"
+        
+        # Skill 1: 读取价格数据
+        try:
+            from src.monitor.price_monitor import PriceMonitor
+            price_monitor = PriceMonitor(
+                '',  # tushare token 可选
+                [],
+                True,  # gold
+                True,  # silver
+                True,  # crude_oil
+                False,  # etf_monitor
+                data_dir='./data'
+            )
+            prices = price_monitor.fetch_latest()
+            context_text += "【最新价格】\n"
+            for p in prices[:5]:
+                context_text += f"- {p.symbol}: {p.price:.2f} (变化: {p.change:+.2f}, {p.change_pct:+.2f}%)\n"
+        except Exception as e:
+            logger.warning(f"Failed to read prices: {e}")
+            context_text += "【最新价格】读取失败\n"
+        
+        # Skill 2: 读取新闻数据
+        try:
+            from src.monitor.news_monitor import NewsMonitor
+            news_monitor = NewsMonitor(regions=['global', 'middle_east', 'us', 'cn'])
+            news = news_monitor.fetch_latest(hours=6)
+            context_text += f"\n【最新新闻】({len(news)}条)\n"
+            for n in news[:5]:
+                context_text += f"- {n.title}\n"
+        except Exception as e:
+            logger.warning(f"Failed to read news: {e}")
+            context_text += "\n【最新新闻】读取失败\n"
+        
+        # Skill 3: 读取预警数据
+        try:
+            ALERT_LOG_PATH = Path('./data/alerts.log')
+            alerts = []
+            if ALERT_LOG_PATH.exists():
+                with open(ALERT_LOG_PATH, 'r', encoding='utf-8') as f:
+                    for line in f:
+                        line = line.strip()
+                        if line:
+                            try:
+                                alert = json.loads(line)
+                                alerts.append(alert)
+                            except:
+                                pass
+                alerts.sort(key=lambda x: x.get('timestamp', ''), reverse=True)
+                context_text += f"\n【最新预警】({len(alerts)}条)\n"
+                for a in alerts[:3]:
+                    context_text += f"- {a.get('asset', 'Unknown')}: {a.get('message', '')}\n"
+        except Exception as e:
+            logger.warning(f"Failed to read alerts: {e}")
+            context_text += "\n【最新预警】读取失败\n"
+        
+        # Skill 4: 读取中东局势情景
+        try:
+            from src.web.app import get_default_middle_east_scenarios
+            scenarios = get_default_middle_east_scenarios()
+            context_text += f"\n【中东局势情景】({len(scenarios)}种)\n"
+            for s in scenarios:
+                context_text += f"- {s['name']} (概率 {s['probability']*100:.0f}%): 黄金 {s['gold_price_range']}, 白银 {s['silver_price_range']}, 原油 {s['crude_price_range']}\n"
+        except Exception as e:
+            logger.warning(f"Failed to read scenarios: {e}")
+            context_text += "\n【中东局势情景】读取失败\n"
+        
+        context_text += "\n数据读取完成！现在基于以上信息回答用户问题。"
+        
         # 构建系统提示
         system_prompt = """你是一位资深的黄金白银市场分析师，拥有15年以上的贵金属市场研究经验。
 
@@ -373,38 +446,8 @@ async def api_chat(request: Request):
 【操作建议】明确的行动建议
 【风险提示】必须包含的风险因素
 
-请基于当前提供的上下文信息，给出专业、严谨、有深度的分析。
+请基于提供的实时数据，给出专业、严谨、有深度的分析。
 """
-        
-        # 构建上下文信息
-        context_text = "当前市场信息：\n"
-        
-        # 中东局势情景
-        if 'middleEastScenarios' in context:
-            scenarios = context['middleEastScenarios']
-            context_text += "\n中东局势情景：\n"
-            for s in scenarios:
-                context_text += f"- {s['name']} (概率 {s['probability']*100:.0f}%): 黄金 {s['gold_price_range']}, 白银 {s['silver_price_range']}, 原油 {s['crude_price_range']}\n"
-        
-        # 大佬观点
-        if 'guruViews' in context:
-            gurus = context['guruViews']
-            context_text += "\n大佬观点：\n"
-            for g in gurus[:3]:
-                context_text += f"- {g.get('name', 'Unknown')}: {g.get('view', g.get('latest_view', ''))}\n"
-        
-        # 最近预警
-        if 'recentAlerts' in context:
-            alerts = context['recentAlerts']
-            context_text += "\n最近预警：\n"
-            for a in alerts:
-                asset = a.get('asset', 'Unknown')
-                message = a.get('message', '')
-                context_text += f"- {asset}: {message}\n"
-        
-        # 当前价格
-        if 'currentPrice' in context:
-            context_text += f"\n当前价格: {context['currentPrice']}\n"
         
         from openai import OpenAI
         client = OpenAI(
@@ -431,6 +474,8 @@ async def api_chat(request: Request):
         
     except Exception as e:
         logger.error(f"Chat API failed: {e}")
+        import traceback
+        logger.error(traceback.format_exc())
         return {
             'success': False,
             'message': f'发生错误：{str(e)}'

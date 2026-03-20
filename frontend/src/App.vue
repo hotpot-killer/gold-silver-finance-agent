@@ -963,13 +963,7 @@ const sendChatMessage = async () => {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
-        message: userMessage,
-        context: {
-          middleEastScenarios: middleEastScenarios.value,
-          guruViews: guruViews.value,
-          recentAlerts: recentAlerts.value,
-          currentPrice: currentPrice.value
-        }
+        message: userMessage
       })
     })
 
