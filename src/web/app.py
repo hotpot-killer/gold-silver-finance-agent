@@ -516,7 +516,7 @@ def get_default_middle_east_scenarios():
 
 @app.get("/api/middle-east-scenarios")
 async def api_middle_east_scenarios():
-    """API - 获取中东局势推演沙盘（每10分钟更新）"""
+    """API - 获取中东局势推演沙盘（每10分钟更新，基于实时新闻）"""
     import time
     from datetime import datetime
     
@@ -554,7 +554,17 @@ async def api_middle_east_scenarios():
     
     scenarios = get_default_middle_east_scenarios()
     
-    # 如果配置了 LLM，尝试生成真实数据
+    # 抓取中东实时新闻
+    latest_news = []
+    try:
+        from monitor.news_monitor import NewsMonitor
+        news_monitor = NewsMonitor(regions=['middle_east'])
+        latest_news = news_monitor.fetch_latest(hours=6)
+        logger.info(f"Fetched {len(latest_news)} Middle East news items")
+    except Exception as e:
+        logger.warning(f"Failed to fetch Middle East news: {e}")
+    
+    # 如果配置了 LLM，尝试基于实时新闻生成真实数据
     if llm_api_key:
         try:
             from openai import OpenAI
@@ -563,6 +573,13 @@ async def api_middle_east_scenarios():
                 api_key=llm_api_key,
                 base_url=llm_base_url if llm_base_url else None
             )
+            
+            # 构建新闻上下文
+            news_context = ""
+            if latest_news:
+                news_context = "以下是最近6小时的中东相关新闻：\n"
+                for i, news in enumerate(latest_news[:5]):
+                    news_context += f"{i+1}. {news.title}\n"
             
             system_prompt = """你是一位专业的地缘政治与大宗商品分析师。
 
@@ -585,13 +602,18 @@ async def api_middle_east_scenarios():
 - 4种情景概率总和应为 1
 - type 必须是这4个值之一
 - 重点关注伊朗局势
+- 如果提供了实时新闻，请基于新闻内容来调整情景
 """
+            
+            user_prompt = "请生成当前中东局势（重点伊朗）的4种推演情景"
+            if news_context:
+                user_prompt = f"{news_context}\n\n请基于以上最新新闻，生成当前中东局势（重点伊朗）的4种推演情景"
             
             response = client.chat.completions.create(
                 model=llm_model,
                 messages=[
                     {"role": "system", "content": system_prompt},
-                    {"role": "user", "content": "请生成当前中东局势（重点伊朗）的4种推演情景"}
+                    {"role": "user", "content": user_prompt}
                 ],
                 response_format={"type": "json_object"},
                 temperature=0.7,
