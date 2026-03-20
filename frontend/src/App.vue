@@ -38,11 +38,11 @@
             </div>
           </section>
 
-          <!-- 中东局势沙盘 -->
+          <!-- 全球地缘政治风险地图 -->
           <div class="sandbox-section">
             <div class="sandbox-header">
               <div class="sandbox-title">
-                🌍 中东局势推演沙盘
+                🌍 全球地缘政治风险地图
               </div>
               <div class="sandbox-controls">
                 <span class="sandbox-update-time">
@@ -430,8 +430,8 @@ const initMap = () => {
     mapInstance.remove()
   }
   
-  // 初始化地图，中心在中东
-  mapInstance = L.map('middle-east-map').setView([29.0, 45.0], 5)
+  // 初始化地图，中心在世界视图
+  mapInstance = L.map('middle-east-map').setView([20.0, 0.0], 2)
   
   // 添加 OpenStreetMap 瓦片层
   L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
