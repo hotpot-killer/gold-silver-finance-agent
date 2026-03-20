@@ -359,57 +359,128 @@
         </div>
 
         <!-- Chat Tab -->
-        <div v-else-if="activeTab === 'chat'" class="h-full flex flex-col">
-          <!-- Simplified Chat Interface -->
-          <div class="flex-1 flex flex-col bg-white border border-slate-200 rounded-2xl overflow-hidden">
-            <div class="p-4 border-b border-slate-200 bg-slate-50">
-              <div class="flex items-center gap-3">
-                <div class="w-10 h-10 bg-slate-900 rounded-xl flex items-center justify-center text-white text-xl">
-                  🤖
-                </div>
-                <div>
-                  <h3 class="font-bold text-slate-900">AI 分析</h3>
-                  <p class="text-xs text-slate-500">基于当前市场信息，为你提供专业分析</p>
-                </div>
-                <div class="ml-auto">
-                  <div class="flex items-center gap-2">
-                    <div class="w-2 h-2 rounded-full bg-green-500"></div>
-                    <span class="text-xs text-slate-500">在线</span>
+        <div v-else-if="activeTab === 'chat'" class="h-full flex flex-col bg-white">
+          <!-- ChatGPT-style Header -->
+          <div class="flex items-center justify-between p-4 border-b border-slate-200 bg-slate-50">
+            <div class="flex items-center gap-3">
+              <div class="w-9 h-9 bg-gradient-to-br from-green-500 to-emerald-600 rounded-full flex items-center justify-center text-white text-lg shadow-sm">
+                G
+              </div>
+              <div>
+                <h3 class="font-semibold text-slate-900 text-base">黄金白银助手</h3>
+                <p class="text-xs text-slate-500">基于当前市场信息，为你提供专业分析</p>
+              </div>
+            </div>
+            <div class="flex items-center gap-2">
+              <div class="w-2 h-2 rounded-full bg-green-500"></div>
+              <span class="text-xs text-slate-500">在线</span>
+            </div>
+          </div>
+          
+          <!-- Chat Messages -->
+          <div ref="chatMessagesRef" class="flex-1 overflow-y-auto bg-slate-50">
+            <div v-if="chatMessages.length === 0" class="flex flex-col items-center justify-center h-full px-6 py-12 text-center">
+              <div class="w-16 h-16 bg-gradient-to-br from-green-100 to-emerald-100 rounded-full flex items-center justify-center mb-6">
+                <span class="text-3xl">💎</span>
+              </div>
+              <h2 class="text-xl font-semibold text-slate-900 mb-2">黄金白银 AI 助手</h2>
+              <p class="text-slate-600 max-w-md mb-8">我可以帮你分析黄金白银市场、解读地缘政治风险、或者回答任何相关问题。</p>
+              <div class="grid grid-cols-1 md:grid-cols-2 gap-3 max-w-xl w-full">
+                <button
+                  @click="chatInput = '当前黄金价格走势如何？有什么风险因素？'"
+                  class="p-4 bg-white border border-slate-200 rounded-xl text-left hover:border-slate-300 hover:shadow-sm transition-all"
+                >
+                  <div class="font-medium text-slate-900 mb-1">📊 分析黄金走势</div>
+                  <div class="text-sm text-slate-500">当前价格、风险因素、操作建议</div>
+                </button>
+                <button
+                  @click="chatInput = '地缘政治风险对白银价格有什么影响？'"
+                  class="p-4 bg-white border border-slate-200 rounded-xl text-left hover:border-slate-300 hover:shadow-sm transition-all"
+                >
+                  <div class="font-medium text-slate-900 mb-1">🌍 地缘风险分析</div>
+                  <div class="text-sm text-slate-500">中东局势对市场的影响</div>
+                </button>
+                <button
+                  @click="chatInput = '大佬们对当前市场有什么看法？我应该怎么做？'"
+                  class="p-4 bg-white border border-slate-200 rounded-xl text-left hover:border-slate-300 hover:shadow-sm transition-all"
+                >
+                  <div class="font-medium text-slate-900 mb-1">🧠 大佬观点汇总</div>
+                  <div class="text-sm text-slate-500">专业投资者的最新观点</div>
+                </button>
+                <button
+                  @click="chatInput = '帮我做一个当前市场的综合分析报告'"
+                  class="p-4 bg-white border border-slate-200 rounded-xl text-left hover:border-slate-300 hover:shadow-sm transition-all"
+                >
+                  <div class="font-medium text-slate-900 mb-1">📝 综合分析报告</div>
+                  <div class="text-sm text-slate-500">完整的市场分析和建议</div>
+                </button>
+              </div>
+            </div>
+            
+            <!-- Chat Messages List -->
+            <div v-else class="max-w-3xl mx-auto py-6 px-4 space-y-6">
+              <div v-for="(msg, idx) in chatMessages" :key="idx">
+                <div :class="[
+                  'flex gap-4',
+                  msg.role === 'user' ? 'flex-row-reverse' : ''
+                ]">
+                  <div :class="[
+                    'w-8 h-8 rounded-full flex items-center justify-center flex-shrink-0',
+                    msg.role === 'user' 
+                      ? 'bg-gradient-to-br from-blue-500 to-indigo-600' 
+                      : 'bg-gradient-to-br from-green-500 to-emerald-600'
+                  ]">
+                    <span class="text-white text-sm font-bold">{{ msg.role === 'user' ? '你' : 'G' }}</span>
+                  </div>
+                  <div :class="[
+                    'flex-1',
+                    msg.role === 'user' ? 'text-right' : ''
+                  ]">
+                    <div :class="[
+                      'inline-block text-left',
+                      msg.role === 'user' 
+                        ? 'bg-gradient-to-br from-blue-600 to-indigo-700 text-white rounded-2xl rounded-tr-md px-5 py-3 max-w-[85%]' 
+                        : 'bg-white border border-slate-200 text-slate-900 rounded-2xl rounded-tl-md px-5 py-3 max-w-[85%] shadow-sm'
+                    ]">
+                      <div class="whitespace-pre-wrap leading-relaxed">{{ msg.content }}</div>
+                    </div>
                   </div>
                 </div>
               </div>
             </div>
-            
-            <div ref="chatMessagesRef" class="flex-1 overflow-y-auto p-4 space-y-4">
-              <div v-if="chatMessages.length === 0" class="flex flex-col items-center justify-center h-full text-slate-400 gap-4">
-                <span class="text-4xl">💬</span>
-                <div class="text-center">
-                  <p class="text-base font-medium text-slate-700">有什么问题想问我吗？</p>
-                  <p class="text-sm text-slate-500">试试问我关于黄金、白银或地缘政治的问题</p>
+          </div>
+          
+          <!-- Input Area -->
+          <div class="border-t border-slate-200 bg-white">
+            <div class="max-w-3xl mx-auto p-4">
+              <div class="relative flex items-end gap-3">
+                <div class="flex-1 relative">
+                  <textarea
+                    v-model="chatInput"
+                    @keydown.enter.prevent="!$event.shiftKey && sendChatMessage()"
+                    :disabled="chatLoading"
+                    placeholder="输入你的问题...（Shift+Enter 换行）"
+                    rows="1"
+                    class="w-full px-5 py-4 pr-14 bg-slate-50 border border-slate-200 rounded-2xl text-base focus:outline-none focus:border-slate-300 focus:ring-4 focus:ring-slate-100 resize-none transition-all min-h-[56px] max-h-48"
+                    style="min-height: 56px;"
+                    @input="autoResizeTextarea"
+                    ref="chatInputRef"
+                  />
+                  <div class="absolute right-3 bottom-3 text-xs text-slate-400 pointer-events-none">
+                    {{ chatLoading ? '⏳' : '⏎' }}
+                  </div>
                 </div>
-              </div>
-              <div v-for="(msg, idx) in chatMessages" :key="idx" :class="['chat-widget-message', msg.role]">
-                {{ msg.content }}
-              </div>
-            </div>
-            
-            <div class="p-4 border-t border-slate-200 bg-slate-50">
-              <div class="flex gap-3">
-                <input
-                  v-model="chatInput"
-                  @keyup.enter="sendChatMessage"
-                  :disabled="chatLoading"
-                  placeholder="输入你的问题..."
-                  class="flex-1 px-4 py-3 border border-slate-200 bg-white rounded-xl text-base focus:outline-none focus:border-slate-400 transition-all"
-                />
                 <button
                   @click="sendChatMessage"
-                  :disabled="chatLoading"
-                  class="px-5 py-3 bg-slate-900 text-white rounded-xl text-base font-medium hover:bg-slate-800 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                  :disabled="chatLoading || !chatInput.trim()"
+                  class="w-12 h-12 bg-gradient-to-br from-green-500 to-emerald-600 text-white rounded-xl flex items-center justify-center font-semibold hover:from-green-600 hover:to-emerald-700 transition-all shadow-sm hover:shadow disabled:opacity-50 disabled:cursor-not-allowed"
                 >
-                  {{ chatLoading ? '思考中...' : '发送' }}
+                  {{ chatLoading ? '⏳' : '→' }}
                 </button>
               </div>
+              <p class="text-center text-xs text-slate-400 mt-3">
+                AI 可以产生错误信息，请谨慎使用
+              </p>
             </div>
           </div>
         </div>
@@ -505,8 +576,16 @@ const chatInput = ref('')
 const chatMessages = ref([])
 const chatLoading = ref(false)
 const chatMessagesRef = ref(null)
+const chatInputRef = ref(null)
 const chartContainerRef = ref(null)
 const mapContainerRef = ref(null)
+
+const autoResizeTextarea = () => {
+  if (chatInputRef.value) {
+    chatInputRef.value.style.height = 'auto'
+    chatInputRef.value.style.height = chatInputRef.value.scrollHeight + 'px'
+  }
+}
 
 // 定时器引用
 let priceRefreshInterval = null

@@ -7,6 +7,7 @@ import time
 from datetime import datetime
 from dataclasses import dataclass, field
 from typing import List, Optional
+from concurrent.futures import ThreadPoolExecutor, as_completed
 
 from src.monitor import PriceMonitor, NewsMonitor, NewsItem, PriceData
 from src.research import ReportSummarizer
@@ -262,9 +263,9 @@ def run_once(config: Config) -> bool:
     logger.info("Starting finance agent monitoring round...")
     
     # ===========================================
-    # Step 1: 获取最新数据
+    # Step 1: 获取最新数据（并发执行，提升性能）
     # ===========================================
-    logger.info("▶️ Step 1: Fetching latest data...")
+    logger.info("▶️ Step 1: Fetching latest data (concurrent)...")
     
     # 价格监控 - 专注黄金白银，附带原油价格监控
     price_monitor = PriceMonitor(
@@ -276,13 +277,32 @@ def run_once(config: Config) -> bool:
         config.monitor.etf_monitor.get('enabled', True),
         data_dir=config.data_dir
     )
-    prices = price_monitor.fetch_latest()
     
     # 新闻监控
     news_monitor = NewsMonitor(sources=config.monitor.news_sources, regions=['global', 'middle_east', 'us', 'cn'])
-    news = news_monitor.fetch_latest(hours=config.monitor.interval)
     
-    logger.info(f"✅ Completed: Fetched {len(prices)} prices, {len(news)} news")
+    # 并发抓取价格和新闻
+    prices = []
+    news = []
+    
+    with ThreadPoolExecutor(max_workers=2) as executor:
+        # 提交任务
+        future_price = executor.submit(price_monitor.fetch_latest)
+        future_news = executor.submit(news_monitor.fetch_latest, hours=config.monitor.interval)
+        
+        # 收集结果
+        for future in as_completed([future_price, future_news]):
+            try:
+                if future is future_price:
+                    prices = future.result()
+                    logger.info(f"  Fetched {len(prices)} prices")
+                else:
+                    news = future.result()
+                    logger.info(f"  Fetched {len(news)} news")
+            except Exception as e:
+                logger.error(f"Error in concurrent fetch: {e}")
+    
+    logger.info(f"✅ Completed: Fetched {len(prices)} prices, {len(news)} news (concurrent)")
     
     # ===========================================
     # Step 2: 新闻研报总结 - LLM过滤总结相关新闻
