@@ -677,11 +677,6 @@ const formatPrice = (price) => {
   return price.toFixed(2)
 }
 
-const renderMarkdown = (content) => {
-  if (!content) return ''
-  return marked(content)
-}
-
 const selectScenario = (index) => {
   selectedScenarioIndex.value = selectedScenarioIndex.value === index ? null : index
 }
