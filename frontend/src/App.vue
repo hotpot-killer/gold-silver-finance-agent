@@ -827,52 +827,7 @@ const fetchMiddleEastScenarios = async () => {
     }
   } catch (e) {
     console.error('Failed to fetch Middle East scenarios:', e)
-    middleEastScenarios.value = [
-      {
-        name: '维持现状 (Status Quo)',
-        type: 'status-quo',
-        probability: 0.55,
-        gold_price_range: '4800-5100',
-        silver_price_range: '74-78',
-        crude_price_range: '95-105',
-        suggested_action: 'wait',
-        action_text: '观望持有',
-        trigger_signals: ['伊朗局势保持稳定']
-      },
-      {
-        name: '局势缓和 (De-escalation)',
-        type: 'de-escalation',
-        probability: 0.2,
-        gold_price_range: '4600-4900',
-        silver_price_range: '71-75',
-        crude_price_range: '88-98',
-        suggested_action: 'sell',
-        action_text: '减持黄金',
-        trigger_signals: ['地缘紧张局势缓解']
-      },
-      {
-        name: '局势升级 (Escalation)',
-        type: 'escalation',
-        probability: 0.2,
-        gold_price_range: '5100-5400',
-        silver_price_range: '78-83',
-        crude_price_range: '105-115',
-        suggested_action: 'buy',
-        action_text: '增持黄金',
-        trigger_signals: ['伊朗革命卫队发动军事行动']
-      },
-      {
-        name: '重大危机 (Major Crisis)',
-        type: 'major-crisis',
-        probability: 0.05,
-        gold_price_range: '5400-5900',
-        silver_price_range: '83-92',
-        crude_price_range: '115-130',
-        suggested_action: 'buy',
-        action_text: '重仓做多',
-        trigger_signals: ['中东地区爆发大规模战争']
-      }
-    ]
+    // 不使用硬编码的 Mock 数据，保持空
   }
 }
 
