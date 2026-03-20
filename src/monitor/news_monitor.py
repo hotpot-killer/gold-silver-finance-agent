@@ -1,7 +1,7 @@
 """
 多地区新闻监控 - 支持中东、美国、中国等地区新闻
 参考 MiroFish 思想：从现实世界提取种子信息
-使用 Scrapling 从搜狐新闻抓取（patchright 已添加到依赖）
+使用 Scrapling 从搜狐新闻抓取（正确的导入方式）
 
 Author: wzh
 Date: 2026-03-19
@@ -9,7 +9,8 @@ Date: 2026-03-19
 import logging
 from datetime import datetime, timedelta
 from typing import List, Dict
-from scrapling import Fetcher, StealthyFetcher, Selector
+from scrapling.fetchers import Fetcher, StealthyFetcher
+from scrapling import Selector
 from .base import BaseMonitor, NewsItem
 
 logger = logging.getLogger(__name__)
@@ -109,8 +110,7 @@ class NewsMonitor(BaseMonitor):
         
         try:
             # 使用 StealthyFetcher 进行抓取
-            fetcher = StealthyFetcher()
-            response = fetcher.get(url)
+            response = StealthyFetcher.fetch(url, headless=True, network_idle=True)
             
             if response.status != 200:
                 return results
