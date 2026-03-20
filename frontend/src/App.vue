@@ -787,8 +787,6 @@ const switchAsset = async (asset) => {
   }
   await nextTick()
   initChart()
-  await nextTick()
-  updateChart()
 }
 
 const initMap = () => {
@@ -882,26 +880,28 @@ const sendChatMessage = async () => {
 
 // Watch activeTab and re-initialize map/chart
 watch(activeTab, async (newTab) => {
+  // Wait for DOM to update
   await nextTick()
-  if (newTab === 'map') {
-    await nextTick()
-    if (mapContainerRef.value) {
-      initMap()
-    }
-  } else if (newTab === 'dashboard') {
-    await nextTick()
-    if (chartContainerRef.value) {
-      initChart()
-    }
+  await nextTick()
+  
+  if (newTab === 'map' && mapContainerRef.value) {
+    initMap()
+  } else if (newTab === 'dashboard' && chartContainerRef.value) {
+    initChart()
   }
 })
 
 // Lifecycle
 onMounted(async () => {
+  // Load data first
   await fetchData()
   await fetchMiddleEastScenarios()
+  
+  // Wait for DOM to be ready
   await nextTick()
   await nextTick()
+  
+  // Initialize chart
   await switchAsset('gold')
 })
 
