@@ -367,7 +367,7 @@
                 G
               </div>
               <div>
-                <h3 class="font-semibold text-slate-900 text-base">黄金白银助手</h3>
+                <h3 class="font-semibold text-slate-900 text-base">金智顾问</h3>
                 <p class="text-xs text-slate-500">基于当前市场信息，为你提供专业分析</p>
               </div>
             </div>
@@ -383,7 +383,7 @@
               <div class="w-16 h-16 bg-gradient-to-br from-green-100 to-emerald-100 rounded-full flex items-center justify-center mb-6">
                 <span class="text-3xl">💎</span>
               </div>
-              <h2 class="text-xl font-semibold text-slate-900 mb-2">黄金白银 AI 助手</h2>
+              <h2 class="text-xl font-semibold text-slate-900 mb-2">金智顾问</h2>
               <p class="text-slate-600 max-w-md mb-8">我可以帮你分析黄金白银市场、解读地缘政治风险、或者回答任何相关问题。</p>
               <div class="grid grid-cols-1 md:grid-cols-2 gap-3 max-w-xl w-full">
                 <button
