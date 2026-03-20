@@ -360,74 +360,32 @@
 
         <!-- Chat Tab -->
         <div v-else-if="activeTab === 'chat'" class="h-full flex flex-col">
-          <!-- Hero Section for Intelligence System -->
-          <section class="bg-gradient-to-br from-slate-900/10 via-slate-800/5 to-slate-700/10 rounded-3xl p-8 border border-slate-300 mb-6">
-            <div class="flex items-center gap-2 mb-4">
-              <span class="px-3 py-1 bg-slate-900 text-white rounded-full text-xs font-bold">
-                🎯 黄金白银情报系统
-              </span>
-              <span class="text-slate-500 text-sm">/ AI 辅助决策</span>
-            </div>
-            <h2 class="text-4xl font-bold text-slate-900 mb-4">
-              多源情报融合，智能决策支持<br>
-              <span class="bg-gradient-to-r from-brand-600 to-slate-600 bg-clip-text text-transparent">
-                你的专属交易情报站
-              </span>
-            </h2>
-            <p class="text-slate-600 text-lg max-w-2xl">
-              融合实时价格信号、地缘政治情报、大佬观点和历史预警，
-              AI 辅助人类完成黄金白银交易决策。
-            </p>
-          </section>
-
-          <!-- Chat Interface -->
+          <!-- Simplified Chat Interface -->
           <div class="flex-1 flex flex-col bg-white border border-slate-200 rounded-2xl overflow-hidden">
-            <div class="p-6 border-b border-slate-200 bg-gradient-to-r from-slate-50 to-brand-50/30">
-              <div class="flex items-center gap-4">
-                <div class="w-12 h-12 bg-gradient-to-br from-brand-500 to-purple-500 rounded-2xl flex items-center justify-center shadow-lg shadow-brand-500/20">
-                  <span class="text-2xl">🤖</span>
+            <div class="p-4 border-b border-slate-200 bg-slate-50">
+              <div class="flex items-center gap-3">
+                <div class="w-10 h-10 bg-slate-900 rounded-xl flex items-center justify-center text-white text-xl">
+                  🤖
                 </div>
                 <div>
-                  <h3 class="font-bold text-slate-900 text-lg">GoldSilver AI Assistant</h3>
-                  <p class="text-sm text-slate-500">基于当前市场信息，为你提供专业分析</p>
+                  <h3 class="font-bold text-slate-900">AI 分析</h3>
+                  <p class="text-xs text-slate-500">基于当前市场信息，为你提供专业分析</p>
                 </div>
                 <div class="ml-auto">
                   <div class="flex items-center gap-2">
-                    <div class="w-2 h-2 rounded-full bg-green-500 animate-pulse"></div>
+                    <div class="w-2 h-2 rounded-full bg-green-500"></div>
                     <span class="text-xs text-slate-500">在线</span>
                   </div>
                 </div>
               </div>
             </div>
             
-            <div ref="chatMessagesRef" class="flex-1 overflow-y-auto p-6 space-y-6">
-              <div v-if="chatMessages.length === 0" class="flex flex-col items-center justify-center h-64 text-slate-400 gap-6">
-                <div class="w-24 h-24 bg-gradient-to-br from-brand-500/20 to-cyan-500/20 rounded-3xl flex items-center justify-center">
-                  <span class="text-6xl">💬</span>
-                </div>
+            <div ref="chatMessagesRef" class="flex-1 overflow-y-auto p-4 space-y-4">
+              <div v-if="chatMessages.length === 0" class="flex flex-col items-center justify-center h-full text-slate-400 gap-4">
+                <span class="text-4xl">💬</span>
                 <div class="text-center">
-                  <p class="text-lg font-bold text-slate-700 mb-2">有什么问题想问我吗？</p>
+                  <p class="text-base font-medium text-slate-700">有什么问题想问我吗？</p>
                   <p class="text-sm text-slate-500">试试问我关于黄金、白银或地缘政治的问题</p>
-                </div>
-                <div class="flex flex-wrap gap-2 justify-center mt-4">
-                  <button 
-                    @click="chatInput = '当前黄金价格走势如何？'"
-                    class="px-4 py-2 bg-slate-100 text-slate-700 rounded-xl text-sm hover:bg-slate-200 transition-colors"
-                  >
-                    🏆 黄金走势
-                  </button>
-                  <button 
-                    @click="chatInput = '地缘政治风险对白银有什么影响？'"
-                    class="px-4 py-2 bg-slate-100 text-slate-700 rounded-xl text-sm hover:bg-slate-200 transition-colors"
-                  >
-                    🌍 地缘风险
-                  </button>
-                  <button 
-                    @click="chatInput = '大佬们对当前市场有什么看法？'"
-                    class="px-4 py-2 bg-slate-100 text-slate-700 rounded-xl text-sm hover:bg-slate-200 transition-colors"
-                  >
-                    🧠 大佬观点
-                  </button>
                 </div>
               </div>
               <div v-for="(msg, idx) in chatMessages" :key="idx" :class="['chat-widget-message', msg.role]">
@@ -435,21 +393,21 @@
               </div>
             </div>
             
-            <div class="p-6 border-t border-slate-200 bg-slate-50">
+            <div class="p-4 border-t border-slate-200 bg-slate-50">
               <div class="flex gap-3">
                 <input
                   v-model="chatInput"
                   @keyup.enter="sendChatMessage"
                   :disabled="chatLoading"
                   placeholder="输入你的问题..."
-                  class="flex-1 px-5 py-4 border-2 border-slate-200 bg-white rounded-2xl text-base focus:outline-none focus:border-brand-500 focus:ring-4 focus:ring-brand-500/10 transition-all"
+                  class="flex-1 px-4 py-3 border border-slate-200 bg-white rounded-xl text-base focus:outline-none focus:border-slate-400 transition-all"
                 />
                 <button
                   @click="sendChatMessage"
                   :disabled="chatLoading"
-                  class="px-6 py-4 bg-gradient-to-r from-brand-600 to-cyan-600 text-white rounded-2xl text-base font-bold hover:from-brand-700 hover:to-cyan-700 transition-all shadow-lg shadow-brand-500/20 hover:shadow-xl hover:shadow-brand-500/30 disabled:opacity-50 disabled:cursor-not-allowed"
+                  class="px-5 py-3 bg-slate-900 text-white rounded-xl text-base font-medium hover:bg-slate-800 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
                 >
-                  {{ chatLoading ? '思考中...' : '发送 →' }}
+                  {{ chatLoading ? '思考中...' : '发送' }}
                 </button>
               </div>
             </div>
