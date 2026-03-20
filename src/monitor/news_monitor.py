@@ -1,7 +1,7 @@
 """
 多地区新闻监控 - 支持中东、美国、中国等地区新闻
 参考 MiroFish 思想：从现实世界提取种子信息
-使用 requests + parsel（避免 scrapling 的异步/同步问题）
+使用 Scrapling 的 Fetcher（普通 HTTP）+ Selector 解析
 
 Author: wzh
 Date: 2026-03-19
@@ -9,14 +9,14 @@ Date: 2026-03-19
 import logging
 from datetime import datetime, timedelta
 from typing import List, Dict
-import requests
-from parsel import Selector
+from scrapling.fetchers import Fetcher
+from scrapling import Selector
 from .base import BaseMonitor, NewsItem
 
 logger = logging.getLogger(__name__)
 
 class NewsMonitor(BaseMonitor):
-    """多地区新闻监控 - 使用 requests + parsel（稳定）"""
+    """多地区新闻监控 - 使用 Scrapling 的 Fetcher（普通 HTTP）+ Selector"""
     
     # 地区新闻源配置 - 搜狐新闻
     NEWS_SOURCES = {
@@ -105,20 +105,18 @@ class NewsMonitor(BaseMonitor):
         return unique_news
     
     def _fetch_from_sohu(self, url: str, keywords: List[str], region: str, cutoff: datetime) -> List[NewsItem]:
-        """使用 requests + parsel 从搜狐新闻抓取（稳定）"""
+        """使用 Scrapling 的 Fetcher（普通 HTTP）从搜狐新闻抓取"""
         results = []
-        headers = {
-            "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36",
-            "Referer": "https://news.sohu.com/"
-        }
         
         try:
-            resp = requests.get(url, headers=headers, timeout=15)
-            if resp.status_code != 200:
+            # 使用 Scrapling 的 Fetcher（普通 HTTP，不是浏览器）
+            response = Fetcher.fetch(url)
+            
+            if response.status != 200:
                 return results
-                
-            # 使用 parsel 解析 HTML
-            sel = Selector(text=resp.text)
+            
+            # 使用 Scrapling 的 Selector 解析 HTML
+            selector = Selector(response.text)
             
             # 尝试多个选择器获取链接
             href_selectors = [
@@ -130,7 +128,7 @@ class NewsMonitor(BaseMonitor):
             
             hrefs = set()
             for sel_str in href_selectors:
-                hrefs.update(sel.css(sel_str).getall())
+                hrefs.update(selector.css(sel_str).getall())
             
             # 同时获取标题
             title_selectors = [
@@ -143,7 +141,7 @@ class NewsMonitor(BaseMonitor):
             
             titles = []
             for sel_str in title_selectors:
-                titles.extend([t.strip() for t in sel.css(sel_str).getall() if t.strip()])
+                titles.extend([t.strip() for t in selector.css(sel_str).getall() if t.strip()])
             
             # 组合标题和链接
             for i, href in enumerate(list(hrefs)[:20]):
@@ -173,7 +171,7 @@ class NewsMonitor(BaseMonitor):
                         title=title,
                         content='',
                         url=href,
-                        source='sohu_news',
+                        source='sohu_news_scrapling',
                         publish_time=datetime.now()
                     )
                     # 动态添加 region 属性
@@ -184,7 +182,7 @@ class NewsMonitor(BaseMonitor):
                     continue
                         
         except Exception as e:
-            logger.error(f"Failed to fetch from {url} with requests: {e}")
+            logger.error(f"Failed to fetch from {url} with Scrapling: {e}")
         
         return results
     
