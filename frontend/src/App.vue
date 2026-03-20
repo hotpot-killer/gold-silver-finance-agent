@@ -16,7 +16,7 @@
           <span class="text-white text-xl">✨</span>
         </div>
         <span v-if="sidebarOpen" class="text-xl font-bold tracking-tight text-slate-900 px-2 leading-none">
-          GoldSilver AI
+          黄金白银情报系统
         </span>
       </div>
 
@@ -93,24 +93,23 @@
       <div class="flex-1 overflow-y-auto p-8 custom-scrollbar">
         <!-- Dashboard Tab -->
         <div v-if="activeTab === 'dashboard'" class="space-y-8">
-          <!-- Hero Section -->
-          <section class="bg-gradient-to-br from-brand-500/10 via-purple-500/5 to-cyan-500/5 rounded-3xl p-8 border border-slate-200">
+          <!-- Hero Section - Intelligence System -->
+          <section class="bg-gradient-to-br from-slate-900/10 via-slate-800/5 to-slate-700/10 rounded-3xl p-8 border border-slate-300">
             <div class="flex items-center gap-2 mb-4">
               <span class="px-3 py-1 bg-slate-900 text-white rounded-full text-xs font-bold">
-                黄金白银专用金融分析引擎
+                黄金白银情报系统
               </span>
-              <span class="text-slate-500 text-sm">/ v1.0</span>
+              <span class="text-slate-500 text-sm">/ AI 辅助决策</span>
             </div>
             <h2 class="text-4xl font-bold text-slate-900 mb-4">
-              实时市场数据分析<br>
-              <span class="bg-gradient-to-r from-brand-600 to-cyan-600 bg-clip-text text-transparent">
-                智能推演未来
+              多源情报融合，智能决策支持<br>
+              <span class="bg-gradient-to-r from-brand-600 to-slate-600 bg-clip-text text-transparent">
+                你的专属交易情报站
               </span>
             </h2>
             <p class="text-slate-600 text-lg max-w-2xl">
-              基于最新新闻和价格信号，gold-silver-finance-agent 自动生成多智能体推演。
-              通过地缘政治沙盘、大佬观点和市场预警，在复杂环境中寻找
-              <span class="font-bold text-brand-600">“最优决策”</span>
+              融合实时价格信号、地缘政治情报、大佬观点和历史预警，
+              AI 辅助人类完成黄金白银交易决策。
             </p>
           </section>
 
@@ -361,23 +360,23 @@
 
         <!-- Chat Tab -->
         <div v-else-if="activeTab === 'chat'" class="h-full flex flex-col">
-          <!-- Hero Section for AI Assistant -->
-          <section class="bg-gradient-to-br from-brand-500/10 via-purple-500/5 to-cyan-500/5 rounded-3xl p-8 border border-slate-200 mb-6">
+          <!-- Hero Section for Intelligence System -->
+          <section class="bg-gradient-to-br from-slate-900/10 via-slate-800/5 to-slate-700/10 rounded-3xl p-8 border border-slate-300 mb-6">
             <div class="flex items-center gap-2 mb-4">
               <span class="px-3 py-1 bg-slate-900 text-white rounded-full text-xs font-bold">
-                🧠 AI 智能分析引擎
+                🎯 黄金白银情报系统
               </span>
-              <span class="text-slate-500 text-sm">/ 核心创新</span>
+              <span class="text-slate-500 text-sm">/ AI 辅助决策</span>
             </div>
             <h2 class="text-4xl font-bold text-slate-900 mb-4">
-              专业分析，智能决策<br>
-              <span class="bg-gradient-to-r from-brand-600 to-cyan-600 bg-clip-text text-transparent">
-                你的专属投资顾问
+              多源情报融合，智能决策支持<br>
+              <span class="bg-gradient-to-r from-brand-600 to-slate-600 bg-clip-text text-transparent">
+                你的专属交易情报站
               </span>
             </h2>
             <p class="text-slate-600 text-lg max-w-2xl">
-              基于实时市场数据、地缘政治风险、大佬观点和历史预警，
-              为你提供深度分析和决策建议。
+              融合实时价格信号、地缘政治情报、大佬观点和历史预警，
+              AI 辅助人类完成黄金白银交易决策。
             </p>
           </section>
 
@@ -471,11 +470,11 @@ import 'leaflet/dist/leaflet.css'
 // 策略模式 (Strategy Pattern) - 导航配置
 // ==========================================
 const navigationTabs = [
-  { id: 'dashboard', label: '仪表盘', icon: '📊' },
-  { id: 'chat', label: 'AI 助手', icon: '💬' },
-  { id: 'map', label: '地缘地图', icon: '🌍' },
-  { id: 'alerts', label: '预警历史', icon: '⚠️' },
-  { id: 'gurus', label: '大佬观点', icon: '🧠' },
+  { id: 'dashboard', label: '情报总览', icon: '📊' },
+  { id: 'chat', label: 'AI 分析', icon: '💬' },
+  { id: 'map', label: '地缘情报', icon: '🌍' },
+  { id: 'alerts', label: '预警情报', icon: '⚠️' },
+  { id: 'gurus', label: '专家观点', icon: '🧠' },
 ]
 
 // ==========================================
@@ -587,8 +586,14 @@ const middleEastHotspots = [
 // 计算属性
 // ==========================================
 const currentTabLabel = computed(() => {
-  const tab = navigationTabs.find(t => t.id === activeTab.value)
-  return tab ? tab.label.toUpperCase() : 'DASHBOARD'
+  const labelMap = {
+    'dashboard': '情报总览',
+    'chat': 'AI 分析',
+    'map': '地缘情报',
+    'alerts': '预警情报',
+    'gurus': '专家观点'
+  }
+  return labelMap[activeTab.value]?.toUpperCase() || 'INTELLIGENCE'
 })
 
 const priceChange = computed(() => {
